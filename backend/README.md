@@ -1,6 +1,6 @@
 # Backend — Eu Amo Piri
 
-API REST do projeto **Eu Amo Piri**, desenvolvida para compartilhar experiências de quem visitou Pirenópolis (hospedagem, restaurantes, passeios, cachoeiras, etc.).
+API REST do projeto **Eu Amo Piri**, desenvolvida para compartilhar experiências de quem visitou Pirenópolis (pousadas, restaurantes, cachoeiras).
 
 Este documento explica tudo o que outro desenvolvedor precisa saber para clonar o repositório, configurar o ambiente e começar a contribuir.
 
@@ -59,7 +59,7 @@ DATABASE_URL="postgres://usuario:senha@localhost:5432/euamopiri"
 PORT=3000
 ```
 
-> **Importante:** o arquivo `.env` **não é versionado** no Git (contém senhas e segredos). Cada desenvolvedor cria o seu localmente a partir do `.env.example`.
+> **Importante:** o arquivo `.env` **não é versionado** no Git (contém senhas e segredos). Cada desenvolvedor cria o seu localmente a partir do `.env.example`. Credenciais serão compartilhadas individualmente para o grupo
 
 ### 4. Gerar o Prisma Client
 
@@ -321,7 +321,7 @@ Siga sempre o fluxo MVC. Exemplo: adicionar `GET /places/:id` (buscar um local p
 
 ### Erro: `DATABASE_URL is not set`
 
-O arquivo `.env` não existe ou não tem a variável `DATABASE_URL`. Copie `.env.example` para `.env` e preencha.
+O arquivo `.env` não existe ou não tem a variável `DATABASE_URL`. Copie `.env.example` para `.env` e preencha com as credenciais corretas a serem buscadas no canal interno do discord.
 
 ### Erro ao importar de `generated/prisma/...`
 
