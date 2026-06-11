@@ -1,0 +1,22 @@
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Tamanhos */
+.sm { width: 16px; height: 16px; border-width: 2px; }
+.md { width: 24px; height: 24px; border-width: 3px; }
+.lg { width: 40px; height: 40px; border-width: 4px; }
+
+/* Cores */
+.primary { color: var(--color-primary); }
+.white   { color: var(--color-white); }
+.muted   { color: var(--color-gray-400); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
