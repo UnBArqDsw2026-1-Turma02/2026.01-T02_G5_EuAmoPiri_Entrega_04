@@ -1,0 +1,124 @@
+/* ============================================================
+   ÁTOMO — Button
+   Mobile-first: tamanhos e espaçamentos pensados para toque
+   ============================================================ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast),
+    box-shadow var(--transition-fast);
+  white-space: nowrap;
+  position: relative;
+  /* Área mínima de toque — WCAG 2.5.5 (RNF07) */
+  min-height: 44px;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Tamanhos --- */
+.sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  min-height: 36px;
+}
+
+.md {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--font-size-base);
+}
+
+.lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--font-size-md);
+}
+
+/* --- Variantes --- */
+
+/* Primary: verde escuro — ação principal */
+.primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+.primary:hover:not([aria-disabled="true"]) {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* Secondary: marrom — ação secundária de destaque */
+.secondary {
+  background-color: var(--color-brown);
+  color: var(--color-white);
+  border-color: var(--color-brown);
+}
+.secondary:hover:not([aria-disabled="true"]) {
+  background-color: var(--color-brown-mid);
+  border-color: var(--color-brown-mid);
+}
+
+/* Outline: borda verde, fundo transparente */
+.outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.outline:hover:not([aria-disabled="true"]) {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Ghost: sem borda, só texto — ação terciária */
+.ghost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: transparent;
+}
+.ghost:hover:not([aria-disabled="true"]) {
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+/* --- Estados --- */
+.button[aria-disabled="true"],
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.loading {
+  cursor: wait;
+  pointer-events: none;
+}
+
+.spinnerWrapper {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hiddenText {
+  visibility: hidden;
+}
+
+/* --- Largura total --- */
+.fullWidth {
+  width: 100%;
+}
