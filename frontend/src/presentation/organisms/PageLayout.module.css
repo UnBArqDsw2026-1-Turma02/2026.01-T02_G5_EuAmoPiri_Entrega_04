@@ -1,0 +1,19 @@
+/* ============================================================
+   ORGANISMO — PageLayout
+   Sticky footer: o layout ocupa no mínimo 100vh,
+   empurrando o footer para baixo quando o conteúdo é curto.
+   ============================================================ */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-bg-page);
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  /* Remove outline padrão do tabIndex=-1 (foco programático para skip link) */
+  outline: none;
+}
