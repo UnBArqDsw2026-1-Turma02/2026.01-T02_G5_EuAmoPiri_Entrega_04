@@ -20,14 +20,29 @@ export default function App() {
   );
 }*/
 
-import React from 'react';
-import SobrePiriPage from './pages/SobrePiriPage';
+/*import React from 'react';
+import SobrePiriPage from './LoginPage';
 import './App.css';
 
 function App() {
   return (
     <div>
       <SobrePiriPage />
+    </div>
+  );
+}
+
+export default App;*/
+
+import React from 'react';
+import LoginPage from "./pages/LoginPage"; // ou ./components/LoginPage
+import './App.css';
+
+function App() {
+  return (
+    <div>
+      {/* Trocamos <SobrePiriPage /> por <LoginPage /> */}
+      <LoginPage /> 
     </div>
   );
 }

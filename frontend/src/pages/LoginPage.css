@@ -1,0 +1,54 @@
+/* Tela cheia com o Gradiente de fundo do protótipo */
+.login-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.login-card {
+  background-color: #ffffff;
+  width: 80%;
+  max-width: 150px; 
+
+  padding: 25px 30px;
+  
+  border-radius: 12px;
+  
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1); 
+  
+  box-sizing: border-box;
+}
+
+/* Cabeçalho do Card */
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-logo {
+  color: #6e4a3b;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 5px 0;
+}
+
+.login-subtitle {
+  color: #8c8c8c;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.btn-google:hover {
+  background-color: #f9f9f9;
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+}
