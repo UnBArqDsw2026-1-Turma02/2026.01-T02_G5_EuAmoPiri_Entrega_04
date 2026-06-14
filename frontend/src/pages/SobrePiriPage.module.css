@@ -1,0 +1,173 @@
+/* ============================================================
+   PÁGINA — SobrePiri
+   ============================================================ */
+
+.page {
+  background-color: var(--color-bg-page);
+  min-height: 100%;
+  padding: var(--space-8) 0;
+}
+
+.container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.card,
+.cardHorizontal {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+/* Mobile: coluna */
+.cardHorizontal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.texto {
+  min-width: 0;
+}
+
+/* --- Tipografia --- */
+.titulo {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-brown);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.paragrafo {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  text-align: justify;
+  margin: 0;
+}
+
+/* --- Galeria principal (Origem) ---
+   Container 350×180px com position:relative.
+   fotoA: 0–180px (left); fotoB: 200–350px (right, offset 45px down).
+   Gap de 20px entre as imagens, sem sobreposição.
+   ------------------------------------------------------------ */
+.galeria {
+  position: relative;
+  width: 350px;
+  height: 180px;
+  flex-shrink: 0;
+}
+
+/* Primeira imagem: paisagem, canto superior esquerdo */
+.fotoA {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 180px;
+  height: 135px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-green-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Segunda imagem: paisagem menor, offset 45px para baixo */
+.fotoB {
+  position: absolute;
+  top: 45px;
+  left: 200px;
+  width: 150px;
+  height: 125px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-green-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Grade inferior --- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+/* --- Fotos nos cards de grade --- */
+.fotosLadoALado {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  margin-top: var(--space-5);
+}
+
+.fotoGrid {
+  width: 250px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-green-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.fotoGridOffset {
+  margin-top: 30px;
+}
+
+/* ============================================================
+   Desktop (≥ 768px) — CSS Grid garante colunas sem overflow
+   ============================================================ */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 var(--space-6);
+  }
+
+  .cardHorizontal {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ============================================================
+   Mobile (< 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .galeria {
+    position: static;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .fotoA,
+  .fotoB {
+    position: static;
+    width: 100%;
+    height: 160px;
+  }
+
+  .fotosLadoALado {
+    flex-direction: column;
+  }
+
+  .fotoGrid,
+  .fotoGridOffset {
+    width: 100%;
+    height: 160px;
+    margin-top: 0;
+  }
+}
