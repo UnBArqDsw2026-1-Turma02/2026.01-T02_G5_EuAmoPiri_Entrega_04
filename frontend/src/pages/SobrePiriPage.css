@@ -1,6 +1,6 @@
 /* Configurações Gerais da Página */
 .sobre-piri-container {
-  background-color: #f5f2eb; /* Fundo bege suave */
+  background-color: #f5f2eb; /* Fundo bege*/
   min-height: 100vh;
   padding: 30px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -19,12 +19,14 @@
   margin-bottom: 25px;
 }
 
+/*logo eu amo piri*/
 .logo {
   font-weight: bold;
   font-size: 1.2rem;
   color: #6e4a3b; /* Marrom escuro */
 }
 
+ /* botão voltar*/
 .btn-amopiri {
   background: #f5f2eb;
   color: #050505;
@@ -33,6 +35,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: bold; /* negrito */
   transition: all 0.2s;
   
   box-shadow: 0px 4px 12px rgba(110, 74, 59, 0.12);
@@ -91,24 +94,34 @@
   line-height: 1.6;
   font-size: 0.95rem;
   text-align: justify;
-  font-weight: 400; /* Peso normal para o bloco de texto */
+  font-weight: 400;
 }
 
 .galeria-fotos-principal {
   display: flex;
-  gap: 15px;
-  align-items: center;
-  justify-content: center; 
+  gap: 20px;
+  align-items: flex-start; 
+  justify-content: center;
 }
 
-/*Deixando as duas imagens com tamanho igual*/
 .galeria-fotos-principal .foto-piri {
-  width: 200px;        
-  height: 150px;       
-  object-fit: cover;    
+  object-fit: cover;
   border-radius: 12px;
-  border: 2px solid #a3b899;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+  border: 2px solid #a3b899; 
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.06); 
+}
+
+.galeria-fotos-principal .foto-piri:first-child {
+  width: 260px;
+  height: 160px;
+  margin-top: 0; 
+}
+
+.galeria-fotos-principal .foto-piri:last-child {
+  width: 250px;
+  height: 150px;
+  
+  margin-top: 50px; 
 }
 
 .grid-inferior {
@@ -117,28 +130,36 @@
   gap: 25px;
 }
 
-/* Deixando as duas imagens lado a lado*/
 .fotos-lado-a-lado {
   display: flex;
   gap: 15px;
   margin-top: 20px;
+  align-items: flex-start; 
 }
 
 .foto-piri {
   border-radius: 12px;
   object-fit: cover;
   border: 2px solid #a3b899; 
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-/* Ajustes finos de tamanho para bater com a imagem */
+.fotos-lado-a-lado .foto-piri:first-child {
+  width: 250px;
+  height: 150px;
+  margin-top: 0; /* Fica no topo */
+}
+
+/* Arruma altura da imagem*/
+.fotos-lado-a-lado .foto-piri:last-child {
+  width: 250px;
+  height: 150px; /* vertical */
+  margin-top: 30px; 
+}
+
 .foto-vertical {
   height: 230px;
   width: 170px;
-}
-
-.fotos-lado-a-lado .foto-piri {
-  width: 50%; /* Faz as duas fotos ocuparem metade do espaço interno cada */
-  height: 140px;
 }
 
 @media (max-width: 900px) {

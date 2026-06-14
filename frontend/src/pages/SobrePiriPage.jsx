@@ -1,7 +1,6 @@
 import React from 'react';
 import './SobrePiriPage.css';
 
-// CORRIGIDO: Cada imagem agora tem o seu próprio nome exclusivo
 import piriImagem1 from '../assets/piriimagem1.png';
 import piriImagem2 from '../assets/piriimagem2.png';
 import piriImagem3 from '../assets/piriimagem3.png';
@@ -48,7 +47,7 @@ export default function SobrePiriPage() {
             e tradições culturais ao longo dos anos.
           </p>
           <div className="fotos-lado-a-lado">
-            {/* Trocado os links da internet pelas suas fotos locais 3 e 4 */}
+        
             <img src={piriImagem3} alt="Igreja Matriz" className="foto-piri" />
             <img src={piriImagem4} alt="Rua Histórica" className="foto-piri" />
           </div>
@@ -62,7 +61,7 @@ export default function SobrePiriPage() {
             tradicionais como as Cavalhadas, que reforçam sua identidade cultural e histórica.
           </p>
           <div className="fotos-lado-a-lado">
-            {/* Trocado os links da internet pelas suas fotos locais 5 e 6 */}
+          
             <img src={piriImagem5} alt="Cachoeira" className="foto-piri" />
             <img src={piriImagem6} alt="Cavalhadas" className="foto-piri" />
           </div>
