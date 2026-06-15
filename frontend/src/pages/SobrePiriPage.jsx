@@ -1,10 +1,3 @@
-/**
- * PÁGINA — SobrePiri
- *
- * Apresenta a história e atualidade de Pirenópolis.
- * Conteúdo original da colega — adaptado para o design system do projeto
- * (tokens CSS, CSS Modules, sem header local duplicado).
- */
 import piriImagem1 from '../assets/piriimagem1.png';
 import piriImagem2 from '../assets/piriimagem2.png';
 import piriImagem3 from '../assets/piriimagem3.png';
