@@ -84,6 +84,17 @@
   color: var(--color-white);
 }
 
+/* Teal: azul-esverdeado — ação de edição / perfil */
+.teal {
+  background-color: var(--color-teal);
+  color: var(--color-white);
+  border-color: var(--color-teal);
+}
+.teal:hover:not([aria-disabled="true"]) {
+  background-color: color-mix(in srgb, var(--color-teal) 85%, black);
+  border-color: color-mix(in srgb, var(--color-teal) 85%, black);
+}
+
 /* Ghost: sem borda, só texto — ação terciária */
 .ghost {
   background-color: transparent;
