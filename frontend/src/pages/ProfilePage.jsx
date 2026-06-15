@@ -1,17 +1,12 @@
-/**
- * PÁGINA — ProfilePage  (RF03: Gestão de Perfil do Usuário)
- *
- * Permite que o usuário autenticado visualize e edite seus dados:
- * nome, email, profissão, contato, data de nascimento, bio e foto.
- *
- * Padrão: leitura do contexto de auth + chamada ao updateProfile do adaptor.
- */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+import { MdEdit } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../presentation/atoms/Avatar';
 import Button from '../presentation/atoms/Button';
 import Badge from '../presentation/atoms/Badge';
+import StarRating from '../presentation/atoms/StarRating';
 import FormField from '../presentation/molecules/FormField';
 import styles from './ProfilePage.module.css';
 
@@ -28,6 +23,27 @@ function formatDate(iso) {
   return `${d}/${m}/${y}`;
 }
 
+/* ─── mock de dados (substituir por API quando disponível) ─── */
+const MOCK_RELATOS_MORADOR = [
+  { id: 1, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país e tenho propriedade para dizer que já cansara de restaurantes melhores em Pirenópolis.', likes: 3 },
+  { id: 2, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
+  { id: 3, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
+];
+
+const MOCK_LOCAIS_MORADOR = [
+  { id: 1, nome: 'Botequim Mercatto Piri', categoria: 'Gastronomia', rating: 4.4, avaliacoes: 1 },
+  { id: 2, nome: 'Cachoeira da Rosário',   categoria: 'Natureza',    rating: 4.3, avaliacoes: 1 },
+  { id: 3, nome: 'Galeria de Arte Local',  categoria: 'Cultura',     rating: 4.3, avaliacoes: 1 },
+  { id: 4, nome: 'Trilha do Poço Azul',    categoria: 'Natureza',    rating: 4.5, avaliacoes: 1 },
+  { id: 5, nome: 'Igreja Matriz de N. S. do Rosário', categoria: 'Cultura', rating: 4.5, avaliacoes: 1 },
+];
+
+const MOCK_AVALIACOES_TURISTA = [
+  { id: 1, local: 'Cachoeiras da região', texto: 'Vista incrível! Com certeza voltarei na próxima viagem!', rating: 5 },
+  { id: 2, local: 'Restaurante típico',   texto: 'Comida deliciosa, atendimento ótimo.', rating: 4 },
+  { id: 3, local: 'Trilha das pedras',    texto: 'Paisagem incrível, recomendo muito.', rating: 5 },
+];
+
 /* ─── sub-componente: linha de info em modo leitura ─── */
 function InfoRow({ label, value }) {
   return (
@@ -38,12 +54,81 @@ function InfoRow({ label, value }) {
   );
 }
 
+/* ─── seção Morador ─── */
+function MoradorSections() {
+  return (
+    <>
+      <div className={styles.sectionCard}>
+        <h2 className={styles.sectionTitle}>ÚLTIMOS RELATOS</h2>
+        <div className={styles.relatosGrid}>
+          {MOCK_RELATOS_MORADOR.map((r) => (
+            <div key={r.id} className={styles.relatoCard}>
+              <div className={styles.relatoHeader}>
+                <span className={styles.relatoLocal}>{r.local}</span>
+                <span className={styles.relatoMeta}>{r.autor} · {r.dias}d atrás</span>
+              </div>
+              <p className={styles.relatoTexto}>{r.texto}</p>
+              <div className={styles.relatoFooter}>
+                <div className={styles.relatoActions}>
+                  <Button variant="outline" size="sm">Editar Avaliação</Button>
+                  <Button variant="ghost" size="sm">Excluir Avaliação</Button>
+                </div>
+                <span>👍 {r.likes}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.sectionCard}>
+        <h2 className={styles.sectionTitle}>MEUS LOCAIS</h2>
+        <div className={styles.locaisGrid}>
+          {MOCK_LOCAIS_MORADOR.map((l) => (
+            <Link key={l.id} to={`/locais/${l.id}`} className={styles.localCard}>
+              <span className={styles.localNome}>{l.nome}</span>
+              <span className={styles.localCat}>{l.categoria}</span>
+              <div className={styles.localRating}>
+                <StarRating value={Math.round(l.rating)} readonly size="sm" />
+                <span>{l.rating.toFixed(1)} · {l.avaliacoes} Avaliação</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── seção Turista ─── */
+function TuristaSections() {
+  return (
+    <div className={styles.sectionCard}>
+      <h2 className={styles.sectionTitle}>SUAS AVALIAÇÕES</h2>
+      <div className={styles.avaliacoesGrid}>
+        {MOCK_AVALIACOES_TURISTA.map((a) => (
+          <div key={a.id} className={styles.avaliacaoCard}>
+            <span className={styles.avaliacaoLocal}>{a.local}</span>
+            <StarRating value={a.rating} readonly size="sm" />
+            <p className={styles.avaliacaoTexto}>{a.texto}</p>
+            <div className={styles.relatoActions}>
+              <Button variant="outline" size="sm">Editar Avaliação</Button>
+              <Button variant="ghost" size="sm">Excluir Avaliação</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── componente principal ─── */
 export default function ProfilePage() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, isMorador } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState(null); // { type: 'success'|'error', msg }
+  const [feedback, setFeedback] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
@@ -53,9 +138,29 @@ export default function ProfilePage() {
       contact:    user?.contact    ?? '',
       birthDate:  user?.birthDate  ?? '',
       bio:        user?.bio        ?? '',
-      avatarUrl:  user?.avatarUrl  ?? '',
     },
   });
+
+  function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      // Comprime para max 200x200px antes de salvar (evita estourar localStorage)
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 200;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        setAvatarPreview(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
 
   function startEditing() {
     reset({
@@ -65,7 +170,6 @@ export default function ProfilePage() {
       contact:    user?.contact    ?? '',
       birthDate:  user?.birthDate  ?? '',
       bio:        user?.bio        ?? '',
-      avatarUrl:  user?.avatarUrl  ?? '',
     });
     setFeedback(null);
     setEditing(true);
@@ -74,14 +178,16 @@ export default function ProfilePage() {
   function cancelEditing() {
     setEditing(false);
     setFeedback(null);
+    setAvatarPreview(null);
   }
 
   async function onSubmit(data) {
     setSaving(true);
     setFeedback(null);
     try {
-      await updateProfile(data);
+      await updateProfile({ ...data, avatarUrl: avatarPreview ?? user?.avatarUrl });
       setFeedback({ type: 'success', msg: 'Perfil atualizado com sucesso!' });
+      setAvatarPreview(null);
       setEditing(false);
     } catch {
       setFeedback({ type: 'error', msg: 'Erro ao salvar. Tente novamente.' });
@@ -104,51 +210,79 @@ export default function ProfilePage() {
 
         {/* ── Cabeçalho do perfil ── */}
         <div className={styles.profileHeader}>
-          <div className={styles.avatarWrap}>
-            <Avatar src={user.avatarUrl} name={user.name} size="xl" />
-          </div>
-          <div className={styles.headerInfo}>
-            <h1 className={styles.userName}>{user.name}</h1>
-            <Badge variant="teal" size="sm">
-              {roleLabel(user.role)}
-            </Badge>
-            {user.bio && <p className={styles.bio}>{user.bio}</p>}
-          </div>
-          {!editing && (
-            <div className={styles.editBtnWrap}>
-              <Button variant="teal" size="sm" onClick={startEditing}>
-                Editar perfil
-              </Button>
+          <div className={styles.profileLeft}>
+            <div className={styles.avatarWrap}>
+              <Avatar src={avatarPreview ?? user.avatarUrl} name={user.name} size="xl" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.avatarFileInput}
+                onChange={handleAvatarChange}
+                aria-label="Alterar foto de perfil"
+              />
+              {editing && (
+                <button
+                  type="button"
+                  className={styles.avatarUploadBtn}
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Alterar foto"
+                  aria-label="Alterar foto de perfil"
+                >
+                  <MdEdit size={14} />
+                </button>
+              )}
             </div>
-          )}
+
+            <div className={styles.headerInfo}>
+              <h1 className={styles.userName}>{user.name}</h1>
+              <div className={styles.userMeta}>
+                <Badge variant="teal" size="sm">{roleLabel(user.role)}</Badge>
+                {user.profession && (
+                  <span className={styles.profession}>{user.profession}</span>
+                )}
+              </div>
+              <span className={styles.userEmail}>{user.email}</span>
+              {user.bio && <p className={styles.bio}>{user.bio}</p>}
+            </div>
+          </div>
+
+          <div className={styles.profileRight}>
+            <span className={styles.statLabel}>
+              {isMorador ? 'Quantidade de relatos sobre os seus locais' : 'Relatos Cadastrados'}
+            </span>
+            <span className={styles.statNumber}>5</span>
+          </div>
         </div>
 
-        {/* ── Feedback ── */}
-        {feedback && (
-          <div className={`${styles.feedback} ${styles[feedback.type]}`}
-               role="alert">
-            {feedback.msg}
+        {/* ── Botões de ação ── */}
+        {!editing && (
+          <div className={styles.actionBtns}>
+            <Button variant="outline" size="sm" onClick={() => {}}>
+              Deletar Perfil
+            </Button>
+            <Button variant="teal" size="sm" onClick={startEditing}>
+              Editar Perfil
+            </Button>
+            {isMorador && (
+              <Button variant="primary" size="sm" as={Link} to="/morador/locais/novo">
+                Cadastrar Novo Local
+              </Button>
+            )}
           </div>
         )}
 
-        {/* ── Modo leitura ── */}
-        {!editing && (
-          <div className={styles.infoCard}>
-            <h2 className={styles.sectionTitle}>Informações pessoais</h2>
-            <div className={styles.infoGrid}>
-              <InfoRow label="Nome completo"      value={user.name} />
-              <InfoRow label="E-mail"             value={user.email} />
-              <InfoRow label="Profissão"          value={user.profession} />
-              <InfoRow label="Contato"            value={user.contact} />
-              <InfoRow label="Data de nascimento" value={formatDate(user.birthDate)} />
-            </div>
+        {/* ── Feedback ── */}
+        {feedback && (
+          <div className={`${styles.feedback} ${styles[feedback.type]}`} role="alert">
+            {feedback.msg}
           </div>
         )}
 
         {/* ── Modo edição ── */}
         {editing && (
           <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
-            <h2 className={styles.sectionTitle}>Editar perfil</h2>
+            <h2 className={styles.sectionTitle}>EDITAR PERFIL</h2>
 
             <div className={styles.formGrid}>
               <FormField
@@ -177,7 +311,7 @@ export default function ProfilePage() {
               />
               <FormField
                 id="contact"
-                label="Contato (telefone ou rede social)"
+                label="Contato"
                 placeholder="Ex: (62) 99999-0000"
                 registration={register('contact')}
               />
@@ -186,12 +320,6 @@ export default function ProfilePage() {
                 label="Data de nascimento"
                 type="date"
                 registration={register('birthDate')}
-              />
-              <FormField
-                id="avatarUrl"
-                label="URL da foto de perfil"
-                placeholder="https://..."
-                registration={register('avatarUrl')}
               />
             </div>
 
@@ -207,14 +335,22 @@ export default function ProfilePage() {
             />
 
             <div className={styles.formActions}>
+              <Button variant="teal" type="submit" loading={saving}>
+                Atualizar Perfil
+              </Button>
+            </div>
+
+            <div className={styles.formActions}>
               <Button variant="ghost" type="button" onClick={cancelEditing} disabled={saving}>
                 Cancelar
               </Button>
-              <Button type="submit" loading={saving}>
-                Salvar alterações
-              </Button>
             </div>
           </form>
+        )}
+
+        {/* ── Seções por role (só no modo leitura) ── */}
+        {!editing && (
+          isMorador ? <MoradorSections /> : <TuristaSections />
         )}
 
       </div>

@@ -1,14 +1,3 @@
-/**
- * ORGANISMO — Header
- *
- * Barra de navegação principal do app.
- * Responsivo: menu hambúrguer no mobile, links inline no desktop.
- *
- * Comportamento por estado de autenticação:
- *   - Não logado:    logo + links públicos + botões Entrar / Cadastrar
- *   - Morador:       logo + links públicos + link "Meu Painel" + avatar + logout
- *   - Turista:       logo + links públicos + link "Meu Painel" + avatar + logout
- */
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { MdMenu, MdClose, MdPerson } from 'react-icons/md';
@@ -60,7 +49,7 @@ export default function Header() {
           {isAuthenticated ? (
             <>
               <Link to="/perfil" className={styles.avatarLink} aria-label="Ver perfil">
-                <Avatar src={user?.avatar} name={user?.name} size="sm" />
+                <Avatar src={user?.avatarUrl} name={user?.name} size="sm" />
               </Link>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Sair

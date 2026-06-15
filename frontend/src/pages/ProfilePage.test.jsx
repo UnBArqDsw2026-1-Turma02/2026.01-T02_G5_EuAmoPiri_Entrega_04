@@ -1,9 +1,7 @@
-/**
- * TESTES — ProfilePage  (RF03: Gestão de Perfil do Usuário)
- */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -24,45 +22,49 @@ const mockUser = {
   avatarUrl: null,
 }
 
+const renderPage = () =>
+  render(<MemoryRouter><ProfilePage /></MemoryRouter>)
+
 describe('ProfilePage — RF03', () => {
   beforeEach(() => {
     vi.mocked(AuthContext.useAuth).mockReturnValue({
       user: mockUser,
       updateProfile: vi.fn().mockResolvedValue(mockUser),
       isAuthenticated: true,
+      isMorador: true,
     })
   })
 
   it('exibe nome do usuário em modo leitura', () => {
-    render(<ProfilePage />)
+    renderPage()
     expect(screen.getByText('Anna Brandão')).toBeInTheDocument()
   })
 
   it('exibe email do usuário em modo leitura', () => {
-    render(<ProfilePage />)
+    renderPage()
     expect(screen.getByText('anna@piri.com')).toBeInTheDocument()
   })
 
   it('exibe profissão do usuário', () => {
-    render(<ProfilePage />)
+    renderPage()
     expect(screen.getByText('Desenvolvedora')).toBeInTheDocument()
   })
 
   it('exibe badge com role do usuário', () => {
-    render(<ProfilePage />)
+    renderPage()
     expect(screen.getByText('Morador')).toBeInTheDocument()
   })
 
-  it('exibe botão "Editar perfil"', () => {
-    render(<ProfilePage />)
+  it('exibe botão "Editar Perfil"', () => {
+    renderPage()
     expect(
       screen.getByRole('button', { name: /editar perfil/i })
     ).toBeInTheDocument()
   })
 
-  it('exibe formulário de edição ao clicar em "Editar perfil"', async () => {
+  it('exibe formulário de edição ao clicar em "Editar Perfil"', async () => {
     const user = userEvent.setup()
-    render(<ProfilePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
     expect(screen.getByLabelText(/nome completo/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument()
@@ -72,7 +74,7 @@ describe('ProfilePage — RF03', () => {
 
   it('pré-preenche campos com dados atuais ao entrar em edição', async () => {
     const user = userEvent.setup()
-    render(<ProfilePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
     expect(screen.getByLabelText(/nome completo/i)).toHaveValue('Anna Brandão')
     expect(screen.getByLabelText(/e-mail/i)).toHaveValue('anna@piri.com')
@@ -80,7 +82,7 @@ describe('ProfilePage — RF03', () => {
 
   it('volta ao modo leitura ao clicar em Cancelar', async () => {
     const user = userEvent.setup()
-    render(<ProfilePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
     await user.click(screen.getByRole('button', { name: /cancelar/i }))
     expect(screen.getByRole('button', { name: /editar perfil/i })).toBeInTheDocument()
@@ -92,19 +94,20 @@ describe('ProfilePage — RF03', () => {
       user: mockUser,
       updateProfile,
       isAuthenticated: true,
+      isMorador: true,
     })
     const user = userEvent.setup()
-    render(<ProfilePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-    await user.click(screen.getByRole('button', { name: /salvar/i }))
+    await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
     await waitFor(() => expect(updateProfile).toHaveBeenCalled())
   })
 
   it('exibe mensagem de sucesso após salvar', async () => {
     const user = userEvent.setup()
-    render(<ProfilePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-    await user.click(screen.getByRole('button', { name: /salvar/i }))
+    await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
     await waitFor(() =>
       expect(screen.getByText(/perfil atualizado com sucesso/i)).toBeInTheDocument()
     )
@@ -112,10 +115,10 @@ describe('ProfilePage — RF03', () => {
 
   it('exibe validação quando nome é removido', async () => {
     const user = userEvent.setup()
-    render(<ProfilePage />)
+    renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
     await user.clear(screen.getByLabelText(/nome completo/i))
-    await user.click(screen.getByRole('button', { name: /salvar/i }))
+    await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
     await waitFor(() =>
       expect(screen.getByText(/nome é obrigatório/i)).toBeInTheDocument()
     )
@@ -126,8 +129,9 @@ describe('ProfilePage — RF03', () => {
       user: null,
       updateProfile: vi.fn(),
       isAuthenticated: false,
+      isMorador: false,
     })
-    render(<ProfilePage />)
+    renderPage()
     expect(screen.getByText(/precisa estar logado/i)).toBeInTheDocument()
   })
 })
