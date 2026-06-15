@@ -2,7 +2,7 @@
  * ÁTOMO — Button
  *
  * Componente de botão reutilizável com suporte a:
- * - 4 variantes visuais: primary, secondary, outline, ghost
+ * - 5 variantes visuais: primary, secondary, outline, ghost, teal
  * - 3 tamanhos: sm, md, lg
  * - Estado de loading (integra o Spinner)
  * - Estado disabled com acessibilidade
