@@ -4,8 +4,10 @@
  * Mapeia as chamadas de domínio para os endpoints da API REST.
  * Isola o restante da aplicação dos detalhes da API.
  *
- * API real disponível: GET /places, POST /places
- * Demais operações: mockadas até o backend implementar.
+ * Para substituir o mapa OpenStreetMap (Leaflet) pelo Google Maps:
+ *   1. Instale @react-google-maps/api
+ *   2. Troque <MapContainer> por <GoogleMap> em PlacesPage.jsx
+ *   3. A estrutura de dados (lat/lng) permanece idêntica
  */
 import apiClient from '../fetcher/apiClient';
 
@@ -20,6 +22,8 @@ const MOCK_PLACES = [
     price: '$$',
     rating: 4.9,
     reviewsCount: 100,
+    lat: -15.8490,
+    lng: -48.9568,
     photos: [],
     mapsLink: null,
     createdAt: new Date('2026-05-10').toISOString(),
@@ -33,6 +37,8 @@ const MOCK_PLACES = [
     price: '$',
     rating: 4.8,
     reviewsCount: 50,
+    lat: -15.8312,
+    lng: -48.9423,
     photos: [],
     mapsLink: null,
     createdAt: new Date('2026-05-15').toISOString(),
@@ -46,64 +52,72 @@ const MOCK_PLACES = [
     price: '$$$',
     rating: 4.5,
     reviewsCount: 300,
+    lat: -15.8654,
+    lng: -48.9234,
     photos: [],
     mapsLink: null,
     createdAt: new Date('2026-04-20').toISOString(),
+  },
+  {
+    id: 4,
+    name: 'Igreja Matriz de N. S. do Rosário',
+    category: 'cultura',
+    description: 'Igreja tombada pelo IPHAN, símbolo da arquitetura colonial de Pirenópolis.',
+    address: 'Praça da Matriz, s/n - Centro',
+    price: '$',
+    rating: 4.7,
+    reviewsCount: 220,
+    lat: -15.8497,
+    lng: -48.9575,
+    photos: [],
+    mapsLink: null,
+    createdAt: new Date('2026-03-10').toISOString(),
+  },
+  {
+    id: 5,
+    name: 'Pousada das Cavalhadas',
+    category: 'hospedagem',
+    description: 'Pousada aconchegante no centro histórico, a passos dos principais pontos.',
+    address: 'Rua das Cavalhadas, 42 - Centro',
+    price: '$$',
+    rating: 4.6,
+    reviewsCount: 80,
+    lat: -15.8510,
+    lng: -48.9555,
+    photos: [],
+    mapsLink: null,
+    createdAt: new Date('2026-04-01').toISOString(),
   },
 ];
 
 /* ─── Funções do adaptor ─── */
 
-/**
- * Lista todos os locais.
- * Usa API real; em caso de falha ou dados insuficientes, retorna mock.
- */
 export async function fetchPlaces() {
   try {
     const { data } = await apiClient.get('/places');
-    return data;
+    return Array.isArray(data) ? data : MOCK_PLACES;
   } catch {
-    // TODO: remover mock quando o backend estiver completo
     return MOCK_PLACES;
   }
 }
 
-/**
- * Busca um local por ID.
- * Mockado até o backend implementar GET /places/:id
- */
 export async function fetchPlaceById(id) {
-  // TODO: substituir por apiClient.get(`/places/${id}`) quando disponível
   const place = MOCK_PLACES.find((p) => p.id === Number(id));
   if (!place) throw new Error('Local não encontrado');
   return place;
 }
 
-/**
- * Cria um novo local (Morador).
- * Usa API real.
- */
 export async function createPlace(placeData) {
   const { data } = await apiClient.post('/places', placeData);
   return data;
 }
 
-/**
- * Atualiza um local existente.
- * Mockado até o backend implementar PUT /places/:id
- */
 export async function updatePlace(id, placeData) {
-  // TODO: substituir por apiClient.put quando disponível
   console.warn('[mock] updatePlace chamado para id:', id);
   return { ...placeData, id };
 }
 
-/**
- * Remove um local.
- * Mockado até o backend implementar DELETE /places/:id
- */
 export async function deletePlace(id) {
-  // TODO: substituir por apiClient.delete quando disponível
   console.warn('[mock] deletePlace chamado para id:', id);
   return { success: true };
 }

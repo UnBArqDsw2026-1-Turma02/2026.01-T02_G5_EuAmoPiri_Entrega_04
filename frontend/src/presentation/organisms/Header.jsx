@@ -1,3 +1,14 @@
+/**
+ * ORGANISMO — Header
+ *
+ * Barra de navegação principal do app.
+ * Responsivo: menu hambúrguer no mobile, links inline no desktop.
+ *
+ * Comportamento por estado de autenticação:
+ *   - Não logado:    logo + links públicos + botões Entrar / Cadastrar
+ *   - Morador:       logo + links públicos + link "Meu Painel" + avatar + logout
+ *   - Turista:       logo + links públicos + link "Meu Painel" + avatar + logout
+ */
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { MdMenu, MdClose, MdPerson } from 'react-icons/md';
@@ -57,11 +68,11 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" as={Link} to="/login">
-                Entrar
+              <Button variant="outline" size="sm" as={Link} to="/cadastro">
+                Cadastre-se
               </Button>
-              <Button variant="primary" size="sm" as={Link} to="/cadastro">
-                Cadastrar
+              <Button variant="primary" size="sm" as={Link} to="/login">
+                Entrar
               </Button>
             </>
           )}
@@ -112,11 +123,11 @@ export default function Header() {
             </>
           ) : (
             <div className={styles.mobileAuthBtns}>
-              <Button variant="outline" fullWidth as={Link} to="/login" onClick={() => setMenuOpen(false)}>
-                Entrar
+              <Button variant="outline" fullWidth as={Link} to="/cadastro" onClick={() => setMenuOpen(false)}>
+                Cadastre-se
               </Button>
-              <Button variant="primary" fullWidth as={Link} to="/cadastro" onClick={() => setMenuOpen(false)}>
-                Cadastrar
+              <Button variant="primary" fullWidth as={Link} to="/login" onClick={() => setMenuOpen(false)}>
+                Entrar
               </Button>
             </div>
           )}
