@@ -4,12 +4,22 @@ import { formatExperience, formatExperienceList } from "../views/experienceView.
 
 export async function createExperience(req: Request, res: Response) {
     const { placeId } = req.params;
-    const { userName, rating } = req.body;
+    const { rating } = req.body;
+
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
 
     try {
-        const newExperience = await experienceModel.createExperience({ userName, rating: Number(rating), placeId: Number(placeId) });
+        const newExperience = await experienceModel.createExperience({
+            userName: req.user.name,
+            userId: req.user.id,
+            rating: Number(rating),
+            placeId: Number(placeId),
+        });
         res.status(201).json(formatExperience(newExperience));
-    } catch (error) {
+    } catch {
         res.status(500).json({ error: 'Erro ao cadastrar a experiencia' });
     }
 }
