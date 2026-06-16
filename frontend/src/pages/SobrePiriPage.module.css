@@ -1,0 +1,273 @@
+.page {
+  background-color: var(--color-bg-page);
+  min-height: 100%;
+  padding: var(--space-8) 0;
+}
+
+/* -- Tabs de navegacao (mobile) -- */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.tab {
+  flex: 1;
+  max-width: 120px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-brown);
+  background: transparent;
+  color: var(--color-brown);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab:hover {
+  background: var(--color-tan);
+}
+
+.tabAtiva {
+  background: var(--color-brown);
+  color: var(--color-white);
+}
+
+/* -- Botoes Anterior / Proximo (mobile) -- */
+.navBotoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0 var(--space-4);
+}
+
+.navBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-brown);
+  background: transparent;
+  color: var(--color-brown);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: var(--color-brown);
+  color: var(--color-white);
+}
+
+.navBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.navIndicador {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Oculta secoes inativas no mobile */
+.secaoOculta {
+  display: none;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-gray-50);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.backLink:hover {
+  background-color: var(--color-gray-100);
+}
+
+.container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.card,
+.cardHorizontal {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+/* Mobile: coluna */
+.cardHorizontal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.texto {
+  min-width: 0;
+}
+
+/* --- Tipografia --- */
+.titulo {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-brown);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.paragrafo {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  text-align: justify;
+  margin: 0;
+}
+
+/* --- Galeria principal (Origem) --- */
+.galeria {
+  position: relative;
+  width: 350px;
+  height: 180px;
+  flex-shrink: 0;
+}
+
+.fotoA {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 180px;
+  height: 135px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-green-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.fotoB {
+  position: absolute;
+  top: 45px;
+  left: 200px;
+  width: 150px;
+  height: 125px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-green-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Grade inferior --- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+/* --- Fotos nos cards de grade --- */
+.fotosLadoALado {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  margin-top: var(--space-5);
+}
+
+.fotoGrid {
+  width: 250px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-green-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.fotoGridOffset {
+  margin-top: 30px;
+}
+
+/* ============================================================
+   Desktop (>= 768px)
+   ============================================================ */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 var(--space-6);
+  }
+
+  .cardHorizontal {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* No desktop: tabs, nav e botao voltar ocultos, todas as secoes visiveis */
+  .tabs,
+  .navBotoes,
+  .backLink {
+    display: none;
+  }
+
+  .secaoOculta {
+    display: block;
+  }
+
+  .grid > .secaoOculta {
+    display: block;
+  }
+}
+
+/* ============================================================
+   Mobile (< 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .galeria {
+    position: static;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .fotoA,
+  .fotoB {
+    position: static;
+    width: 100%;
+    height: 160px;
+  }
+
+  .fotosLadoALado {
+    flex-direction: column;
+  }
+
+  .fotoGrid,
+  .fotoGridOffset {
+    width: 100%;
+    height: 160px;
+    margin-top: 0;
+  }
+}

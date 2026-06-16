@@ -5,7 +5,11 @@
   "main": "server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --import tsx ./src/server.ts"
+    "dev": "node --import tsx ./src/server.ts",
+    "dev:prod": "dotenv -e .env.prod -o -- node --import tsx ./src/server.ts",
+    "prisma:generate:prod": "dotenv -e .env.prod -o -- prisma generate",
+    "prisma:migrate:prod": "dotenv -e .env.prod -o -- prisma migrate deploy",
+    "prisma:studio:prod": "dotenv -e .env.prod -o -- prisma studio"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +25,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.20.0",
+    "dotenv-cli": "^11.0.0",
     "@types/swagger-ui-express": "^4.1.8",
     "prisma": "^7.8.0",
     "ts-node": "^10.9.2",

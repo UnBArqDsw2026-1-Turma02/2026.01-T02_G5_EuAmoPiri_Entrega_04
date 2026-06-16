@@ -1,0 +1,108 @@
+/* ============================================================
+   GLOBAL STYLES — Eu Amo Piri
+   Mobile-first: estilos base para mobile, breakpoints para cima
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import './tokens.css';
+
+/* --- Reset & Base --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background-color: var(--color-bg-page);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Tipografia base (WCAG: mínimo 16px no body — RNF07) --- */
+h1 { font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold);     line-height: var(--line-height-tight); }
+h2 { font-size: var(--font-size-xl);  font-weight: var(--font-weight-bold);     line-height: var(--line-height-tight); }
+h3 { font-size: var(--font-size-lg);  font-weight: var(--font-weight-semibold); line-height: var(--line-height-tight); }
+h4 { font-size: var(--font-size-md);  font-weight: var(--font-weight-semibold); }
+h5 { font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); }
+
+@media (min-width: 768px) {
+  h1 { font-size: var(--font-size-3xl); }
+  h2 { font-size: var(--font-size-2xl); }
+  h3 { font-size: var(--font-size-xl);  }
+}
+
+p { line-height: var(--line-height-relaxed); }
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover  { color: var(--color-primary-hover); text-decoration: underline; }
+a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+img, svg {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-family);
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+
+ul, ol { list-style: none; }
+
+/* --- Utilitários de acessibilidade (RNF07) --- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* --- Container responsivo --- */
+.container {
+  width: 100%;
+  padding-inline: var(--space-4);
+  margin-inline: auto;
+}
+
+@media (min-width: 480px)  { .container { padding-inline: var(--space-6); } }
+@media (min-width: 768px)  { .container { padding-inline: var(--space-8); } }
+@media (min-width: 1024px) { .container { max-width: var(--content-max-width); padding-inline: var(--space-10); } }
+
+/* --- Scrollbar customizada (sutil) --- */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--color-gray-100); }
+::-webkit-scrollbar-thumb  { background: var(--color-gray-400); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gray-600); }

@@ -1,0 +1,60 @@
+/* ============================================================
+   ÁTOMO — Badge
+   ============================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* Tamanhos */
+.sm {
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-2);
+}
+
+.md {
+  font-size: var(--font-size-sm);
+  padding: calc(var(--space-1) + 2px) var(--space-3);
+}
+
+.lg {
+  font-size: var(--font-size-base);
+  padding: var(--space-2) var(--space-4);
+}
+
+/* Variantes de cor */
+.green {
+  background-color: color-mix(in srgb, var(--color-green-primary) 12%, transparent);
+  color: var(--color-green-primary);
+}
+
+.brown {
+  background-color: color-mix(in srgb, var(--color-brown) 12%, transparent);
+  color: var(--color-brown);
+}
+
+.teal {
+  background-color: color-mix(in srgb, var(--color-teal) 15%, transparent);
+  color: var(--color-teal);
+}
+
+.olive {
+  background-color: color-mix(in srgb, var(--color-olive-green) 12%, transparent);
+  color: var(--color-olive-green);
+}
+
+.rust {
+  background-color: color-mix(in srgb, var(--color-rust) 12%, transparent);
+  color: var(--color-rust);
+}
+
+.gray {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-600);
+}

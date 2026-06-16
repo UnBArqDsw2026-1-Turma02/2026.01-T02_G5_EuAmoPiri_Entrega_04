@@ -1,0 +1,159 @@
+/* ============================================================
+   ORGANISMO — Header
+   Mobile-first
+   ============================================================ */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--space-4);
+}
+
+/* --- Logo --- */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoHeart {
+  color: var(--color-brown);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+
+.logoText {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-brown);
+}
+
+/* --- Nav desktop (oculta no mobile) --- */
+.nav {
+  display: none;
+}
+
+/* --- Ações desktop (ocultas no mobile) --- */
+.actions {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.avatarLink {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  transition: opacity var(--transition-fast);
+}
+.avatarLink:hover { opacity: 0.8; }
+
+/* --- Botão hambúrguer (visível só no mobile) --- */
+.menuBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+.menuBtn:hover { background-color: var(--color-gray-100); }
+.menuBtn:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Menu mobile --- */
+.mobileMenu {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  gap: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-white);
+}
+
+.mobileAuthBtns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.mobileLogout {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-error);
+  padding: var(--space-3) 0;
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+}
+
+/* --- Links de nav --- */
+.navLink {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+  padding: var(--space-3) 0;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.navLink:hover { color: var(--color-primary); }
+.navLinkActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ============================================================
+   Desktop (≥ 768px)
+   ============================================================ */
+@media (min-width: 768px) {
+  .inner {
+    padding: 0 var(--space-4);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .nav .navLink {
+    padding: var(--space-2) 0;
+  }
+
+  .actions {
+    display: flex;
+  }
+
+  .menuBtn {
+    display: none;
+  }
+
+  .mobileMenu {
+    display: none !important;
+  }
+}

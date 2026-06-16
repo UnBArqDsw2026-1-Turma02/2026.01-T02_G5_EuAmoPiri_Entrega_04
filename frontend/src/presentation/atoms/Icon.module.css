@@ -1,0 +1,32 @@
+/* ============================================================
+   ÁTOMO — Icon
+   ============================================================ */
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+}
+
+/* Tamanhos */
+.xs  { font-size: 0.75rem;  }
+.sm  { font-size: 1rem;     }
+.md  { font-size: 1.25rem;  }
+.lg  { font-size: 1.5rem;   }
+.xl  { font-size: 2rem;     }
+
+/* Variantes de cor */
+.color-inherit { color: inherit; }
+.color-primary { color: var(--color-primary); }
+.color-muted   { color: var(--color-text-muted); }
+.color-white   { color: var(--color-white); }
+.color-error   { color: var(--color-error); }
+.color-star    { color: var(--color-star); }

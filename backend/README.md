@@ -4,6 +4,15 @@ API REST do projeto **Eu Amo Piri**, desenvolvida para compartilhar experiência
 
 Este documento explica tudo o que outro desenvolvedor precisa saber para clonar o repositório, configurar o ambiente e começar a contribuir.
 
+### Índice rápido
+
+- [Desenvolvimento local (Docker)](#banco-de-dados-com-docker)
+- [Produção (Supabase) — passo a passo](#banco-de-dados-de-produção-supabase)
+- [Primeiros passos (setup local)](#primeiros-passos-setup-completo--desenvolvimento-local)
+- [Arquitetura MVC](#arquitetura-mvc)
+- [Endpoints da API](#endpoints-da-api)
+- [Problemas comuns](#problemas-comuns)
+
 ---
 
 ## Tecnologias
@@ -18,7 +27,8 @@ Este documento explica tudo o que outro desenvolvedor precisa saber para clonar 
 | **Swagger** | Documentação interativa da API (`/api-docs`) |
 | **Prisma 7** | ORM e migrations do banco |
 | **PostgreSQL** | Banco de dados relacional |
-| **Docker** | Sobe o PostgreSQL local de forma padronizada (recomendado) |
+| **Docker** | Sobe o PostgreSQL local de forma padronizada (desenvolvimento) |
+| **Supabase** | PostgreSQL na nuvem (banco de produção) |
 | **tsx** | Executa TypeScript em desenvolvimento |
 
 ---
@@ -134,7 +144,300 @@ npx prisma migrate deploy
 
 ---
 
-## Primeiros passos (setup completo)
+## Banco de dados de produção (Supabase)
+
+Este projeto usa **dois bancos separados**:
+
+| Ambiente | Onde fica | Arquivo de config | Quem usa os dados |
+|----------|-----------|-------------------|-------------------|
+| **Desenvolvimento** | Docker na sua máquina | `.env` | Só você (testes locais) |
+| **Produção** | Supabase na nuvem | `.env.prod` | Toda a equipe + usuários reais |
+
+O banco de produção **não roda na sua máquina**. Ele fica no [Supabase](https://supabase.com) e é compartilhado pela equipe.
+
+### Como tudo se conecta (visão geral)
+
+```
+DESENVOLVIMENTO (seu computador)
+  npm run dev  →  API (localhost:3000)  →  Docker (localhost:5432)
+
+PRODUÇÃO (nuvem — futuro deploy no Render)
+  Usuário  →  Site (Render)  →  API (Render)  →  Supabase (banco)
+```
+
+> **Importante:** o usuário final **nunca acessa o Supabase diretamente**. Ele usa o site; o site chama a API; a API grava no banco.
+
+---
+
+### Passo 1 — Obter acesso ao Supabase
+
+1. Peça a um membro da equipe:
+   - convite para o projeto no painel do Supabase, **ou**
+   - o arquivo `.env.prod` por um **canal seguro** (Discord privado, gerenciador de senhas da equipe)
+2. **Nunca** envie `.env.prod` pelo Git — ele contém senhas e está no `.gitignore`.
+3. Salve o arquivo em `backend/.env.prod` (mesma pasta do `package.json`).
+
+> Modelo sem senhas: copie `.env.prod.example` para `.env.prod` e preencha com os dados da equipe:
+> ```bash
+> cp .env.prod.example .env.prod
+> ```
+
+Estrutura esperada do `.env.prod`:
+
+```env
+# API em produção usa o pooler (porta 6543)
+DATABASE_URL="postgresql://postgres.[REF]:[SENHA]@....pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Migrations usam conexão direta (porta 5432)
+DIRECT_URL="postgresql://postgres.[REF]:[SENHA]@....pooler.supabase.com:5432/postgres"
+
+PORT=3000
+```
+
+| Variável | Para que serve |
+|----------|----------------|
+| `DATABASE_URL` | API rodando (pooler, porta `6543`) |
+| `DIRECT_URL` | Comandos `prisma migrate` (porta `5432`) |
+
+---
+
+### Passo 2 — Preparar o projeto (primeira vez com produção)
+
+Na pasta `backend/`:
+
+```bash
+npm install
+npx prisma generate
+```
+
+---
+
+### Passo 3 — Aplicar as tabelas no Supabase (migrations)
+
+Se o banco de produção ainda não tiver as tabelas, ou se alguém adicionou migrations novas no Git:
+
+```bash
+npm run prisma:migrate:prod
+```
+
+Saída esperada:
+
+```
+All migrations have been successfully applied.
+```
+
+Isso cria/atualiza as tabelas `Place` e `Experiences` no Supabase.
+
+> **Regra de ouro:**
+> - `npx prisma migrate dev` → **só no Docker local** (desenvolvimento)
+> - `npm run prisma:migrate:prod` → **Supabase** (produção)
+
+---
+
+### Passo 4 — Ver os dados no painel do Supabase (modo visual)
+
+1. Acesse [https://supabase.com](https://supabase.com) e faça login.
+2. Abra o projeto da equipe (ex.: `euamopiri-prod`).
+3. No menu lateral, clique em **Table Editor**.
+4. Selecione a tabela `Place` ou `Experiences`.
+5. Você pode **ver**, **filtrar** e **editar** registros manualmente (cuidado em produção!).
+
+---
+
+### Passo 5 — Ver e editar dados com Prisma Studio (alternativa)
+
+Na pasta `backend/`:
+
+```bash
+npm run prisma:studio:prod
+```
+
+Abre uma interface no navegador (geralmente `http://localhost:5555`) conectada ao **Supabase**.
+
+Útil para:
+- Conferir se um cadastro via API realmente chegou no banco
+- Ver estrutura das tabelas
+- Editar ou apagar registros de teste
+
+---
+
+### Passo 6 — Conectar a API ao banco de produção (teste local)
+
+Por padrão, `npm run dev` usa o **Docker local** (`.env`).
+
+Para testar a API apontando para o **Supabase**:
+
+```bash
+npm run dev:prod
+```
+
+Deve aparecer: `Servidor rodando em http://localhost:3000`
+
+Agora os cadastros vão para o banco de **produção** no Supabase.
+
+| Comando | Banco usado |
+|---------|-------------|
+| `npm run dev` | Docker local (`.env`) |
+| `npm run dev:prod` | Supabase (`.env.prod`) |
+
+> **Cuidado:** com `dev:prod`, tudo que você cadastrar vai para o banco real da equipe. Use nomes como `"Teste - seu nome"` para identificar registros de teste.
+
+---
+
+### Passo 7 — Testar cadastros na API (PowerShell / Windows)
+
+Com `npm run dev:prod` rodando em um terminal, abra **outro** terminal:
+
+**Listar locais:**
+
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/places" -Method GET
+```
+
+**Cadastrar um local:**
+
+```powershell
+$body = @{
+    name = "Teste - Amanda"
+    category = "restaurante"
+    description = "Cadastro de teste em producao"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:3000/places" -Method POST -Body $body -ContentType "application/json"
+```
+
+**Cadastrar experiência (substitua `1` pelo id do local):**
+
+```powershell
+$body = @{
+    userName = "Amanda"
+    rating = 5
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method POST -Body $body -ContentType "application/json"
+```
+
+Confirme no **Table Editor** do Supabase ou com `npm run prisma:studio:prod`.
+
+---
+
+### Passo 8 — Alterar a estrutura do banco (novas tabelas/colunas)
+
+Fluxo completo para a equipe:
+
+```
+1. Altere prisma/schema.prisma no seu computador
+2. Teste localmente:
+     npx prisma migrate dev --name descricao_da_mudanca
+3. Commit da pasta prisma/migrations/ no Git
+4. Cada dev (ou CI) aplica em produção:
+     npm run prisma:migrate:prod
+```
+
+**Nunca** rode `prisma migrate dev` apontando para o Supabase. Esse comando é só para o Docker local.
+
+---
+
+### Passo 9 — Conexão com o Render (quando a API for publicada)
+
+Quando o backend for deployado no [Render](https://render.com):
+
+1. Crie um **Web Service** apontando para a pasta `backend/` do repositório.
+2. No painel do Render, em **Environment**, adicione:
+   - `DATABASE_URL` = valor do **pooler** (porta `6543`) do `.env.prod`
+3. Configure os comandos de build/start:
+
+| Campo | Valor sugerido |
+|-------|----------------|
+| Build Command | `npm install && npx prisma generate && npx prisma migrate deploy` |
+| Start Command | `node --import tsx ./src/server.ts` |
+
+A API pública no Render usará a mesma `DATABASE_URL` do Supabase — igual ao `npm run dev:prod`, mas acessível pela internet.
+
+---
+
+### Scripts de produção disponíveis
+
+| Comando | O que faz |
+|---------|-----------|
+| `npm run dev:prod` | Sobe a API local conectada ao Supabase |
+| `npm run prisma:migrate:prod` | Aplica migrations no Supabase |
+| `npm run prisma:studio:prod` | Abre Prisma Studio no Supabase |
+| `npm run prisma:generate:prod` | Gera o Prisma Client (raramente necessário separado) |
+
+> Os scripts acima usam `dotenv-cli` internamente. Se quiser rodar manualmente: `npx dotenv -e .env.prod -o -- <comando>`.
+
+---
+
+### Regras de segurança em produção
+
+| Pode | Não pode |
+|------|----------|
+| Ver dados no Table Editor | Commitar `.env.prod` no Git |
+| Cadastrar dados de teste identificados | Apagar tabelas sem combinar com a equipe |
+| Rodar `prisma:migrate:prod` após merge de migrations | Rodar `prisma migrate dev` no Supabase |
+| Compartilhar credenciais por canal seguro da equipe | Postar senhas em chat público |
+
+---
+
+### Problemas comuns — produção (Supabase)
+
+#### `dotenv` não é reconhecido no terminal
+
+O `dotenv` só funciona via `npm run` ou `npx`:
+
+```bash
+# Errado (PowerShell)
+dotenv -e .env.prod -o -- npm run dev
+
+# Certo
+npm run dev:prod
+# ou
+npx dotenv -e .env.prod -o -- npm run dev
+```
+
+#### `P1000: Authentication failed`
+
+- Senha incorreta ou mal formatada na URL.
+- Copie a connection string **direto do painel do Supabase** (Database → Connection string → URI).
+- Se a senha tiver `@`, `#`, `[`, `]` etc., ela precisa estar **URL-encoded** na string.
+
+#### Migration ok, mas API cadastra no Docker local
+
+Você provavelmente rodou `npm run dev` em vez de `npm run dev:prod`. Pare o servidor (Ctrl+C) e suba com `npm run dev:prod`.
+
+#### `prisma migrate deploy` conecta no localhost
+
+Use sempre `npm run prisma:migrate:prod`, não `npx prisma migrate deploy` direto (esse usa o `.env` local).
+
+#### Como saber se estou no banco certo?
+
+Ao rodar `npm run prisma:migrate:prod`, a saída deve mostrar o host do Supabase:
+
+```
+Datasource "db": PostgreSQL ... at "....pooler.supabase.com:5432"
+```
+
+Se aparecer `localhost`, você está no banco errado.
+
+---
+
+### Checklist — banco de produção
+
+```
+[ ] Recebi o .env.prod (ou convite no Supabase) pela equipe
+[ ] Arquivo salvo em backend/.env.prod (não commitado)
+[ ] npm install
+[ ] npx prisma generate
+[ ] npm run prisma:migrate:prod  → migrations aplicadas
+[ ] Table Editor do Supabase mostra Place e Experiences
+[ ] npm run dev:prod  → API conectada ao Supabase
+[ ] POST /places  → registro aparece no Supabase
+```
+
+---
+
+## Primeiros passos (setup completo — desenvolvimento local)
 
 ### 1. Clonar o repositório e entrar na pasta do backend
 
@@ -282,18 +585,29 @@ backend/
 │   │   ├── experienceModel.ts
 │   │   └── userModel.ts
 │   ├── views/
+│   │   ├── placeView.ts
+│   │   ├── experienceView.ts
+│   │   └── userView.ts
 │   ├── controllers/
+│   │   ├── placeController.ts
+│   │   ├── experienceController.ts
 │   │   └── authController.ts
 │   ├── routes/
-│   │   └── authRoutes.ts
+│   │   ├── authRoutes.ts
+│   │   ├── placeRoutes.ts
+│   │   └── experienceRoutes.ts
 │   ├── middleware/
 │   │   └── authMiddleware.ts
 │   ├── utils/
 │   │   ├── jwt.ts
 │   │   └── password.ts
-│   └── server.ts
-├── .env.example
-└── package.json
+│   └── server.ts              # ponto de entrada (bootstrap)
+├── .env.example               # modelo para desenvolvimento (Docker)
+├── .env                       # credenciais locais — Docker (não versionado)
+├── .env.prod                  # credenciais Supabase — produção (não versionado)
+├── prisma.config.ts           # configuração do Prisma CLI
+├── package.json
+└── tsconfig.json
 ```
 
 ### Responsabilidade de cada camada
@@ -409,19 +723,25 @@ Resposta de conta inexistente no login (`404`):
 | `GET` | `/places` | Lista todos os locais |
 | `POST` | `/places` | Cadastra um novo local |
 
-**Exemplo — criar local:**
+**Exemplo — criar local (PowerShell):**
 
-```bash
-curl -X POST http://localhost:3000/places \
-  -H "Content-Type: application/json" \
-  -d "{\"name\": \"Cachoeira dos Dragões\", \"category\": \"cachoeira\", \"description\": \"Linda cachoeira com trilha fácil\"}"
+```powershell
+$body = @{
+    name = "Cachoeira dos Dragões"
+    category = "cachoeira"
+    description = "Linda cachoeira com trilha fácil"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:3000/places" -Method POST -Body $body -ContentType "application/json"
 ```
 
-**Exemplo — listar locais:**
+**Exemplo — listar locais (PowerShell):**
 
-```bash
-curl http://localhost:3000/places
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/places" -Method GET
 ```
+
+> Para testar contra o **Supabase**, use `npm run dev:prod` antes de rodar os comandos acima.
 
 ### Experiências (Experiences)
 
@@ -430,19 +750,19 @@ curl http://localhost:3000/places
 | `GET` | `/places/:placeId/experiences` | Lista experiências de um local |
 | `POST` | `/places/:placeId/experiences` | Cadastra experiência (**requer JWT**) |
 
-**Exemplo — criar experiência autenticada (placeId = 1):**
+**Exemplo — criar experiência autenticada, placeId = 1 (PowerShell):**
 
-```bash
-curl -X POST http://localhost:3000/places/1/experiences \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SEU_TOKEN_JWT" \
-  -d "{\"rating\": 5}"
+```powershell
+$headers = @{ Authorization = "Bearer SEU_TOKEN_JWT" }
+$body = @{ rating = 5 } | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method POST -Body $body -ContentType "application/json" -Headers $headers
 ```
 
-**Exemplo — listar experiências de um local:**
+**Exemplo — listar experiências de um local (PowerShell):**
 
-```bash
-curl http://localhost:3000/places/1/experiences
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method GET
 ```
 
 ---
@@ -508,16 +828,24 @@ Siga sempre o fluxo MVC. Exemplo: adicionar `GET /places/:id` (buscar um local p
 
 ## Comandos úteis
 
-### API e Prisma
+### API e Prisma — desenvolvimento (Docker)
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run dev` | Inicia o servidor em modo desenvolvimento |
+| `npm run dev` | API local → banco Docker (`.env`) |
 | `npx prisma generate` | Gera o cliente Prisma em `generated/prisma/` |
-| `npx prisma migrate dev` | Cria/aplica migration em desenvolvimento |
-| `npx prisma migrate deploy` | Aplica migrations em produção/CI |
-| `npx prisma studio` | Interface visual para ver/editar dados do banco |
-| `npx prisma db pull` | Atualiza o schema a partir de um banco existente |
+| `npx prisma migrate dev` | Cria/aplica migration no Docker local |
+| `npx prisma migrate deploy` | Aplica migrations no Docker local |
+| `npx prisma studio` | Prisma Studio → banco Docker |
+
+### API e Prisma — produção (Supabase)
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev:prod` | API local → banco Supabase (`.env.prod`) |
+| `npm run prisma:migrate:prod` | Aplica migrations no Supabase |
+| `npm run prisma:studio:prod` | Prisma Studio → banco Supabase |
+| `npm run prisma:generate:prod` | Gera Prisma Client com `.env.prod` |
 
 ### Docker (banco de dados)
 
@@ -603,10 +931,11 @@ npx prisma generate
 | Versionado | Não versionado |
 |------------|----------------|
 | `src/` (código-fonte) | `node_modules/` |
-| `prisma/schema.prisma` | `.env` |
+| `prisma/schema.prisma` | `.env`, `.env.prod` |
 | `prisma/migrations/` | `generated/prisma/` |
-| `.env.example` | Container Docker (cada dev cria localmente) |
-| `README.md` (este guia) | Dados do banco local |
+| `.env.example` | Modelo para desenvolvimento (Docker) |
+| `.env.prod.example` | Modelo para produção (Supabase, sem senhas) |
+| `README.md` (este guia) | Dados dos bancos (local e Supabase) |
 | | `dist/`, logs |
 
 ---
@@ -615,11 +944,19 @@ npx prisma generate
 
 ```json
 {
-  "dev": "node --import tsx ./src/server.ts"
+  "dev": "node --import tsx ./src/server.ts",
+  "dev:prod": "dotenv -e .env.prod -o -- node --import tsx ./src/server.ts",
+  "prisma:migrate:prod": "dotenv -e .env.prod -o -- prisma migrate deploy",
+  "prisma:studio:prod": "dotenv -e .env.prod -o -- prisma studio",
+  "prisma:generate:prod": "dotenv -e .env.prod -o -- prisma generate"
 }
 ```
 
-Por enquanto só existe o script `dev`. Para produção, será necessário adicionar um script de build/start (ex.: compilar com `tsc` ou usar `tsx` diretamente).
+| Script | Ambiente |
+|--------|----------|
+| `npm run dev` | Desenvolvimento — Docker local |
+| `npm run dev:prod` | Teste local apontando para Supabase |
+| `npm run prisma:migrate:prod` | Atualiza tabelas no Supabase |
 
 ---
 
