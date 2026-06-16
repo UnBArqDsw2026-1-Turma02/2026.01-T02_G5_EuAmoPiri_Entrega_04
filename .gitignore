@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente (nunca versionar segredos)
+.env
+.env.local
+.env.*.local
+
+# Prisma Client (gerado automaticamente por `prisma generate`)
+generated/
+**/generated/
+src/generated/
+src/controllers/generated/
+
+# Build / compilação
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores (opcional)
+.vscode/
+.idea/
