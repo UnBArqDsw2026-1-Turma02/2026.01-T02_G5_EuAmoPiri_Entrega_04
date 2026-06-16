@@ -1,17 +1,12 @@
-/**
- * ORGANISMO — ExperienceForm  (RF05: Cadastro de Relato de Experiência)
- *
- * Formulário para turista registrar sua experiência em um local:
- * avaliação em estrelas, data da visita e texto do relato.
- *
- * Reutilizado em: PlaceDetailPage (inline), CreateExperiencePage (standalone).
- */
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import StarRating from '../atoms/StarRating';
 import Button from '../atoms/Button';
 import FormField from '../molecules/FormField';
 import styles from './ExperienceForm.module.css';
+
+const COST_OPTIONS = ['$', '$$', '$$$', '$$$$', '$$$$$'];
 
 export default function ExperienceForm({ onSubmit, onCancel, loading = false, defaultValues = {} }) {
   const {
@@ -22,78 +17,143 @@ export default function ExperienceForm({ onSubmit, onCancel, loading = false, de
     formState: { errors },
   } = useForm({
     defaultValues: {
-      rating:    defaultValues.rating    ?? 0,
-      visitDate: defaultValues.visitDate ?? '',
-      text:      defaultValues.text      ?? '',
+      rating: defaultValues.rating ?? 0,
+      cost:   defaultValues.cost   ?? '',
+      title:  defaultValues.title  ?? '',
+      text:   defaultValues.text   ?? '',
     },
   });
 
   const rating = watch('rating');
-  const [submitError, setSubmitError] = useState(null);
+  const cost   = watch('cost');
+  const [submitStatus,  setSubmitStatus]  = useState(null); // null | 'success' | 'error'
+  const [ratingTouched, setRatingTouched] = useState(false);
 
   async function onFormSubmit(data) {
-    if (data.rating === 0) return; // validação manual da estrela
-    setSubmitError(null);
+    setRatingTouched(true);
+    if (data.rating === 0) return;
     try {
       await onSubmit(data);
+      setSubmitStatus('success');
     } catch {
-      setSubmitError('Erro ao enviar relato. Tente novamente.');
+      setSubmitStatus('error');
     }
+  }
+
+  /* ── Modal sucesso ── */
+  if (submitStatus === 'success') {
+    return (
+      <div className={styles.resultModal}>
+        <p className={styles.resultLogo}>❤ EuAmoPiri</p>
+        <span className={styles.resultIcon} aria-hidden="true">✓</span>
+        <h2 className={styles.resultTitle}>Avaliação enviada com sucesso</h2>
+        <p className={styles.resultText}>Sua experiência vai ajudar outros viajantes.</p>
+        <Button variant="primary" fullWidth as={Link} to="/locais">Avaliar outros lugares</Button>
+        <Button variant="neutral" fullWidth as={Link} to="/">Voltar para a página inicial</Button>
+      </div>
+    );
+  }
+
+  /* ── Modal erro ── */
+  if (submitStatus === 'error') {
+    return (
+      <div className={styles.resultModal}>
+        <p className={styles.resultLogo}>❤ EuAmoPiri</p>
+        <span className={`${styles.resultIcon} ${styles.resultIconError}`} aria-hidden="true">⚠️</span>
+        <h2 className={styles.resultTitle}>Falha ao enviar avaliação</h2>
+        <p className={styles.resultText}>Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.</p>
+        <Button variant="neutral" fullWidth onClick={() => setSubmitStatus(null)}>Voltar</Button>
+      </div>
+    );
   }
 
   return (
     <form className={styles.form} onSubmit={handleSubmit(onFormSubmit)} noValidate>
-      <h3 className={styles.title}>Meu relato</h3>
 
-      {/* ── Avaliação ── */}
-      <div className={styles.ratingField}>
-        <span className={styles.ratingLabel}>Avaliação *</span>
-        <StarRating
-          value={rating}
-          onChange={(v) => setValue('rating', v)}
-          size="lg"
-          label="Avaliação do local"
-        />
-        {rating === 0 && submitError !== null && (
-          <span className={styles.fieldError}>Selecione uma avaliação</span>
-        )}
+      {/* ── Avaliação em estrelas ── */}
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Qual sua avaliação?</span>
+        <div className={styles.box}>
+          <span className={styles.boxLabel}>AVALIAÇÃO EM ESTRELAS</span>
+          <StarRating
+            value={rating}
+            onChange={(v) => { setValue('rating', v); setRatingTouched(true); }}
+            size="lg"
+            label="Avaliação do local"
+          />
+          {ratingTouched && rating === 0 && (
+            <span className={styles.fieldError}>Selecione uma avaliação</span>
+          )}
+          {!ratingTouched && rating === 0 && (
+            <span className={styles.hint}>Clique para avaliar</span>
+          )}
+        </div>
       </div>
 
-      {/* ── Data da visita ── */}
-      <FormField
-        id="visitDate"
-        label="Data da visita"
-        type="date"
-        registration={register('visitDate', { required: 'Informe a data da visita' })}
-        error={errors.visitDate?.message}
-      />
+      {/* ── Classificação de custo ── */}
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Qual foi o custo?</span>
+        <div className={styles.box}>
+          <span className={styles.boxLabel}>CLASSIFICAÇÃO DE CUSTO</span>
+          <div className={styles.costRow}>
+            {COST_OPTIONS.map((opt) => (
+              <Button
+                key={opt}
+                type="button"
+                variant={cost === opt ? 'olive' : 'outline'}
+                size="sm"
+                onClick={() => setValue('cost', opt)}
+              >
+                {opt}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {/* ── Relato textual ── */}
-      <FormField
-        id="text"
-        label="Relato *"
-        multiline
-        rows={4}
-        maxLength={1000}
-        placeholder="Conte sua experiência neste local..."
-        registration={register('text', {
-          required:  'O relato não pode estar vazio',
-          minLength: { value: 20, message: 'Mínimo de 20 caracteres' },
-          maxLength: { value: 1000, message: 'Máximo de 1000 caracteres' },
-        })}
-        error={errors.text?.message}
-      />
+      {/* ── Diretrizes ── */}
+      <div className={styles.guidelines}>
+        <p className={styles.guidelinesTitle}>COMPARTILHE SUA EXPERIÊNCIA COM RESPEITO 🤝</p>
+        <p className={styles.guidelinesText}>
+          EVITE LINGUAGEM OFENSIVA E PREFIRA COMENTÁRIOS CONSTRUTIVOS — ISSO AJUDA OUTROS VIAJANTES!
+        </p>
+      </div>
 
-      {submitError && <p className={styles.submitError} role="alert">{submitError}</p>}
+      {/* ── Título + Comentário numa caixinha ── */}
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Deixe seu comentário</span>
+        <div className={styles.box}>
+          <FormField
+            id="title"
+            label="TÍTULO (OPCIONAL)"
+            placeholder="Ex: Experiência incrível"
+            registration={register('title')}
+          />
+          <FormField
+            id="text"
+            label="SEU COMENTÁRIO"
+            multiline
+            rows={4}
+            maxLength={300}
+            placeholder="Compartilhe sua experiência..."
+            registration={register('text', {
+              required:  'O comentário não pode estar vazio',
+              minLength: { value: 20, message: 'Mínimo de 20 caracteres' },
+              maxLength: { value: 300, message: 'Máximo de 300 caracteres' },
+            })}
+            error={errors.text?.message}
+          />
+        </div>
+      </div>
 
       <div className={styles.actions}>
         {onCancel && (
-          <Button variant="ghost" type="button" onClick={onCancel} disabled={loading}>
+          <Button variant="neutral" type="button" onClick={onCancel} disabled={loading}>
             Cancelar
           </Button>
         )}
-        <Button type="submit" loading={loading}>
-          Publicar relato
+        <Button variant="primary" type="submit" loading={loading}>
+          Enviar Avaliação
         </Button>
       </div>
     </form>

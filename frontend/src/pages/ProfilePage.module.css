@@ -128,8 +128,23 @@
 .actionBtns {
   display: flex;
   gap: var(--space-3);
-  flex-wrap: wrap;
   justify-content: center;
+}
+
+.actionBtns > * {
+  flex: 1;
+  max-width: 220px;
+}
+
+@media (max-width: 600px) {
+  .actionBtns {
+    flex-direction: column;
+    align-items: center;
+  }
+  .actionBtns > * {
+    width: 100%;
+    max-width: 280px;
+  }
 }
 
 /* ── Feedback ── */
@@ -265,32 +280,80 @@
   flex-wrap: wrap;
 }
 
-/* ── Avaliações (turista) ── */
+/* ── Avaliações (turista) — scroll horizontal ── */
 .avaliacoesGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
   gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.avaliacoesGrid::-webkit-scrollbar {
+  height: 4px;
+}
+.avaliacoesGrid::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 2px;
+}
+.avaliacoesGrid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
 }
 
 .avaliacaoCard {
   border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 280px;
+  max-width: 320px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--color-bg-card);
+}
+
+.avaliacaoMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.pinIcon {
+  color: var(--color-teal);
+  flex-shrink: 0;
 }
 
 .avaliacaoLocal {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
+  color: var(--color-teal);
+}
+
+.avaliacaoDias {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.avaliacaoTitulo {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
+  margin: 0;
 }
 
 .avaliacaoTexto {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   line-height: 1.5;
+  flex: 1;
+  margin: 0;
 }
 
 /* ── Formulário de edição ── */

@@ -1,10 +1,8 @@
-/**
- * PÁGINA — EditExperiencePage  (RF05: Edição de Relato de Experiência)
- */
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { fetchExperiencesByPlace, updateExperience } from '../infra/adaptor/experienceAdaptor';
 import ExperienceForm from '../presentation/organisms/ExperienceForm';
+import Button from '../presentation/atoms/Button';
 import Spinner from '../presentation/atoms/Spinner';
 import styles from './CreateExperiencePage.module.css'; /* reutiliza o css */
 
@@ -40,7 +38,9 @@ export default function EditExperiencePage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <nav className={styles.breadcrumb}>
-          <Link to={`/locais/${placeId}`} className={styles.back}>← Voltar ao local</Link>
+          <Button variant="neutral" size="sm" as={Link} to={`/locais/${placeId}`}>
+            ← Voltar ao local
+          </Button>
         </nav>
         <h1 className={styles.title}>Editar relato</h1>
         <div className={styles.formCard}>

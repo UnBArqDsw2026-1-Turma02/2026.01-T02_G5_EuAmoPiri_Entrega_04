@@ -34,11 +34,8 @@ export default function Header() {
         <nav className={styles.nav} aria-label="Navegação principal">
           <NavLink to="/" className={navLinkClass} end>Sobre Piri</NavLink>
           <NavLink to="/locais" className={navLinkClass}>Locais</NavLink>
-          {isAuthenticated && (
-            <NavLink
-              to={isMorador ? '/morador/painel' : '/turista/painel'}
-              className={navLinkClass}
-            >
+          {isAuthenticated && isMorador && (
+            <NavLink to="/morador/painel" className={navLinkClass}>
               Meu Painel
             </NavLink>
           )}
@@ -92,12 +89,8 @@ export default function Header() {
           <NavLink to="/locais" className={navLinkClass} onClick={() => setMenuOpen(false)}>
             Locais
           </NavLink>
-          {isAuthenticated && (
-            <NavLink
-              to={isMorador ? '/morador/painel' : '/turista/painel'}
-              className={navLinkClass}
-              onClick={() => setMenuOpen(false)}
-            >
+          {isAuthenticated && isMorador && (
+            <NavLink to="/morador/painel" className={navLinkClass} onClick={() => setMenuOpen(false)}>
               Meu Painel
             </NavLink>
           )}

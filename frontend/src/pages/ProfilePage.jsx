@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-import { MdEdit } from 'react-icons/md';
+import { MdEdit, MdOutlineDelete, MdLocationOn } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../presentation/atoms/Avatar';
 import Button from '../presentation/atoms/Button';
@@ -39,9 +39,10 @@ const MOCK_LOCAIS_MORADOR = [
 ];
 
 const MOCK_AVALIACOES_TURISTA = [
-  { id: 1, local: 'Cachoeiras da região', texto: 'Vista incrível! Com certeza voltarei na próxima viagem!', rating: 5 },
-  { id: 2, local: 'Restaurante típico',   texto: 'Comida deliciosa, atendimento ótimo.', rating: 4 },
-  { id: 3, local: 'Trilha das pedras',    texto: 'Paisagem incrível, recomendo muito.', rating: 5 },
+  { id: 1, local: 'Cachoeiras da região', titulo: 'Vista incrível!', texto: 'Com certeza voltarei na próxima viagem! O lugar é simplesmente deslumbrante.', rating: 5, dias: 6 },
+  { id: 2, local: 'Restaurante típico',   titulo: 'Comida deliciosa',  texto: 'Atendimento ótimo, ambiente acolhedor. Recomendo o prato do dia.', rating: 4, dias: 12 },
+  { id: 3, local: 'Trilha das pedras',    titulo: 'Paisagem incrível', texto: 'Recomendo muito! A trilha é bem sinalizada e o visual compensa cada passo.', rating: 5, dias: 24 },
+  { id: 4, local: 'Pousada das Cavalhadas', titulo: 'Quero morar aqui...', texto: 'Sempre indico para os amigos que vêm visitar. O café da manhã tem aquele gostinho de fazenda.', rating: 5, dias: 66 },
 ];
 
 /* ─── sub-componente: linha de info em modo leitura ─── */
@@ -71,7 +72,7 @@ function MoradorSections() {
               <div className={styles.relatoFooter}>
                 <div className={styles.relatoActions}>
                   <Button variant="outline" size="sm">Editar Avaliação</Button>
-                  <Button variant="ghost" size="sm">Excluir Avaliação</Button>
+                  <Button variant="outline" size="sm">Excluir Avaliação</Button>
                 </div>
                 <span>👍 {r.likes}</span>
               </div>
@@ -103,16 +104,21 @@ function MoradorSections() {
 function TuristaSections() {
   return (
     <div className={styles.sectionCard}>
-      <h2 className={styles.sectionTitle}>SUAS AVALIAÇÕES</h2>
+      <h2 className={styles.sectionTitle}>AVALIAÇÕES CADASTRADAS</h2>
       <div className={styles.avaliacoesGrid}>
         {MOCK_AVALIACOES_TURISTA.map((a) => (
           <div key={a.id} className={styles.avaliacaoCard}>
-            <span className={styles.avaliacaoLocal}>{a.local}</span>
+            <div className={styles.avaliacaoMeta}>
+              <MdLocationOn size={16} className={styles.pinIcon} />
+              <span className={styles.avaliacaoLocal}>{a.local}</span>
+              <span className={styles.avaliacaoDias}>há {a.dias} dias</span>
+            </div>
             <StarRating value={a.rating} readonly size="sm" />
-            <p className={styles.avaliacaoTexto}>{a.texto}</p>
+            {a.titulo && <p className={styles.avaliacaoTitulo}>{a.titulo}</p>}
+            <p className={styles.avaliacaoTexto}>"{a.texto}"</p>
             <div className={styles.relatoActions}>
-              <Button variant="outline" size="sm">Editar Avaliação</Button>
-              <Button variant="ghost" size="sm">Excluir Avaliação</Button>
+              <Button variant="secondary" size="sm">Editar Avaliação</Button>
+              <Button variant="rust" size="sm">Excluir Avaliação</Button>
             </div>
           </div>
         ))}
@@ -258,15 +264,19 @@ export default function ProfilePage() {
         {/* ── Botões de ação ── */}
         {!editing && (
           <div className={styles.actionBtns}>
-            <Button variant="outline" size="sm" onClick={() => {}}>
-              Deletar Perfil
+            <Button variant="danger" size="sm" onClick={() => {}}>
+              <MdOutlineDelete size={16} /> Deletar Perfil
             </Button>
-            <Button variant="teal" size="sm" onClick={startEditing}>
+            <Button variant="primary" size="sm" onClick={startEditing}>
               Editar Perfil
             </Button>
-            {isMorador && (
+            {isMorador ? (
               <Button variant="primary" size="sm" as={Link} to="/morador/locais/novo">
                 Cadastrar Novo Local
+              </Button>
+            ) : (
+              <Button variant="primary" size="sm" as={Link} to="/locais">
+                Cadastrar Novo Relato
               </Button>
             )}
           </div>
@@ -335,14 +345,11 @@ export default function ProfilePage() {
             />
 
             <div className={styles.formActions}>
-              <Button variant="teal" type="submit" loading={saving}>
-                Atualizar Perfil
-              </Button>
-            </div>
-
-            <div className={styles.formActions}>
-              <Button variant="ghost" type="button" onClick={cancelEditing} disabled={saving}>
+              <Button variant="neutral" type="button" onClick={cancelEditing} disabled={saving}>
                 Cancelar
+              </Button>
+              <Button variant="primary" type="submit" loading={saving}>
+                Atualizar Perfil
               </Button>
             </div>
           </form>
