@@ -24,6 +24,24 @@ model Place{
 
 }
 
+enum AccountType {
+  TURISTA
+  MORADOR
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  accountType  AccountType?
+  name         String
+  email        String       @unique
+  birthDate    DateTime?
+  phone        String?
+  passwordHash String?
+  googleId     String?      @unique
+  createdAt    DateTime     @default(now())
+  experiences  Experiences[]
+}
+
 model Experiences {
 
   id  Int @id @default(autoincrement())
@@ -32,5 +50,7 @@ model Experiences {
   createdAt DateTime @default(now()) 
   placeId Int           // Chave estrangeira de Place
   place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  userId Int?
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
 }

@@ -22,6 +22,9 @@ Este documento explica tudo o que outro desenvolvedor precisa saber para clonar 
 | **Node.js** | Runtime JavaScript |
 | **TypeScript** | Tipagem estática |
 | **Express 5** | Servidor HTTP e rotas |
+| **Passport.js** | Autenticação (Facade + Strategy) |
+| **google-auth-library** | Validação OAuth Google |
+| **Swagger** | Documentação interativa da API (`/api-docs`) |
 | **Prisma 7** | ORM e migrations do banco |
 | **PostgreSQL** | Banco de dados relacional |
 | **Docker** | Sobe o PostgreSQL local de forma padronizada (desenvolvimento) |
@@ -566,24 +569,38 @@ Requisição HTTP
 ```
 backend/
 ├── prisma/
-│   ├── schema.prisma          # definição dos models (Place, Experiences)
-│   └── migrations/            # histórico de alterações do banco (versionado)
-├── generated/prisma/          # cliente Prisma gerado (NÃO versionado — rode prisma generate)
+│   ├── schema.prisma          # Place, Experiences, User
+│   └── migrations/
+├── generated/prisma/          # cliente Prisma gerado (NÃO versionado)
 ├── src/
 │   ├── config/
-│   │   └── prisma.ts          # instância única do PrismaClient
+│   │   ├── prisma.ts
+│   │   ├── passport.ts        # Facade Passport (local + jwt)
+│   │   └── swagger.ts         # OpenAPI spec
+│   ├── services/
+│   │   ├── authService.ts
+│   │   └── googleAuthService.ts
 │   ├── model/
-│   │   ├── placeModel.ts      # operações de banco: locais
-│   │   └── experienceModel.ts # operações de banco: experiências
+│   │   ├── placeModel.ts
+│   │   ├── experienceModel.ts
+│   │   └── userModel.ts
 │   ├── views/
-│   │   ├── placeView.ts       # formata JSON de locais
-│   │   └── experienceView.ts  # formata JSON de experiências
+│   │   ├── placeView.ts
+│   │   ├── experienceView.ts
+│   │   └── userView.ts
 │   ├── controllers/
 │   │   ├── placeController.ts
-│   │   └── experienceController.ts
+│   │   ├── experienceController.ts
+│   │   └── authController.ts
 │   ├── routes/
+│   │   ├── authRoutes.ts
 │   │   ├── placeRoutes.ts
 │   │   └── experienceRoutes.ts
+│   ├── middleware/
+│   │   └── authMiddleware.ts
+│   ├── utils/
+│   │   ├── jwt.ts
+│   │   └── password.ts
 │   └── server.ts              # ponto de entrada (bootstrap)
 ├── .env.example               # modelo para desenvolvimento (Docker)
 ├── .env                       # credenciais locais — Docker (não versionado)
@@ -627,8 +644,23 @@ Definidos em `prisma/schema.prisma`:
 |-------|------|-----------|
 | `id` | Int | Chave primária (auto) |
 | `userName` | String | Nome de quem compartilhou |
+| `userId` | Int? | FK para User (preenchido quando autenticado) |
 | `rating` | Int | Avaliação de 0 a 5 |
 | `placeId` | Int | FK para Place |
+| `createdAt` | DateTime | Data de criação (automática) |
+
+### User (usuário)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | Int | Chave primária (auto) |
+| `accountType` | AccountType? | `TURISTA` ou `MORADOR` |
+| `name` | String | Nome completo |
+| `email` | String | Email único |
+| `birthDate` | DateTime? | Data de nascimento |
+| `phone` | String? | Telefone |
+| `passwordHash` | String? | Hash bcrypt (null se login só Google) |
+| `googleId` | String? | ID Google OAuth |
 | `createdAt` | DateTime | Data de criação (automática) |
 
 ---
@@ -642,6 +674,47 @@ Base URL: `http://localhost:3000`
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `GET` | `/` | Verifica se a API está online |
+| `GET` | `/api-docs` | Documentação Swagger (UI interativa) |
+
+### Autenticação (Auth)
+
+Documentação arquitetural completa (bibliotecas, padrões Facade/Strategy, ADRs): [`docs/requisitos/RF01-backend/4.4.Autenticacao.md`](../docs/requisitos/RF01-backend/4.4.Autenticacao.md)
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| `POST` | `/auth/register` | Não | Cadastro (nome, email, senha, etc.) |
+| `POST` | `/auth/login` | Não | Login email/senha → JWT |
+| `POST` | `/auth/google` | Não | Login Google (body: `{ "credential": "<id_token>" }`) |
+| `GET` | `/auth/me` | Bearer JWT | Dados do usuário logado |
+
+**Exemplo — cadastro:**
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"accountType\":\"TURISTA\",\"name\":\"Maria Silva\",\"email\":\"maria@test.com\",\"birthDate\":\"1995-03-15\",\"phone\":\"(62) 99999-9999\",\"password\":\"SenhaForte1\",\"confirmPassword\":\"SenhaForte1\"}"
+```
+
+**Exemplo — login:**
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"maria@test.com\",\"password\":\"SenhaForte1\"}"
+```
+
+**Exemplo — usuário logado:**
+
+```bash
+curl http://localhost:3000/auth/me \
+  -H "Authorization: Bearer SEU_TOKEN_JWT"
+```
+
+Resposta de conta inexistente no login (`404`):
+
+```json
+{ "error": "Conta não encontrada", "code": "USER_NOT_FOUND" }
+```
 
 ### Locais (Places)
 
@@ -675,20 +748,51 @@ Invoke-RestMethod -Uri "http://localhost:3000/places" -Method GET
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `GET` | `/places/:placeId/experiences` | Lista experiências de um local |
-| `POST` | `/places/:placeId/experiences` | Cadastra experiência em um local |
+| `POST` | `/places/:placeId/experiences` | Cadastra experiência (**requer JWT**) |
 
-**Exemplo — criar experiência, placeId = 1 (PowerShell):**
+**Exemplo — criar experiência autenticada, placeId = 1 (PowerShell):**
 
 ```powershell
-$body = @{ userName = "Maria"; rating = 5 } | ConvertTo-Json
+$headers = @{ Authorization = "Bearer SEU_TOKEN_JWT" }
+$body = @{ rating = 5 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method POST -Body $body -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method POST -Body $body -ContentType "application/json" -Headers $headers
 ```
 
 **Exemplo — listar experiências de um local (PowerShell):**
 
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method GET
+```
+
+---
+
+## Frontend de teste
+
+Pasta `frontend/` na raiz do repositório — interface mínima para validar login, cadastro, Google OAuth e rotas protegidas.
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Acesse `http://localhost:5173`. Configure `VITE_GOOGLE_CLIENT_ID` com o mesmo Client ID do backend.
+
+Variáveis adicionais no `.env` do backend:
+
+```env
+JWT_SECRET=sua-chave-secreta
+JWT_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
+CORS_ORIGIN=http://localhost:5173
+```
+
+Após alterar o schema, aplique a migration de autenticação:
+
+```bash
+npx prisma migrate deploy
 ```
 
 ---
