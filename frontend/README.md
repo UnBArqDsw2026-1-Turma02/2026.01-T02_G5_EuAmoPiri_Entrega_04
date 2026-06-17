@@ -1,16 +1,46 @@
-# React + Vite
+# Frontend — Eu Amo Piri
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface React (Vite) do projeto **Eu Amo Piri**.
 
-Currently, two official plugins are available:
+## Desenvolvimento
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Acesse `http://localhost:5173`. Em dev, requisições para `/api` são proxyadas para `http://localhost:3000` (ver `vite.config.js`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Em produção, configure `VITE_API_URL` com a URL pública da API.
 
-## Expanding the ESLint configuration
+## Camadas
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+pages/          → UI e formulários
+context/        → Estado global (ex.: AuthContext)
+presentation/   → Componentes Atomic Design (atoms, molecules, organisms)
+api/
+  client.js     → Axios + interceptors (HTTP)
+  auth/         → Módulo de autenticação (SRP)
+infra/
+  adaptor/      → Adaptadores de locais e relatos (places, experiences)
+```
+
+## Módulo de autenticação (SRP)
+
+Em `src/api/auth/`:
+
+| Arquivo | Padrão GoF | Responsabilidade |
+|---------|------------|------------------|
+| `authApi.js` | Gateway HTTP | Chamadas REST a `/auth/*` |
+| `authMapper.js` | **Adapter** | Mapeamento frontend ↔ backend |
+| `authSessionStorage.js` | — | Token e usuário no `localStorage` |
+| `authFacade.js` | **Facade** | Orquestra os módulos acima |
+
+`AuthContext` importa apenas `api/auth/authFacade`.
+
+## Testes
+
+```bash
+npm run test:run
+```
