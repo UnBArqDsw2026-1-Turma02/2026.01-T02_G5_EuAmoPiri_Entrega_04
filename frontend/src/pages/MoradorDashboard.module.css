@@ -80,6 +80,15 @@
   height: 100%;
 }
 
+.mapCoordsHint {
+  margin: 0;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-muted, #666);
+  background: var(--color-gray-100, #f2f2f2);
+  text-align: center;
+}
+
 .mapEmpty {
   display: flex;
   flex-direction: column;
@@ -142,6 +151,15 @@
 }
 
 .placeCard:hover { background: #f0f4e8; }
+
+.placeCardThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-gray-100);
+}
 
 .placeCardIcon {
   font-size: 1.25rem;

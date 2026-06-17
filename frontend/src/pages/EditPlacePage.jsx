@@ -16,12 +16,6 @@ const CATEGORIAS = [
   { value: 'histórico',   label: 'Histórico' },
 ];
 
-const PRECOS = [
-  { value: '$',   label: '$ — Econômico' },
-  { value: '$$',  label: '$$ — Moderado' },
-  { value: '$$$', label: '$$$ — Sofisticado' },
-];
-
 export default function EditPlacePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,7 +36,6 @@ export default function EditPlacePage() {
           category:    place.category    ?? 'gastronomia',
           description: place.description ?? '',
           address:     place.address     ?? '',
-          price:       place.price       ?? '$$',
           hours:       place.hours       ?? '',
           phone:       place.phone       ?? '',
         });
@@ -167,20 +160,6 @@ export default function EditPlacePage() {
               registration={register('address', { required: 'Endereço é obrigatório' })}
               error={errors.address?.message}
             />
-
-            {/* Preço */}
-            <div className={styles.selectGroup}>
-              <label className={styles.selectLabel} htmlFor="price">Classificação de custo</label>
-              <select
-                id="price"
-                className={styles.select}
-                {...register('price')}
-              >
-                {PRECOS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
-              </select>
-            </div>
 
             <FormField
               id="hours"

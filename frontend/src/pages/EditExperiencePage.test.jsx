@@ -33,7 +33,7 @@ const mockExperience = {
   placeName: 'Botequim Mercatto Piri',
   title: 'Melhor botequim de Pirenópolis',
   text: 'Recomendo demais! A qualidade da comida é impecável e os preços são justos.',
-  rating: 5, cost: '$$$', dias: 5,
+  rating: 5, visitDate: '2026-06-01', dias: 5,
 }
 
 const renderPage = () => render(<MemoryRouter><EditExperiencePage /></MemoryRouter>)
@@ -45,7 +45,7 @@ describe('EditExperiencePage', () => {
   })
 
   it('mostra Spinner enquanto carrega', () => {
-    vi.mocked(experienceAdaptor.fetchExperiencesByPlace).mockReturnValue(new Promise(() => {}))
+    vi.mocked(experienceAdaptor.fetchExperiencesByPlace).mockReturnValue(new Promise(() => { }))
     renderPage()
     expect(screen.getByRole('status', { name: /carregando/i })).toBeInTheDocument()
   })

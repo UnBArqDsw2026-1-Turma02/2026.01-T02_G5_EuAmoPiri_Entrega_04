@@ -47,17 +47,29 @@ function SidebarCard({ place, active, onClick }) {
       className={[styles.sidebarCard, active ? styles.sidebarCardActive : ''].join(' ')}
       onClick={onClick}
     >
-      <div className={styles.sidebarCardHeader}>
-        <span className={styles.sidebarCardName}>{place.name}</span>
-        {place.price && <span className={styles.sidebarCardPrice}>{place.price}</span>}
-      </div>
-      <span className={styles.sidebarCardCat}>
-        {CATEGORY_LABELS[place.category] ?? place.category}
-      </span>
-      <div className={styles.sidebarCardRating}>
-        <StarRating value={Math.round(place.rating ?? 0)} readonly size="sm" />
-        <span className={styles.sidebarCardRatingNum}>{place.rating?.toFixed(1)}</span>
-        <span className={styles.sidebarCardReviews}>({place.reviewsCount} avaliações)</span>
+      <div className={styles.sidebarCardBody}>
+        {place.coverImage ? (
+          <img
+            src={place.coverImage}
+            alt=""
+            className={styles.sidebarCardThumb}
+            loading="lazy"
+          />
+        ) : (
+          <div className={styles.sidebarCardThumbFallback} aria-hidden="true" />
+        )}
+        <div className={styles.sidebarCardContent}>
+          <div className={styles.sidebarCardHeader}>
+            <span className={styles.sidebarCardName}>{place.name}</span>          </div>
+          <span className={styles.sidebarCardCat}>
+            {CATEGORY_LABELS[place.category] ?? place.category}
+          </span>
+          <div className={styles.sidebarCardRating}>
+            <StarRating value={Math.round(place.rating ?? 0)} readonly size="sm" />
+            <span className={styles.sidebarCardRatingNum}>{place.rating?.toFixed(1)}</span>
+            <span className={styles.sidebarCardReviews}>({place.reviewsCount} avaliações)</span>
+          </div>
+        </div>
       </div>
     </Link>
   );
@@ -72,7 +84,6 @@ export default function PlacesPage() {
   const [search, setSearch]     = useState('');
   const [category, setCategory] = useState('');
   const [rating, setRating]     = useState('');
-  const [custo, setCusto]       = useState('');
   const [activeId, setActiveId] = useState(null);
 
   useEffect(() => {
@@ -90,10 +101,9 @@ export default function PlacesPage() {
       const matchText = !q || p.name.toLowerCase().includes(q) || p.address?.toLowerCase().includes(q);
       const matchCat  = !category || p.category === category;
       const matchRat  = !rating   || (p.rating ?? 0) >= Number(rating);
-      const matchCost = !custo    || p.price === custo;
-      return matchText && matchCat && matchRat && matchCost;
+      return matchText && matchCat && matchRat;
     });
-  }, [places, search, category, rating, custo]);
+  }, [places, search, category, rating]);
 
   return (
     <div className={styles.page}>
@@ -134,15 +144,6 @@ export default function PlacesPage() {
           </select>
         </label>
 
-        <label className={styles.filterGroup}>
-          <span className={styles.filterLabel}>CUSTO</span>
-          <select className={styles.filterSelect} value={custo} onChange={(e) => setCusto(e.target.value)}>
-            <option value="">Todos</option>
-            <option value="$">$ Econômico</option>
-            <option value="$$">$$ Moderado</option>
-            <option value="$$$">$$$ Premium</option>
-          </select>
-        </label>
 
         {isMorador && (
           <Button as={Link} to="/morador/locais/novo" variant="primary" size="sm">

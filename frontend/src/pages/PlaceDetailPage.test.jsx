@@ -30,7 +30,7 @@ const MOCK_PLACE = {
   id: 1, name: 'Cachoeira da Rosário', category: 'natureza',
   description: 'Águas cristalinas em Pirenópolis.',
   address: 'Estrada da Rosário, km 3', rating: 4.8,
-  reviewsCount: 50, price: '$', mapsLink: null,
+  reviewsCount: 50, mapsLink: null,
 }
 
 const MOCK_EXPERIENCES = [
@@ -49,7 +49,7 @@ const renderPage = () =>
 describe('PlaceDetailPage — RF06 detalhe / RF13 emojis / RF12 relatos', () => {
   beforeEach(() => {
     vi.mocked(AuthContext.useAuth).mockReturnValue({
-      isAuthenticated: false, isTurista: false, user: null,
+      isAuthenticated: false, isTurista: false, isMorador: false, user: null,
     })
     vi.mocked(placeAdaptor.fetchPlaceById).mockResolvedValue(MOCK_PLACE)
     vi.mocked(expAdaptor.fetchExperiencesByPlace).mockResolvedValue(MOCK_EXPERIENCES)
@@ -133,9 +133,28 @@ describe('PlaceDetailPage — RF06 detalhe / RF13 emojis / RF12 relatos', () => 
     expect(link).toHaveAttribute('href', '/locais/1/relatos/novo')
   })
 
-  it('não exibe link de avaliar para usuários não turistas autenticados', async () => {
+  it('não exibe link de avaliar para usuários não autenticados sem login hint', async () => {
     vi.mocked(AuthContext.useAuth).mockReturnValue({
-      isAuthenticated: true, isTurista: false, user: { name: 'Morador' },
+      isAuthenticated: false, isTurista: false, isMorador: false, user: null,
+    })
+    renderPage()
+    await screen.findByText('Cachoeira da Rosário')
+    expect(screen.getAllByRole('link', { name: /avaliar local/i }).length).toBeGreaterThan(0)
+  })
+
+  it('exibe link Avaliar Local para morador autenticado', async () => {
+    vi.mocked(AuthContext.useAuth).mockReturnValue({
+      isAuthenticated: true, isTurista: false, isMorador: true, user: { name: 'Morador' },
+    })
+    renderPage()
+    await screen.findByText('Cachoeira da Rosário')
+    const link = screen.getAllByRole('link', { name: /avaliar local/i })[0]
+    expect(link).toHaveAttribute('href', '/locais/1/relatos/novo')
+  })
+
+  it('não exibe link de avaliar para usuários autenticados sem papel turista/morador', async () => {
+    vi.mocked(AuthContext.useAuth).mockReturnValue({
+      isAuthenticated: true, isTurista: false, isMorador: false, user: { name: 'Outro' },
     })
     renderPage()
     await screen.findByText('Cachoeira da Rosário')

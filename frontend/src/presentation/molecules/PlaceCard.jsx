@@ -2,7 +2,7 @@
  * MOLÉCULA — PlaceCard
  *
  * Card de um ponto turístico para uso na listagem PlacesPage.
- * Exibe: nome, categoria, descrição curta, endereço, avaliação e preço.
+ * Exibe: nome, categoria, descrição curta, endereço e avaliação.
  *
  * Reutilizado em: PlacesPage, MoradorDashboard (lista de locais do morador).
  */
@@ -38,7 +38,6 @@ export default function PlaceCard({ place }) {
     address,
     rating,
     reviewsCount,
-    price,
   } = place;
 
   const truncated = description?.length > 100
@@ -54,7 +53,6 @@ export default function PlaceCard({ place }) {
         >
           {CATEGORY_LABELS[category] ?? category}
         </Badge>
-        {price && <span className={styles.price}>{price}</span>}
       </div>
 
       <h3 className={styles.name}>{name}</h3>

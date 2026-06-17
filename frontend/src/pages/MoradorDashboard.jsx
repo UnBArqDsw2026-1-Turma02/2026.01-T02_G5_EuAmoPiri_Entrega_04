@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -27,7 +27,6 @@ const SORT_OPTIONS = [
   { key: 'reacted', label: 'Mais reagidos' },
 ];
 
-const COST_OPTIONS = ['$', '$$', '$$$'];
 
 /** Converte ISO date para "há X dias/horas" */
 function timeAgo(isoDate) {
@@ -51,19 +50,29 @@ function totalReactions(reactions = {}) {
   return Object.values(reactions).reduce((s, v) => s + (v || 0), 0);
 }
 
+function hasValidCoords(place) {
+  return Number.isFinite(place?.lat) && Number.isFinite(place?.lng);
+}
+
 /* ── Card de local na sidebar ── */
 function PlaceSidebarCard({ place }) {
+  const ratingLabel = place.rating != null ? Number(place.rating).toFixed(1) : '—';
+  const reviewsCount = place.reviewsCount ?? 0;
+
   return (
     <Link to={`/locais/${place.id}`} className={styles.placeCard}>
-      <div className={styles.placeCardIcon} aria-hidden="true">🏠</div>
+      {place.coverImage ? (
+        <img src={place.coverImage} alt="" className={styles.placeCardThumb} loading="lazy" />
+      ) : (
+        <div className={styles.placeCardIcon} aria-hidden="true">🏠</div>
+      )}
       <div className={styles.placeCardInfo}>
         <span className={styles.placeCardName}>{place.name}</span>
         <span className={styles.placeCardCat}>{place.category}</span>
         <div className={styles.placeCardMeta}>
           <StarRating value={Math.round(place.rating ?? 0)} readonly size="sm" />
-          <span className={styles.placeCardRating}>{place.rating?.toFixed(1)}</span>
-          <span className={styles.placeCardPrice}>{place.price}</span>
-          <span className={styles.placeCardReviews}>{place.reviewsCount} Avaliações</span>
+          <span className={styles.placeCardRating}>{ratingLabel}</span>
+          <span className={styles.placeCardReviews}>{reviewsCount} Avaliações</span>
         </div>
       </div>
     </Link>
@@ -114,7 +123,6 @@ export default function MoradorDashboard() {
 
   /* Filtros */
   const [ratingFilter, setRatingFilter] = useState('');
-  const [costFilter, setCostFilter]     = useState('');
 
   /* Ordenação */
   const [sortKey, setSortKey] = useState('recent');
@@ -153,14 +161,18 @@ export default function MoradorDashboard() {
     [places],
   );
 
+  const mappablePlaces = useMemo(
+    () => places.filter(hasValidCoords),
+    [places],
+  );
+
   /* Filtragem */
   const filtered = useMemo(() => {
     return experiences.filter((e) => {
       if (ratingFilter && e.rating !== Number(ratingFilter)) return false;
-      if (costFilter && e.cost !== costFilter) return false;
       return true;
     });
-  }, [experiences, ratingFilter, costFilter]);
+  }, [experiences, ratingFilter]);
 
   /* Ordenação */
   const sorted = useMemo(() => {
@@ -210,21 +222,7 @@ export default function MoradorDashboard() {
           </select>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel} htmlFor="filter-cost">CUSTO</label>
-          <select
-            id="filter-cost"
-            className={styles.filterSelect}
-            value={costFilter}
-            onChange={(e) => setCostFilter(e.target.value)}
-            aria-label="Filtrar por custo"
-          >
-            <option value="">Todos</option>
-            {COST_OPTIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
+        
       </div>
 
       {/* Área principal: mapa + sidebar de locais */}
@@ -233,29 +231,36 @@ export default function MoradorDashboard() {
         {/* Mapa */}
         <div className={styles.mapWrapper}>
           {places.length > 0 ? (
-            <MapContainer
-              center={PIRI_CENTER}
-              zoom={13}
-              className={styles.map}
-              aria-label="Mapa dos seus locais cadastrados"
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              />
-              {places.map((place) => (
-                <Marker
-                  key={place.id}
-                  position={[place.lat, place.lng]}
-                >
-                  <Popup>
-                    <strong>{place.name}</strong>
-                    <br />
-                    <Link to={`/locais/${place.id}`}>Ver detalhes →</Link>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+            <Fragment>
+              <MapContainer
+                center={PIRI_CENTER}
+                zoom={13}
+                className={styles.map}
+                aria-label="Mapa dos seus locais cadastrados"
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                />
+                {mappablePlaces.map((place) => (
+                  <Marker
+                    key={place.id}
+                    position={[place.lat, place.lng]}
+                  >
+                    <Popup>
+                      <strong>{place.name}</strong>
+                      <br />
+                      <Link to={`/locais/${place.id}`}>Ver detalhes →</Link>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+              {mappablePlaces.length === 0 && (
+                <p className={styles.mapCoordsHint}>
+                  Seus locais ainda não possuem coordenadas no mapa.
+                </p>
+              )}
+            </Fragment>
           ) : (
             <div className={styles.mapEmpty}>
               <p>Você ainda não tem locais cadastrados.</p>

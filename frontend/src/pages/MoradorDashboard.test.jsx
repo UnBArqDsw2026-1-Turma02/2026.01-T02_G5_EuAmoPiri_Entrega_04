@@ -46,13 +46,11 @@ import { fetchExperiencesByPlaces } from '../infra/adaptor/experienceAdaptor';
 
 const MOCK_PLACES = [
   {
-    id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia',
-    price: '$$', rating: 4.9, reviewsCount: 128,
+    id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia', rating: 4.9, reviewsCount: 128,
     lat: -15.849, lng: -48.957, moradorId: 1,
   },
   {
-    id: 6, name: 'Restaurante LovePiri', category: 'gastronomia',
-    price: '$$$', rating: 3.8, reviewsCount: 45,
+    id: 6, name: 'Restaurante LovePiri', category: 'gastronomia', rating: 3.8, reviewsCount: 45,
     lat: -15.847, lng: -48.954, moradorId: 1,
   },
 ];
@@ -183,6 +181,23 @@ describe('MoradorDashboard', () => {
     await waitFor(() => {
       expect(screen.getByText('Experiência incrível!')).toBeInTheDocument();
       expect(screen.queryByText('Nem bom, nem ruim!')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renderiza com locais da API sem coordenadas', async () => {
+    fetchMyPlaces.mockResolvedValue([
+      {
+        id: 2,
+        name: 'Restaurante Teste 2',
+        category: 'restaurante',
+        moradorId: 1,
+      },
+    ]);
+    fetchExperiencesByPlaces.mockResolvedValue([]);
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText('Restaurante Teste 2')).toBeInTheDocument();
+      expect(screen.getByText(/ainda não possuem coordenadas no mapa/i)).toBeInTheDocument();
     });
   });
 

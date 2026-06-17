@@ -25,8 +25,6 @@ const CATEGORY_LABELS = {
   cultura: 'Cultura', compras: 'Compras', aventura: 'Aventura',
 };
 
-const COST_OPTIONS = ['$', '$$', '$$$', '$$$$', '$$$$$'];
-
 const REACTION_EMOJIS = [
   { key: 'heart',   emoji: '❤️' },
   { key: 'like',    emoji: '👍' },
@@ -47,7 +45,6 @@ function CommentCard({ exp, onReact, showReactions = false, userReactions = new 
       </div>
       <div className={styles.commentMeta}>
         <StarRating value={exp.rating} readonly size="sm" />
-        {exp.cost && <span className={styles.commentCost}>{exp.cost}</span>}
       </div>
       {exp.title && <p className={styles.commentTitle}>{exp.title}</p>}
       <p className={styles.commentText}>{exp.text}</p>
@@ -109,7 +106,7 @@ function CommentsModal({ experiences, onReact, onClose, userReactions }) {
 export default function PlaceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isTurista } = useAuth();
+  const { isAuthenticated, isTurista, isMorador } = useAuth();
 
   const [place,         setPlace]         = useState(null);
   const [experiences,   setExperiences]   = useState([]);
@@ -174,10 +171,6 @@ export default function PlaceDetailPage() {
     count: experiences.filter((e) => Math.round(e.rating) === star).length,
   }));
   const maxCount = Math.max(...ratingDist.map((d) => d.count), 1);
-  const costDist = COST_OPTIONS.map((opt) => ({
-    opt,
-    count: experiences.filter((e) => e.cost === opt).length,
-  }));
   const PREVIEW = 3;
 
   return (
@@ -250,25 +243,11 @@ export default function PlaceDetailPage() {
               </div>
             </section>
 
-            {/* Classificação de custo */}
-            <section>
-              <h2 className={`${styles.sectionTitle} ${styles.sectionTitleSm}`}>CLASSIFICAÇÃO DE CUSTO</h2>
-              <div className={styles.sectionDivider} />
-              <div className={styles.costRow}>
-                {costDist.map(({ opt, count }) => (
-                  <div key={opt} className={styles.costItem}>
-                    <span className={styles.costLabel}>{opt}</span>
-                    <span className={styles.costCount}>{count}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
             {/* Comentários */}
             <section>
               <div className={styles.commentsSectionHeader}>
                 <h2 className={styles.sectionTitle}>Comentários ({experiences.length})</h2>
-                {isTurista && (
+                {(isTurista || isMorador) && (
                   <Button size="sm" as={Link} to={`/locais/${id}/relatos/novo`}>
                     + Avaliar
                   </Button>
@@ -325,7 +304,7 @@ export default function PlaceDetailPage() {
             <span className={styles.statValue}>{place.visitsCount ?? '—'}</span>
           </div>
         </div>
-        {isTurista && (
+        {(isTurista || isMorador) && (
           <Button variant="primary" fullWidth as={Link} to={`/locais/${id}/relatos/novo`}>
             Avaliar Local
           </Button>

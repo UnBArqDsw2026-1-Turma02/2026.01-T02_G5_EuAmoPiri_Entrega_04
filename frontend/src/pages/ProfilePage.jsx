@@ -45,11 +45,11 @@ const MOCK_RELATOS_MORADOR = [
 ];
 
 const MOCK_LOCAIS_MORADOR = [
-  { id: 1, nome: 'Botequim Mercatto Piri', categoria: 'gastronomia', icon: '🏛️', price: '$$', rating: 4.9, avaliacoes: 100 },
-  { id: 2, nome: 'Cachoeira da Rosário', categoria: 'natureza', icon: '🏞️', price: '$', rating: 4.8, avaliacoes: 50 },
-  { id: 3, nome: 'Galeria de Arte Local', categoria: 'experiencia', icon: '🎨', price: '$$', rating: 4.7, avaliacoes: 10 },
-  { id: 4, nome: 'Trilha do Poço Azul', categoria: 'natureza', icon: '🌿', price: '$$$', rating: 4.6, avaliacoes: 300 },
-  { id: 5, nome: 'Igreja Matriz de Pirenópolis', categoria: 'histórico', icon: '⛪', price: '$', rating: 4.9, avaliacoes: 1000 },
+  { id: 1, nome: 'Botequim Mercatto Piri', categoria: 'gastronomia', icon: '🏛️', rating: 4.9, avaliacoes: 100 },
+  { id: 2, nome: 'Cachoeira da Rosário', categoria: 'natureza', icon: '🏞️', rating: 4.8, avaliacoes: 50 },
+  { id: 3, nome: 'Galeria de Arte Local', categoria: 'experiencia', icon: '🎨', rating: 4.7, avaliacoes: 10 },
+  { id: 4, nome: 'Trilha do Poço Azul', categoria: 'natureza', icon: '🌿', rating: 4.6, avaliacoes: 300 },
+  { id: 5, nome: 'Igreja Matriz de Pirenópolis', categoria: 'histórico', icon: '⛪', rating: 4.9, avaliacoes: 1000 },
 ];
 
 
@@ -129,7 +129,7 @@ function MoradorSections() {
                   <div className={styles.localRating}>
                     <StarRating value={Math.round(l.rating)} readonly size="sm" />
                     <span className={styles.localMeta}>
-                      {l.rating.toFixed(1)} &nbsp;{l.price}&nbsp; {l.avaliacoes} Avaliações
+                      {l.rating.toFixed(1)} — {l.avaliacoes} Avaliações
                     </span>
                   </div>
                 </div>
