@@ -1,3 +1,6 @@
+/**
+ * PÁGINA — PlaceDetailPage  (RF06 detalhe + RF12 comentários + RF13 emojis)
+ */
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -119,6 +122,8 @@ export default function PlaceDetailPage() {
   const [showModal,       setShowModal]       = useState(false);
   const [confirmDelete,   setConfirmDelete]   = useState(false);
   const [deleting,        setDeleting]        = useState(false);
+  const [deleteSuccess,   setDeleteSuccess]   = useState(false);
+  const [deleteErr,       setDeleteErr]       = useState(null);
   const [photoIndex,      setPhotoIndex]      = useState(0);
   // Map<expId, emojiKey> — 1 reação por comentário, anulável
   const [userReactions, setUserReactions] = useState(new Map());
@@ -133,12 +138,24 @@ export default function PlaceDetailPage() {
 
   async function handleDeleteConfirm() {
     setDeleting(true);
+    setDeleteErr(null);
     try {
       await deletePlace(id);
-      navigate('/locais');
+      setDeleteSuccess(true);
     } catch {
+      setDeleteErr('Erro ao excluir. Tente novamente.');
+    } finally {
       setDeleting(false);
+    }
+  }
+
+  function closeDeleteModal() {
+    if (deleteSuccess) {
+      navigate('/locais');
+    } else {
       setConfirmDelete(false);
+      setDeleteErr(null);
+      setDeleteSuccess(false);
     }
   }
 
@@ -416,25 +433,47 @@ export default function PlaceDetailPage() {
       )}
 
       {confirmDelete && (
-        <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && setConfirmDelete(false)}>
-          <div className={styles.confirmModal}>
-            <h2 className={styles.modalTitle}>Excluir local?</h2>
-            <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
-              Esta ação não pode ser desfeita. Tem certeza que deseja excluir <strong>{place.name}</strong>?
-            </p>
-            <div className={styles.confirmActions}>
-              <Button variant="neutral" fullWidth onClick={() => setConfirmDelete(false)} disabled={deleting}>
-                Cancelar
-              </Button>
-              <button
-                className={styles.btnDelete}
-                onClick={handleDeleteConfirm}
-                disabled={deleting}
-                style={{ flex: '1 1 0' }}
-              >
-                {deleting ? 'Excluindo...' : 'Excluir'}
-              </button>
-            </div>
+        <div
+          className={styles.confirmOverlay}
+          onClick={(e) => e.target === e.currentTarget && !deleting && closeDeleteModal()}
+        >
+          <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
+            {deleteSuccess ? (
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
+                <h3 className={styles.confirmTitle}>Local excluído com sucesso!</h3>
+                <p className={styles.confirmBody}>O local foi removido da lista.</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="primary" fullWidth onClick={closeDeleteModal}>Fechar</Button>
+                </div>
+              </>
+            ) : deleteErr ? (
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
+                <h3 className={styles.confirmTitle}>Erro ao excluir local</h3>
+                <p className={styles.confirmBody}>{deleteErr}</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="neutral" fullWidth onClick={() => setDeleteErr(null)}>Voltar</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className={styles.confirmTitle}>Excluir local</h3>
+                <p className={styles.confirmBody}>
+                  Tem certeza que deseja excluir <strong>{place.name}</strong>? Esta ação não pode ser desfeita.
+                </p>
+                <div className={styles.confirmActions}>
+                  <Button variant="neutral" fullWidth onClick={closeDeleteModal} disabled={deleting}>
+                    Cancelar
+                  </Button>
+                  <button className={styles.btnDelete} onClick={handleDeleteConfirm} disabled={deleting}>
+                    {deleting ? 'Excluindo...' : 'Excluir'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

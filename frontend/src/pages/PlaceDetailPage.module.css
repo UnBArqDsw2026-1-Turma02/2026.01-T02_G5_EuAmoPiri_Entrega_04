@@ -1,3 +1,9 @@
+/* ============================================================
+   PÁGINA — PlaceDetailPage
+   RF06 detalhe do local · RF12 comentários · RF13 reações
+   ============================================================ */
+
+/* Page wrapper */
 .page {
   min-height: 100vh;
   background-color: var(--color-gray-100, #f5f5f0);
@@ -545,32 +551,86 @@
 }
 
 /* ── Modal de confirmação (excluir) ── */
-.confirmModal {
-  background: var(--color-white, #fff);
-  border-radius: var(--radius-lg, 12px);
-  width: 100%;
-  max-width: 400px;
-  padding: var(--space-8) var(--space-6);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
-  text-align: center;
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
 }
 
-.confirmModal .modalTitle {
+.confirmDialog {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.confirmTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
   margin: 0;
+}
+
+.confirmBody {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .confirmActions {
   display: flex;
   gap: var(--space-3);
-  margin-top: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .confirmActions > * {
   flex: 1 1 0;
   min-width: 0;
+}
+
+.confirmActionsCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.confirmDialogSuccess {
+  text-align: center;
+}
+
+.confirmDialogError {
+  text-align: center;
+}
+
+.confirmLogo {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-brown, #7F5539);
+  margin: 0 0 var(--space-2);
+  letter-spacing: 0.02em;
+}
+
+.confirmSuccessIcon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin: var(--space-2) 0;
+  color: var(--color-primary, #2e7d32);
+}
+
+.confirmErrIcon {
+  color: var(--color-error, #e53935);
 }
 
 /* ── Modal ── */
