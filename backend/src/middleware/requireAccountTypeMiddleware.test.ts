@@ -10,11 +10,15 @@ function mockRes() {
     return res;
 }
 
+function mockNext(): NextFunction {
+    return vi.fn() as unknown as NextFunction;
+}
+
 describe("requireAccountTypeMiddleware", () => {
     let next: NextFunction;
 
     beforeEach(() => {
-        next = vi.fn();
+        next = mockNext();
     });
 
     it("retorna 401 sem usuário", () => {
