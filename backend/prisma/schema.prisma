@@ -35,10 +35,13 @@ model User {
   name         String
   email        String       @unique
   birthDate    DateTime?
-  phone        String?
-  passwordHash String?
-  googleId     String?      @unique
-  createdAt    DateTime     @default(now())
+  phone           String?
+  profession      String?
+  biography       String?
+  profilePhotoUrl String?
+  passwordHash    String?
+  googleId        String?      @unique
+  createdAt       DateTime     @default(now())
   experiences  Experiences[]
 }
 

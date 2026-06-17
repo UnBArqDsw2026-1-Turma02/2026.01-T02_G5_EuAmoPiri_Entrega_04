@@ -8,6 +8,9 @@ export function formatUser(user: User) {
         email: user.email,
         birthDate: user.birthDate,
         phone: user.phone,
+        profession: user.profession,
+        biography: user.biography,
+        profilePhotoUrl: user.profilePhotoUrl,
         googleId: user.googleId,
         createdAt: user.createdAt,
     };

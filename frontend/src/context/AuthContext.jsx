@@ -2,30 +2,87 @@
  * CAMADA CONTEXTO — AuthContext
  *
  * Gerencia o estado global de autenticação da aplicação.
- * Reutilizado por: ProtectedRoute, Header, qualquer componente
- * que precise saber se o usuário está logado e qual seu papel.
- *
- * Reutilização (Atomic Design → Context): este hook centraliza
- * a lógica de auth, evitando que cada componente acesse o
- * localStorage diretamente.
+ * Consome apenas authFacade (padrão Facade em api/auth); não acessa client nem localStorage.
  */
-import { createContext, useContext, useState, useCallback } from 'react';
-import { getCurrentUser, login, logout, register, updateProfile } from '../infra/adaptor/authAdaptor';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import {
+  getCurrentUser,
+  getToken,
+  login,
+  logout,
+  register,
+  updateProfile,
+  fetchMe,
+  loadProfilePhotoBlob,
+} from '../api/auth/authFacade';
 
 const AuthContext = createContext(null);
 
+async function attachAvatarBlob(user) {
+  if (!user?.profilePhotoUrl) {
+    return { ...user, avatarUrl: null };
+  }
+
+  try {
+    const blob = await loadProfilePhotoBlob();
+    if (!blob) return { ...user, avatarUrl: null };
+    return { ...user, avatarUrl: URL.createObjectURL(blob) };
+  } catch {
+    return { ...user, avatarUrl: null };
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getCurrentUser());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(getToken()));
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let avatarUrlToRevoke = null;
+
+    async function bootstrap() {
+      const token = getToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const me = await fetchMe();
+        const withAvatar = await attachAvatarBlob(me);
+        if (cancelled) {
+          if (withAvatar.avatarUrl) URL.revokeObjectURL(withAvatar.avatarUrl);
+          return;
+        }
+        avatarUrlToRevoke = withAvatar.avatarUrl;
+        setUser(withAvatar);
+      } catch {
+        if (!cancelled) {
+          await logout();
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    bootstrap();
+
+    return () => {
+      cancelled = true;
+      if (avatarUrlToRevoke) URL.revokeObjectURL(avatarUrlToRevoke);
+    };
+  }, []);
 
   const handleLogin = useCallback(async (credentials) => {
     setLoading(true);
     setError(null);
     try {
       const { user: loggedUser } = await login(credentials);
-      setUser(loggedUser);
-      return loggedUser;
+      const withAvatar = await attachAvatarBlob(loggedUser);
+      setUser(withAvatar);
+      return withAvatar;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -50,15 +107,24 @@ export function AuthProvider({ children }) {
   }, []);
 
   const handleLogout = useCallback(async () => {
+    if (user?.avatarUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(user.avatarUrl);
+    }
     await logout();
     setUser(null);
-  }, []);
+  }, [user]);
 
-  const handleUpdateProfile = useCallback(async (profileData) => {
+  const handleUpdateProfile = useCallback(async (profileData, photoFile) => {
     if (!user) return;
-    const updated = await updateProfile(user.id, profileData);
-    setUser(updated);
-    return updated;
+
+    if (user.avatarUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(user.avatarUrl);
+    }
+
+    const { user: updated } = await updateProfile(profileData, photoFile);
+    const withAvatar = await attachAvatarBlob(updated);
+    setUser(withAvatar);
+    return withAvatar;
   }, [user]);
 
   const isAuthenticated = Boolean(user);
@@ -83,7 +149,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-/** Hook de conveniência — reutilizado em todos os componentes que precisam de auth */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth deve ser usado dentro de <AuthProvider>');

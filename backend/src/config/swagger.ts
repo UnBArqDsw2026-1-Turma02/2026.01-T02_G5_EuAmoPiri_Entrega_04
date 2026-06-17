@@ -60,7 +60,21 @@ const options = {
                         email: { type: "string" },
                         birthDate: { type: "string", format: "date-time", nullable: true },
                         phone: { type: "string", nullable: true },
+                        profession: { type: "string", nullable: true },
+                        biography: { type: "string", nullable: true },
+                        profilePhotoUrl: {
+                            type: "string",
+                            nullable: true,
+                            description: "Chave do objeto no GCS (ex.: profile_photo/1-1718650000.jpg)",
+                        },
                         createdAt: { type: "string", format: "date-time" },
+                    },
+                },
+                ProfileUpdateResponse: {
+                    type: "object",
+                    properties: {
+                        user: { $ref: "#/components/schemas/User" },
+                        message: { type: "string", example: "Perfil atualizado com sucesso" },
                     },
                 },
                 AuthResponse: {

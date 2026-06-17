@@ -29,6 +29,8 @@ Este documento explica tudo o que outro desenvolvedor precisa saber para clonar 
 | **PostgreSQL** | Banco de dados relacional |
 | **Docker** | Sobe o PostgreSQL local de forma padronizada (desenvolvimento) |
 | **Supabase** | PostgreSQL na nuvem (banco de produção) |
+| **@google-cloud/storage** | Fotos de perfil no GCS (bucket privado) |
+| **multer** | Upload multipart em memória (`PATCH /auth/me`) |
 | **tsx** | Executa TypeScript em desenvolvimento |
 
 ---
@@ -659,6 +661,9 @@ Definidos em `prisma/schema.prisma`:
 | `email` | String | Email único |
 | `birthDate` | DateTime? | Data de nascimento |
 | `phone` | String? | Telefone |
+| `profession` | String? | Profissão |
+| `biography` | String? | Biografia |
+| `profilePhotoUrl` | String? | Chave do objeto no GCS (ex.: `profile_photo/1-1718650000.jpg`) |
 | `passwordHash` | String? | Hash bcrypt (null se login só Google) |
 | `googleId` | String? | ID Google OAuth |
 | `createdAt` | DateTime | Data de criação (automática) |
@@ -686,6 +691,10 @@ Documentação arquitetural completa (bibliotecas, padrões Facade/Strategy, ADR
 | `POST` | `/auth/login` | Não | Login email/senha → JWT |
 | `POST` | `/auth/google` | Não | Login Google (body: `{ "credential": "<id_token>" }`) |
 | `GET` | `/auth/me` | Bearer JWT | Dados do usuário logado |
+| `PATCH` | `/auth/me` | Bearer JWT | Atualiza perfil (multipart; campo `profilePhoto` opcional) |
+| `GET` | `/auth/me/photo` | Bearer JWT | Stream da foto de perfil (proxy GCS) |
+
+Documentação arquitetural da foto de perfil: [`docs/requisitos/RF-edit-perfil/4.5.FotoPerfilGCS.md`](../docs/requisitos/RF-edit-perfil/4.5.FotoPerfilGCS.md)
 
 **Exemplo — cadastro:**
 
@@ -771,6 +780,8 @@ Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method GET
 
 Pasta `frontend/` na raiz do repositório — interface mínima para validar login, cadastro, Google OAuth e rotas protegidas.
 
+O módulo de auth no frontend fica em `src/api/auth/` (SRP: `authApi`, `authMapper`, `authSessionStorage`, `authFacade`) com HTTP global em `src/api/client.js`. Ver `frontend/README.md` e [`4.5.FotoPerfilGCS.md`](../docs/requisitos/RF-edit-perfil/4.5.FotoPerfilGCS.md).
+
 ```bash
 cd frontend
 cp .env.example .env
@@ -794,6 +805,44 @@ Após alterar o schema, aplique a migration de autenticação:
 ```bash
 npx prisma migrate deploy
 ```
+
+---
+
+## Google Cloud Storage — fotos de perfil (desenvolvimento local)
+
+1. Obtenha o JSON da service account com a equipe (canal seguro).
+2. Salve em `backend/secrets/` (pasta no `.gitignore`).
+3. Configure no `.env`:
+
+```env
+GCS_BUCKET_NAME=profile_photo_euamopiri
+GCS_PROJECT_ID=euamopiri
+GCS_PROFILE_PREFIX=profile_photo/
+GOOGLE_APPLICATION_CREDENTIALS=./secrets/seu-arquivo.json
+```
+
+4. Teste via frontend em `/login` (ou `/teste-auth` em dev) → `/perfil` → editar foto.
+
+O bucket é **privado**. A API expõe a foto via `GET /auth/me/photo` (JWT). Não use `express.static('/uploads')`.
+
+---
+
+## Deploy no Render — fase 2 (GCS + API)
+
+Quando a API for publicada no Render, além de `DATABASE_URL`, configure:
+
+| Variável | Descrição |
+|----------|-----------|
+| `GCS_CREDENTIALS_JSON` | Conteúdo completo do JSON da service account (string) |
+| `GCS_BUCKET_NAME` | Nome do bucket |
+| `GCS_PROJECT_ID` | Project ID GCP |
+| `GCS_PROFILE_PREFIX` | Prefixo das chaves (ex.: `profile_photo/`) |
+| `JWT_SECRET` | Segredo JWT de produção |
+| `CORS_ORIGIN` | URL do frontend em produção |
+
+No frontend (Render ou estático), defina `VITE_API_URL` com a URL pública da API (ex.: `https://sua-api.onrender.com`). Em desenvolvimento, o proxy Vite `/api` → `localhost:3000` dispensa essa variável.
+
+O `storageService` usa `GCS_CREDENTIALS_JSON` quando presente; caso contrário, `GOOGLE_APPLICATION_CREDENTIALS` (arquivo local).
 
 ---
 
