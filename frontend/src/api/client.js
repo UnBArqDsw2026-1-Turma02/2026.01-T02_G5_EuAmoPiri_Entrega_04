@@ -68,6 +68,7 @@ export async function fetchBlob(url) {
   const token = localStorage.getItem('euamopiri_token');
   const response = await fetch(`${baseURL}${url}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
+    cache: 'no-store',
   });
   if (!response.ok) {
     const err = new Error('Falha ao carregar recurso');

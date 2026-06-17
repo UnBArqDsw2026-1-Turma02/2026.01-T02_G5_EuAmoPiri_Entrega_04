@@ -9,25 +9,9 @@
 import { Link } from 'react-router-dom';
 import StarRating from '../atoms/StarRating';
 import Badge from '../atoms/Badge';
+import { formatPublicRating } from '../../utils/placeStats';
+import { CATEGORY_LABELS, CATEGORY_VARIANTS } from '../utils/placeCategories';
 import styles from './PlaceCard.module.css';
-
-const CATEGORY_LABELS = {
-  gastronomia: 'Gastronomia',
-  natureza:    'Natureza',
-  hospedagem:  'Hospedagem',
-  cultura:     'Cultura',
-  compras:     'Compras',
-  aventura:    'Aventura',
-};
-
-const CATEGORY_VARIANTS = {
-  gastronomia: 'rust',
-  natureza:    'green',
-  hospedagem:  'teal',
-  cultura:     'brown',
-  compras:     'olive',
-  aventura:    'green',
-};
 
 export default function PlaceCard({ place }) {
   const {
@@ -36,9 +20,9 @@ export default function PlaceCard({ place }) {
     category,
     description,
     address,
-    rating,
-    reviewsCount,
   } = place;
+
+  const { starValue, ratingLabel, reviewsLabel } = formatPublicRating(place);
 
   const truncated = description?.length > 100
     ? description.slice(0, 100).trimEnd() + '…'
@@ -61,11 +45,11 @@ export default function PlaceCard({ place }) {
 
       <div className={styles.footer}>
         <div className={styles.ratingRow}>
-          <StarRating value={Math.round(rating ?? 0)} readonly size="sm" />
-          <span className={styles.ratingNum}>{rating?.toFixed(1)}</span>
-          {reviewsCount != null && (
-            <span className={styles.reviews}>({reviewsCount} avaliações)</span>
+          <StarRating value={starValue} readonly size="sm" />
+          {ratingLabel != null && (
+            <span className={styles.ratingNum}>{ratingLabel}</span>
           )}
+          <span className={styles.reviews}>({reviewsLabel})</span>
         </div>
         {address && <span className={styles.address}>📍 {address}</span>}
       </div>

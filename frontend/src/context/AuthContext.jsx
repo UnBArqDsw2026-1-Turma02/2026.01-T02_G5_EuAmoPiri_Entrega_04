@@ -24,7 +24,7 @@ async function attachAvatarBlob(user) {
   }
 
   try {
-    const blob = await loadProfilePhotoBlob();
+    const blob = await loadProfilePhotoBlob(user.profilePhotoUrl);
     if (!blob) return { ...user, avatarUrl: null };
     return { ...user, avatarUrl: URL.createObjectURL(blob) };
   } catch {
@@ -117,14 +117,22 @@ export function AuthProvider({ children }) {
   const handleUpdateProfile = useCallback(async (profileData, photoFile) => {
     if (!user) return;
 
-    if (user.avatarUrl?.startsWith('blob:')) {
-      URL.revokeObjectURL(user.avatarUrl);
-    }
+    const previousAvatarUrl = user.avatarUrl;
 
-    const { user: updated } = await updateProfile(profileData, photoFile);
-    const withAvatar = await attachAvatarBlob(updated);
-    setUser(withAvatar);
-    return withAvatar;
+    try {
+      const { user: updated } = await updateProfile(profileData, photoFile);
+      if (previousAvatarUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(previousAvatarUrl);
+      }
+      const withAvatar = await attachAvatarBlob(updated);
+      setUser(withAvatar);
+      return withAvatar;
+    } catch (err) {
+      setUser((current) => (
+        current ? { ...current, avatarUrl: previousAvatarUrl } : current
+      ));
+      throw err;
+    }
   }, [user]);
 
   const isAuthenticated = Boolean(user);

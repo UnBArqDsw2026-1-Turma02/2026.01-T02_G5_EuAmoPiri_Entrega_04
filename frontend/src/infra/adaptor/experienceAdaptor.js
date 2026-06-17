@@ -24,14 +24,13 @@ const MOCK_EXPERIENCES = [
   },
 ];
 
-function diffDays(isoDate) {
-  return Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000);
-}
-
 export async function fetchMyExperiences() {
-  return MOCK_EXPERIENCES
-    .filter((e) => e.userId === 'current')
-    .map((e) => ({ ...e, dias: diffDays(e.createdAt) }));
+  try {
+    const { data } = await apiClient.get('/auth/me/experiences');
+    return Array.isArray(data) ? data.map(mapExperience) : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchExperiencesByPlaces(placeIds) {

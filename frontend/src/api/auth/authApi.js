@@ -29,6 +29,9 @@ export async function patchProfile(formData) {
   return patchFormData('/auth/me', formData);
 }
 
-export async function getProfilePhotoBlob() {
-  return fetchBlob('/auth/me/photo');
+export async function getProfilePhotoBlob(profilePhotoUrl) {
+  const version = profilePhotoUrl
+    ? encodeURIComponent(profilePhotoUrl)
+    : String(Date.now());
+  return fetchBlob(`/auth/me/photo?v=${version}`);
 }
