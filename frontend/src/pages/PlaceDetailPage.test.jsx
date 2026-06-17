@@ -160,23 +160,29 @@ describe('PlaceDetailPage — RF06 detalhe / RF13 emojis / RF12 relatos', () => 
   })
 
   it('incrementa contagem do ❤️ ao clicar (RF13)', async () => {
+    vi.mocked(AuthContext.useAuth).mockReturnValue({
+      isAuthenticated: true, isTurista: true, user: { name: 'João' },
+    })
     const user = userEvent.setup()
     renderPage()
     await screen.findByText('Maria Silva')
 
-    await user.click(screen.getByLabelText(/amei: 3/i))
+    await user.click(screen.getByRole('button', { name: /amei: 3/i }))
 
     await waitFor(() =>
-      expect(screen.getByLabelText(/amei: 4/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /amei: 4/i })).toBeInTheDocument()
     )
   })
 
   it('chama reactToExperience com o emoji correto (RF13)', async () => {
+    vi.mocked(AuthContext.useAuth).mockReturnValue({
+      isAuthenticated: true, isTurista: true, user: { name: 'João' },
+    })
     const user = userEvent.setup()
     renderPage()
     await screen.findByText('Maria Silva')
 
-    await user.click(screen.getByLabelText(/amei: 3/i))
+    await user.click(screen.getByRole('button', { name: /amei: 3/i }))
 
     await waitFor(() =>
       expect(expAdaptor.reactToExperience).toHaveBeenCalledWith('1', 1, 'heart')

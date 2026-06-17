@@ -31,11 +31,11 @@ const MOCK_RELATOS_MORADOR = [
 ];
 
 const MOCK_LOCAIS_MORADOR = [
-  { id: 1, nome: 'Botequim Mercatto Piri', categoria: 'Gastronomia', rating: 4.4, avaliacoes: 1 },
-  { id: 2, nome: 'Cachoeira da Rosário',   categoria: 'Natureza',    rating: 4.3, avaliacoes: 1 },
-  { id: 3, nome: 'Galeria de Arte Local',  categoria: 'Cultura',     rating: 4.3, avaliacoes: 1 },
-  { id: 4, nome: 'Trilha do Poço Azul',    categoria: 'Natureza',    rating: 4.5, avaliacoes: 1 },
-  { id: 5, nome: 'Igreja Matriz de N. S. do Rosário', categoria: 'Cultura', rating: 4.5, avaliacoes: 1 },
+  { id: 1, nome: 'Botequim Mercatto Piri',          categoria: 'gastronomia', icon: '🏛️', price: '$$',  rating: 4.9, avaliacoes: 100 },
+  { id: 2, nome: 'Cachoeira da Rosário',             categoria: 'natureza',    icon: '🏞️', price: '$',   rating: 4.8, avaliacoes: 50  },
+  { id: 3, nome: 'Galeria de Arte Local',            categoria: 'experiencia', icon: '🎨', price: '$$',  rating: 4.7, avaliacoes: 10  },
+  { id: 4, nome: 'Trilha do Poço Azul',              categoria: 'natureza',    icon: '🌿', price: '$$$', rating: 4.6, avaliacoes: 300 },
+  { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', price: '$',   rating: 4.9, avaliacoes: 1000 },
 ];
 
 const MOCK_AVALIACOES_TURISTA = [
@@ -64,35 +64,46 @@ function MoradorSections() {
         <div className={styles.relatosGrid}>
           {MOCK_RELATOS_MORADOR.map((r) => (
             <div key={r.id} className={styles.relatoCard}>
-              <div className={styles.relatoHeader}>
-                <span className={styles.relatoLocal}>{r.local}</span>
-                <span className={styles.relatoMeta}>{r.autor} · {r.dias}d atrás</span>
+              <div className={styles.avaliacaoMeta}>
+                <MdLocationOn size={16} className={styles.pinIcon} />
+                <span className={styles.avaliacaoLocal}>{r.local}</span>
+                <span className={styles.avaliacaoDias}>há {r.dias} dias</span>
               </div>
+              <span className={styles.relatoAutor}>{r.autor}</span>
               <p className={styles.relatoTexto}>{r.texto}</p>
-              <div className={styles.relatoFooter}>
-                <div className={styles.relatoActions}>
-                  <Button variant="outline" size="sm">Editar Avaliação</Button>
-                  <Button variant="outline" size="sm">Excluir Avaliação</Button>
-                </div>
-                <span>👍 {r.likes}</span>
-              </div>
+              <span className={styles.relatoLikes}>👍 {r.likes}</span>
             </div>
           ))}
         </div>
       </div>
 
       <div className={styles.sectionCard}>
-        <h2 className={styles.sectionTitle}>MEUS LOCAIS</h2>
-        <div className={styles.locaisGrid}>
+        <h2 className={styles.sectionTitle}>LOCAIS CADASTRADOS</h2>
+        <div className={styles.locaisLista}>
           {MOCK_LOCAIS_MORADOR.map((l) => (
-            <Link key={l.id} to={`/locais/${l.id}`} className={styles.localCard}>
-              <span className={styles.localNome}>{l.nome}</span>
-              <span className={styles.localCat}>{l.categoria}</span>
-              <div className={styles.localRating}>
-                <StarRating value={Math.round(l.rating)} readonly size="sm" />
-                <span>{l.rating.toFixed(1)} · {l.avaliacoes} Avaliação</span>
+            <div key={l.id} className={styles.localRow}>
+              <div className={styles.localInfo}>
+                <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
+                <div>
+                  <span className={styles.localNome}>{l.nome}</span>
+                  <span className={styles.localCat}>{l.categoria}</span>
+                  <div className={styles.localRating}>
+                    <StarRating value={Math.round(l.rating)} readonly size="sm" />
+                    <span className={styles.localMeta}>
+                      {l.rating.toFixed(1)} &nbsp;{l.price}&nbsp; {l.avaliacoes} Avaliações
+                    </span>
+                  </div>
+                </div>
               </div>
-            </Link>
+              <div className={styles.localActions}>
+                <Button variant="secondary" size="sm" as={Link} to={`/locais/${l.id}`}>
+                  Editar Local
+                </Button>
+                <Button variant="rust" size="sm" onClick={() => {}}>
+                  Excluir Local
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -135,6 +146,11 @@ export default function ProfilePage() {
   const [feedback, setFeedback] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
+
+  /* ── Estado da seção de senha ── */
+  const [passwordData, setPasswordData] = useState({ current: '', next: '', confirm: '' });
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
@@ -199,6 +215,32 @@ export default function ProfilePage() {
       setFeedback({ type: 'error', msg: 'Erro ao salvar. Tente novamente.' });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePasswordUpdate(e) {
+    e.preventDefault();
+    setPasswordFeedback(null);
+    const { current, next, confirm } = passwordData;
+    if (!current || !next || !confirm) {
+      return setPasswordFeedback({ type: 'error', msg: 'Preencha todos os campos de senha.' });
+    }
+    if (next !== confirm) {
+      return setPasswordFeedback({ type: 'error', msg: 'Nova senha e confirmação não coincidem.' });
+    }
+    if (next.length < 6) {
+      return setPasswordFeedback({ type: 'error', msg: 'A nova senha deve ter pelo menos 6 caracteres.' });
+    }
+    setSavingPassword(true);
+    try {
+      // TODO: chamar API real — await updatePassword({ current, next });
+      await new Promise((r) => setTimeout(r, 600)); // mock de latência
+      setPasswordData({ current: '', next: '', confirm: '' });
+      setPasswordFeedback({ type: 'success', msg: 'Senha atualizada com sucesso!' });
+    } catch {
+      setPasswordFeedback({ type: 'error', msg: 'Erro ao atualizar senha. Tente novamente.' });
+    } finally {
+      setSavingPassword(false);
     }
   }
 
@@ -267,7 +309,7 @@ export default function ProfilePage() {
             <Button variant="danger" size="sm" onClick={() => {}}>
               <MdOutlineDelete size={16} /> Deletar Perfil
             </Button>
-            <Button variant="primary" size="sm" onClick={startEditing}>
+            <Button variant="secondary" size="sm" onClick={startEditing}>
               Editar Perfil
             </Button>
             {isMorador ? (
@@ -354,6 +396,53 @@ export default function ProfilePage() {
             </div>
           </form>
         )}
+
+        {/* ── Seção: Cadastrar Nova Senha (só no modo edição) ── */}
+        {editing && <form className={styles.passwordForm} onSubmit={handlePasswordUpdate} noValidate>
+          <h2 className={styles.sectionTitle}>CADASTRAR NOVA SENHA</h2>
+
+          <div className={styles.passwordFields}>
+            <input
+              type="password"
+              className={styles.passwordInput}
+              placeholder="Senha Atual"
+              value={passwordData.current}
+              onChange={(e) => setPasswordData((p) => ({ ...p, current: e.target.value }))}
+              autoComplete="current-password"
+              aria-label="Senha atual"
+            />
+            <input
+              type="password"
+              className={styles.passwordInput}
+              placeholder="Nova Senha"
+              value={passwordData.next}
+              onChange={(e) => setPasswordData((p) => ({ ...p, next: e.target.value }))}
+              autoComplete="new-password"
+              aria-label="Nova senha"
+            />
+            <input
+              type="password"
+              className={styles.passwordInput}
+              placeholder="Confirmar Nova Senha"
+              value={passwordData.confirm}
+              onChange={(e) => setPasswordData((p) => ({ ...p, confirm: e.target.value }))}
+              autoComplete="new-password"
+              aria-label="Confirmar nova senha"
+            />
+          </div>
+
+          {passwordFeedback && (
+            <div className={`${styles.feedback} ${styles[passwordFeedback.type]}`} role="alert">
+              {passwordFeedback.msg}
+            </div>
+          )}
+
+          <div className={styles.passwordActions}>
+            <Button variant="secondary" type="submit" loading={savingPassword}>
+              Atualizar Senha
+            </Button>
+          </div>
+        </form>}
 
         {/* ── Seções por role (só no modo leitura) ── */}
         {!editing && (

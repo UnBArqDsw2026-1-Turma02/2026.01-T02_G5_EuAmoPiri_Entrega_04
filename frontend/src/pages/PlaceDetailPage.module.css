@@ -396,6 +396,20 @@
   color: #6B8E23;
 }
 
+/* Leitura apenas (morador): mesma aparência sem interação */
+.reactionBtnReadonly {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--color-gray-200, #e5e5e5);
+  border-radius: var(--radius-sm, 4px);
+  padding: 2px var(--space-2);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  cursor: default;
+  user-select: none;
+}
+
 
 .loadMoreWrap {
   display: flex;
