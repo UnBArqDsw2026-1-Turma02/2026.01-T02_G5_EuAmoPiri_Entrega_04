@@ -137,3 +137,26 @@
   color: #6e4a3b; /* Muda para marrom ao passar o mouse */
   text-decoration: underline;
 }
+
+/* ============================================================
+   Desktop (>= 768px)
+   ============================================================ */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 var(--space-6);
+  }
+}
+
+/* ============================================================
+   Mobile (< 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .galeria {
+    position: static;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}

@@ -1,11 +1,12 @@
 import React from 'react';
 import './LoginPage.css';
 
+import logoGoogle from '../assets/Google__G__logo.svg.png'; 
+
 export default function LoginPage() {
   return (
     <div className="login-container">
       
-      {/* Caixa branca centralizada */}
       <div className="login-card">
         
         {/* Logo e Boas-vindas */}
@@ -45,7 +46,7 @@ export default function LoginPage() {
           {/* Botão do Google */}
           <button type="button" className="btn-google">
             <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_\"
+              src={logoGoogle} 
               alt="Google" 
               className="google-icon"
             />
@@ -54,7 +55,6 @@ export default function LoginPage() {
 
         </form>
 
-        {/* Links de Rodapé */}
         <div className="login-footer">
           <a href="#esqueci" className="link-footer">Esqueci a senha</a>
           <a href="#criar" className="link-footer">Criar conta</a>
