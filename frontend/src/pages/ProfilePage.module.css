@@ -239,6 +239,8 @@
   flex-shrink: 0;
   scroll-snap-align: start;
   background: var(--color-bg-card);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .relatoAutor {
@@ -251,6 +253,9 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .relatoTexto {
@@ -259,6 +264,9 @@
   line-height: 1.5;
   flex: 1;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
@@ -435,6 +443,8 @@
   flex-shrink: 0;
   scroll-snap-align: start;
   background: var(--color-bg-card);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .avaliacaoMeta {
@@ -442,6 +452,7 @@
   align-items: center;
   gap: var(--space-1);
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .pinIcon {
@@ -454,6 +465,9 @@
   font-weight: var(--font-weight-semibold);
   color: #1A7DD9;
   text-decoration: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .avaliacaoLocal:hover {
@@ -471,6 +485,9 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .avaliacaoTexto {
@@ -479,6 +496,13 @@
   line-height: 1.5;
   flex: 1;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ── Nome do local e ícone nos relatos do Morador ── */
@@ -496,12 +520,13 @@
 /* ── Botões de ação em cards ── */
 .relatoActions {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-1);
 }
 
 .relatoActions > * {
-  flex: 1;
+  width: 100%;
 }
 
 /* ── Formulário de edição ── */

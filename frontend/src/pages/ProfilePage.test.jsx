@@ -71,6 +71,7 @@ function asMorador(extra = {}) {
     updateProfile: vi.fn().mockResolvedValue(mockMorador),
     isAuthenticated: true,
     isMorador: true,
+    isTurista: false,
     ...extra,
   })
 }
@@ -81,6 +82,7 @@ function asTurista(extra = {}) {
     updateProfile: vi.fn().mockResolvedValue(mockTurista),
     isAuthenticated: true,
     isMorador: false,
+    isTurista: true,
     ...extra,
   })
 

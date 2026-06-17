@@ -282,7 +282,7 @@ function MoradorSections({ user, onRelatosCount }) {
   );
 }
 
-function TuristaSections({ onRelatosCount }) {
+function TuristaSections({ user, onRelatosCount }) {
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -292,11 +292,17 @@ function TuristaSections({ onRelatosCount }) {
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   useEffect(() => {
+    if (!user?.id) {
+      setAvaliacoes([]);
+      setLoading(false);
+      return undefined;
+    }
+
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
 
-    fetchMyExperiences()
+    fetchMyExperiences(user.id)
       .then((data) => {
         if (!cancelled) setAvaliacoes(Array.isArray(data) ? data : []);
       })
@@ -308,7 +314,7 @@ function TuristaSections({ onRelatosCount }) {
       });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     onRelatosCount?.(avaliacoes.length);
@@ -445,7 +451,7 @@ function TuristaSections({ onRelatosCount }) {
 
 /* ─── componente principal ─── */
 export default function ProfilePage() {
-  const { user, updateProfile, isMorador } = useAuth();
+  const { user, updateProfile, isMorador, isTurista } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -783,10 +789,11 @@ export default function ProfilePage() {
           </div>
         </form>}
 
-        {!editing && (
-          isMorador
-            ? <MoradorSections user={user} onRelatosCount={setRelatosCount} />
-            : <TuristaSections onRelatosCount={setRelatosCount} />
+        {!editing && isMorador && (
+          <MoradorSections user={user} onRelatosCount={setRelatosCount} />
+        )}
+        {!editing && isTurista && (
+          <TuristaSections user={user} onRelatosCount={setRelatosCount} />
         )}
 
       </div>

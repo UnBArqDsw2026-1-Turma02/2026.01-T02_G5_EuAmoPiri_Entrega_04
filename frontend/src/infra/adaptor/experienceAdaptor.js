@@ -2,6 +2,7 @@
  * Adaptor de Relatos (Experiences) — integração com API REST.
  */
 import apiClient, { postFormData } from '../../api/client';
+import { fetchPlaces } from './placeAdaptor';
 import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 function mapExperience(exp) {
@@ -24,12 +25,38 @@ const MOCK_EXPERIENCES = [
   },
 ];
 
-export async function fetchMyExperiences() {
+function sameUserId(a, b) {
+  return a != null && b != null && Number(a) === Number(b);
+}
+
+async function fetchMyExperiencesFallback(userId) {
+  const places = await fetchPlaces();
+  const placeIds = places.map((p) => p.id);
+  if (placeIds.length === 0) return [];
+
+  const all = await fetchExperiencesByPlaces(placeIds);
+  return all
+    .filter((exp) => sameUserId(exp.userId, userId))
+    .map((exp) => {
+      const place = places.find((p) => Number(p.id) === Number(exp.placeId));
+      return mapExperience({
+        ...exp,
+        placeName: place?.name ?? 'Local',
+      });
+    })
+    .sort((a, b) => new Date(b.createdAt ?? 0) - new Date(a.createdAt ?? 0));
+}
+
+export async function fetchMyExperiences(userId) {
   try {
     const { data } = await apiClient.get('/auth/me/experiences');
     return Array.isArray(data) ? data.map(mapExperience) : [];
-  } catch {
-    return [];
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 404 && userId != null) {
+      return fetchMyExperiencesFallback(userId);
+    }
+    throw error;
   }
 }
 
