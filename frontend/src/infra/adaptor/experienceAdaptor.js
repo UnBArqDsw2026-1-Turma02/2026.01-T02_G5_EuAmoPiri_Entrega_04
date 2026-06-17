@@ -60,9 +60,35 @@ const MOCK_EXPERIENCES = [
     rating: 5, cost: '$', reactions: { heart: 9, like: 3 },
     createdAt: daysAgo(3),
   },
+  {
+    id: 8, placeId: 1,
+    userName: 'Antônio Francisco', title: 'Nem bom, nem ruim!',
+    text: 'A qualidade das bebidas deixou a desejar bastante. Trouxe minha esposa e meus filhos adultos para comemorar meu aniversário e o que poderia ter sido lendário era ordinário. Ok.',
+    rating: 3, cost: '$$', reactions: { heart: 0, like: 23 },
+    createdAt: daysAgo(4),
+  },
+  {
+    id: 9, placeId: 6,
+    userName: 'Josefina Souza', title: 'Já tive experiências melhores',
+    text: 'Olha, nos meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país e tenho propriedade para dizer que já centenas de restaurantes melhores em Pirenópolis. A comida veio fria!',
+    rating: 1, cost: '$$$', reactions: { heart: 0, like: 5 },
+    createdAt: daysAgo(6),
+  },
+  {
+    id: 10, placeId: 6,
+    userName: 'Marcos Oliveira', title: 'Boa experiência!',
+    text: 'Ambiente muito bonito e a comida estava saborosa. O serviço poderia ser mais ágil, mas no geral valeu muito a visita. Voltarei com certeza.',
+    rating: 4, cost: '$$$', reactions: { heart: 7, like: 11 },
+    createdAt: daysAgo(9),
+  },
 ];
 
 /* ─── Funções do adaptor ─── */
+
+export async function fetchExperiencesByPlaces(placeIds) {
+  const ids = placeIds.map(Number);
+  return MOCK_EXPERIENCES.filter((e) => ids.includes(e.placeId));
+}
 
 export async function fetchExperiencesByPlace(placeId) {
   // TODO: descomentar quando backend estiver integrado

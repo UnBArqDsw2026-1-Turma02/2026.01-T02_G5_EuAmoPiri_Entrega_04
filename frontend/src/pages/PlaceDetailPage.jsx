@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { fetchPlaceById } from '../infra/adaptor/placeAdaptor';
 import { fetchExperiencesByPlace, reactToExperience } from '../infra/adaptor/experienceAdaptor';
@@ -54,16 +54,29 @@ function CommentCard({ exp, onReact, showReactions = false, userReactions = new 
       {showReactions && (
         <div className={styles.reactions}>
           {REACTION_EMOJIS.map(({ key, emoji }) => {
+            const count = exp.reactions?.[key] ?? 0;
+            if (!onReact) {
+              // Morador: apenas visualiza os contadores, sem interação
+              return (
+                <span
+                  key={key}
+                  className={styles.reactionBtnReadonly}
+                  aria-label={`${REACTION_LABELS[key]}: ${count}`}
+                >
+                  {emoji} <span>{count}</span>
+                </span>
+              );
+            }
             const isActive = myReaction === key;
             return (
               <button
                 key={key}
-                aria-label={`${REACTION_LABELS[key]}: ${exp.reactions?.[key] ?? 0}`}
+                aria-label={`${REACTION_LABELS[key]}: ${count}`}
                 className={`${styles.reactionBtn} ${isActive ? styles.reactionBtnActive : ''}`}
-                onClick={() => onReact?.(exp.id, key)}
+                onClick={() => onReact(exp.id, key)}
                 title={isActive ? 'Clique para desfazer' : undefined}
               >
-                {emoji} <span>{exp.reactions?.[key] ?? 0}</span>
+                {emoji} <span>{count}</span>
               </button>
             );
           })}
@@ -95,6 +108,7 @@ function CommentsModal({ experiences, onReact, onClose, userReactions }) {
 /* ─── Componente principal ─── */
 export default function PlaceDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated, isTurista } = useAuth();
 
   const [place,         setPlace]         = useState(null);
@@ -173,7 +187,7 @@ export default function PlaceDetailPage() {
 
         {/* ── Cabeçalho do card ── */}
         <div className={styles.cardHeader}>
-          <Button variant="neutral" size="sm" as={Link} to="/locais">← Voltar</Button>
+          <Button variant="neutral" size="sm" onClick={() => navigate(-1)}>← Voltar</Button>
         </div>
 
           {/* ── Info area ── */}
@@ -278,7 +292,7 @@ export default function PlaceDetailPage() {
                   key={exp.id}
                   exp={exp}
                   showReactions
-                  onReact={handleReact}
+                  onReact={isTurista ? handleReact : undefined}
                   userReactions={userReactions}
                 />
               ))}
@@ -328,7 +342,7 @@ export default function PlaceDetailPage() {
       {showModal && (
         <CommentsModal
           experiences={experiences}
-          onReact={handleReact}
+          onReact={isTurista ? handleReact : undefined}
           onClose={() => setShowModal(false)}
           userReactions={userReactions}
         />

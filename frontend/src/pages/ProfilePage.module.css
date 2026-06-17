@@ -129,21 +129,23 @@
   display: flex;
   gap: var(--space-3);
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .actionBtns > * {
   flex: 1;
+  min-width: 160px;
   max-width: 220px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .actionBtns {
     flex-direction: column;
     align-items: center;
   }
   .actionBtns > * {
     width: 100%;
-    max-width: 280px;
+    max-width: 320px;
   }
 }
 
@@ -183,36 +185,45 @@
   margin: 0 0 var(--space-4);
 }
 
-/* ── Relatos (morador) ── */
+/* ── Relatos (morador) — scroll horizontal idêntico ao Turista ── */
 .relatosGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
   gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.relatosGrid::-webkit-scrollbar {
+  height: 4px;
+}
+.relatosGrid::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 2px;
+}
+.relatosGrid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
 }
 
 .relatoCard {
   border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 280px;
+  max-width: 320px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--color-bg-card);
 }
 
-.relatoHeader {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.relatoLocal {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-.relatoMeta {
-  font-size: 11px;
+.relatoAutor {
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 
@@ -221,63 +232,82 @@
   color: var(--color-text-muted);
   line-height: 1.5;
   flex: 1;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.relatoFooter {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+.relatoLikes {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 
-.relatoActions {
+/* ── Locais (morador) — lista vertical ── */
+.locaisLista {
   display: flex;
-  gap: var(--space-2);
-}
-
-/* ── Locais (morador) ── */
-.locaisGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  flex-direction: column;
   gap: var(--space-3);
 }
 
-.localCard {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+.localRow {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  text-decoration: none;
-  transition: background var(--transition-fast);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-card);
 }
-.localCard:hover { background: var(--color-gray-50); }
+
+.localInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.localIcon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 
 .localNome {
+  display: block;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
 }
 
 .localCat {
+  display: block;
   font-size: 11px;
   color: var(--color-text-muted);
+  margin-bottom: 4px;
 }
 
 .localRating {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: 11px;
-  color: var(--color-text-muted);
   flex-wrap: wrap;
+}
+
+.localMeta {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.localActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
 }
 
 /* ── Avaliações (turista) — scroll horizontal ── */
@@ -356,6 +386,17 @@
   margin: 0;
 }
 
+/* ── Botões de ação em cards ── */
+.relatoActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.relatoActions > * {
+  flex: 1;
+}
+
 /* ── Formulário de edição ── */
 .form {
   background: var(--color-bg-card);
@@ -383,6 +424,51 @@
   text-align: center;
   color: var(--color-text-muted);
   padding: var(--space-8);
+}
+
+/* ── Seção: Cadastrar Nova Senha ── */
+.passwordForm {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.passwordFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 400px;
+}
+
+.passwordInput {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: var(--color-bg-card);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.passwordInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.passwordInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.passwordActions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* ── Mobile ── */
@@ -420,13 +506,18 @@
     grid-template-columns: 1fr;
   }
 
-  .relatosGrid,
   .avaliacoesGrid {
     grid-template-columns: 1fr;
   }
 
-  .locaisGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .localRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .localActions {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .relatoFooter {

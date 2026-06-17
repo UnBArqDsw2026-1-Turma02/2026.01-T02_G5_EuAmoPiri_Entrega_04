@@ -22,6 +22,7 @@ const MOCK_PLACES = [
     coverImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&q=70',
     lat: -15.8490, lng: -48.9568, photos: [], mapsLink: null,
     createdAt: new Date('2026-05-10').toISOString(),
+    moradorId: 1,
   },
   {
     id: 2, name: 'Cachoeira da Rosário', category: 'natureza',
@@ -32,6 +33,7 @@ const MOCK_PLACES = [
     coverImage: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=300&q=70',
     lat: -15.8312, lng: -48.9423, photos: [], mapsLink: null,
     createdAt: new Date('2026-05-15').toISOString(),
+    moradorId: 1,
   },
   {
     id: 3, name: 'Trilha do Poço Azul', category: 'natureza',
@@ -62,6 +64,17 @@ const MOCK_PLACES = [
     coverImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300&q=70',
     lat: -15.8510, lng: -48.9555, photos: [], mapsLink: null,
     createdAt: new Date('2026-04-01').toISOString(),
+  },
+  {
+    id: 6, name: 'Restaurante LovePiri', category: 'gastronomia',
+    description: 'Restaurante sofisticado com culinária goiana contemporânea e vista para a Serra dos Pireneus.',
+    address: 'Av. Sizenando Jayme, 120 - Centro, Pirenópolis',
+    price: '$$$', rating: 3.8, reviewsCount: 45, commentsCount: 60, visitsCount: '300',
+    hours: '12h - 23h', phone: '(62) 3331-9988',
+    coverImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&q=70',
+    lat: -15.8475, lng: -48.9541, photos: [], mapsLink: null,
+    createdAt: new Date('2026-05-20').toISOString(),
+    moradorId: 1,
   },
 ];
 
@@ -95,4 +108,9 @@ export async function updatePlace(id, placeData) {
 export async function deletePlace(id) {
   console.warn('[mock] deletePlace chamado para id:', id);
   return { success: true };
+}
+
+export async function fetchMyPlaces(moradorId) {
+  // TODO: substituir por apiClient.get(`/places?moradorId=${moradorId}`) quando disponível
+  return MOCK_PLACES.filter((p) => p.moradorId === Number(moradorId));
 }

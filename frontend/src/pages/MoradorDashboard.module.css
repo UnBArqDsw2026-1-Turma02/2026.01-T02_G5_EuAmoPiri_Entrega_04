@@ -1,0 +1,428 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-height, 64px));
+  background: var(--color-bg, #f5f5f0);
+  padding: var(--space-4, 1rem);
+  gap: var(--space-4, 1rem);
+}
+
+/* ── Centered loading / error ── */
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - var(--header-height, 64px));
+}
+
+.errorMsg {
+  color: var(--color-error, #c0392b);
+  font-size: 1rem;
+}
+
+/* ── Filter bar ── */
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3, 0.75rem);
+  align-items: center;
+  background: var(--color-white, #fff);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary, #555);
+}
+
+.filterSelect {
+  font-size: 0.875rem;
+  border: 1px solid var(--color-gray-300, #d1d5db);
+  border-radius: var(--radius-sm, 4px);
+  padding: 4px 8px;
+  background: var(--color-white, #fff);
+  color: var(--color-text, #333);
+  cursor: pointer;
+}
+
+.filterSelect:focus {
+  outline: 2px solid #6B8E23;
+  outline-offset: 1px;
+}
+
+/* ── Main area: map + places sidebar ── */
+.mainArea {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: var(--space-4, 1rem);
+  height: 420px;
+}
+
+.mapWrapper {
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  min-height: 300px;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.mapEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--color-white, #fff);
+  border-radius: var(--radius-md, 8px);
+  gap: var(--space-3, 0.75rem);
+  color: var(--color-text-secondary, #777);
+}
+
+.noPlacesLink {
+  color: #6B8E23;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.noPlacesLink:hover { text-decoration: underline; }
+
+/* ── Places sidebar ── */
+.placesSidebar {
+  background: var(--color-white, #fff);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebarTitle {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-text, #333);
+  padding: var(--space-3, 0.75rem) var(--space-3, 0.75rem) 0;
+  text-transform: uppercase;
+  border-bottom: 2px solid #6B8E23;
+  padding-bottom: var(--space-2, 0.5rem);
+  margin-bottom: 0;
+}
+
+.placesList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* ── Place card in sidebar ── */
+.placeCard {
+  display: flex;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.15s;
+}
+
+.placeCard:hover { background: #f0f4e8; }
+
+.placeCardIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.placeCardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.placeCardName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text, #333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.placeCardCat {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary, #777);
+  text-transform: capitalize;
+}
+
+.placeCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.placeCardRating {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6B8E23;
+}
+
+.placeCardPrice {
+  font-size: 0.7rem;
+  color: #6B8E23;
+  font-weight: 600;
+}
+
+.placeCardReviews {
+  font-size: 0.65rem;
+  color: var(--color-text-secondary, #888);
+}
+
+.addPlaceBtn {
+  display: block;
+  margin: var(--space-3, 0.75rem);
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #6B8E23;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.addPlaceBtn:hover { background: #5a7a1e; }
+
+/* ── Reviews section ── */
+.reviewsSection {
+  background: var(--color-white, #fff);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem);
+}
+
+.reviewsSectionTitle {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text, #333);
+  margin-bottom: var(--space-4, 1rem);
+  padding-bottom: var(--space-2, 0.5rem);
+  border-bottom: 3px solid #6B8E23;
+}
+
+.reviewsLayout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--space-6, 1.5rem);
+  align-items: start;
+}
+
+/* ── Sort panel — sticky ── */
+.sortPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  position: sticky;
+  top: calc(var(--header-height, 64px) + 1rem);
+  align-self: start;
+}
+
+.sortLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text, #222);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.sortBtn {
+  width: 100%;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #6B8E23;
+  background: transparent;
+  color: #6B8E23;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sortBtn:hover {
+  background: #f0f4e8;
+}
+
+.sortBtnActive {
+  background: #6B8E23;
+  color: #fff;
+  border-color: #6B8E23;
+}
+
+.sortBtnActive:hover {
+  background: #5a7a1e;
+  border-color: #5a7a1e;
+}
+
+/* ── Reviews grid — equal-height cards ── */
+.reviewsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--space-4, 1rem);
+  align-items: stretch;
+}
+
+/* ── Review card ── */
+.reviewCard {
+  background: #f8f9f4;
+  border: 1.5px solid #e2e8d0;
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-4, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.reviewCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-2, 0.5rem);
+}
+
+.reviewPlaceName {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1A7DD9;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.reviewPlaceName:hover { text-decoration: underline; }
+
+.pinIcon { font-size: 0.85rem; }
+
+.reviewDate {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary, #999);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.reviewAuthor {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text, #222);
+}
+
+.reviewTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text, #222);
+  margin: 0;
+}
+
+.reviewText {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #555);
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.reviewReactions {
+  display: flex;
+  gap: var(--space-2, 0.5rem);
+  padding-top: var(--space-2, 0.5rem);
+  border-top: 1px solid #e2e8d0;
+  margin-top: 4px;
+}
+
+.reactionCount {
+  font-size: 0.82rem;
+  color: #4a6741;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.emptyMsg {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #777);
+  padding: var(--space-4, 1rem) 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .mainArea {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .mapWrapper {
+    height: 260px;
+  }
+
+  .placesSidebar {
+    height: auto;
+    max-height: 280px;
+  }
+
+  .reviewsLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .sortPanel {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sortBtn {
+    width: auto;
+    flex: 1 1 auto;
+  }
+
+  .reviewsGrid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+
+  .filterBar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .filterBar::-webkit-scrollbar { display: none; }
+}
