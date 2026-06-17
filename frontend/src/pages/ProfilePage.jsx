@@ -45,7 +45,7 @@ function totalLikes(reactions = {}) {
   return Object.values(reactions).reduce((s, v) => s + (v || 0), 0);
 }
 
-/* ─── seção Morador (painel consolidado em /perfil) ─── */
+/* ─── seção Morador (locais e relatos recebidos — exibidos em /perfil) ─── */
 function MoradorSections({ user, onRelatosCount }) {
   const [places, setPlaces] = useState([]);
   const [experiences, setExperiences] = useState([]);
@@ -75,7 +75,7 @@ function MoradorSections({ user, onRelatosCount }) {
           setExperiences([]);
         }
       } catch {
-        if (!cancelled) setLoadError('Erro ao carregar dados do painel.');
+        if (!cancelled) setLoadError('Erro ao carregar dados do perfil.');
       } finally {
         if (!cancelled) setLoading(false);
       }
