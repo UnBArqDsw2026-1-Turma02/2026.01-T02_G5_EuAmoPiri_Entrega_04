@@ -19,7 +19,7 @@ const MOCK_EXPERIENCES = [
     createdAt: daysAgo(2),
   },
   {
-    id: 2, placeId: 1,
+    id: 2, placeId: 1, userId: 'current', placeName: 'Botequim Mercatto Piri',
     userName: 'João Santos', title: 'Melhor botequim de Pirenópolis',
     text: 'Recomendo demais! A qualidade da comida é impecável e os preços são justos. Já visitei várias vezes e nunca decepcionou. Definitivamente um local imprescindível.',
     rating: 5, cost: '$$$', reactions: { heart: 12, like: 3 },
@@ -33,7 +33,7 @@ const MOCK_EXPERIENCES = [
     createdAt: daysAgo(7),
   },
   {
-    id: 4, placeId: 1,
+    id: 4, placeId: 1, userId: 'current', placeName: 'Botequim Mercatto Piri',
     userName: 'Carlos Mendes', title: 'Ambiente aconchegante',
     text: 'Lugar perfeito para um almoço tranquilo. A comida é saborosa e o ambiente muito agradável. Recomendo especialmente aos finais de semana.',
     rating: 5, cost: '$$', reactions: { heart: 8, like: 2 },
@@ -54,7 +54,7 @@ const MOCK_EXPERIENCES = [
     createdAt: daysAgo(30),
   },
   {
-    id: 7, placeId: 2,
+    id: 7, placeId: 2, userId: 'current', placeName: 'Cachoeira da Rosário',
     userName: 'Lucia Pereira', title: 'Água cristalina!',
     text: 'Uma das cachoeiras mais lindas que já visitei. A trilha é tranquila e a água gelada é perfeita para o calor.',
     rating: 5, cost: '$', reactions: { heart: 9, like: 3 },
@@ -75,7 +75,7 @@ const MOCK_EXPERIENCES = [
     createdAt: daysAgo(6),
   },
   {
-    id: 10, placeId: 6,
+    id: 10, placeId: 6, userId: 'current', placeName: 'Restaurante LovePiri',
     userName: 'Marcos Oliveira', title: 'Boa experiência!',
     text: 'Ambiente muito bonito e a comida estava saborosa. O serviço poderia ser mais ágil, mas no geral valeu muito a visita. Voltarei com certeza.',
     rating: 4, cost: '$$$', reactions: { heart: 7, like: 11 },
@@ -83,7 +83,23 @@ const MOCK_EXPERIENCES = [
   },
 ];
 
+/* ─── helpers ─── */
+function diffDays(isoDate) {
+  return Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000);
+}
+
 /* ─── Funções do adaptor ─── */
+
+/**
+ * Retorna as experiências do usuário logado (mock: userId === 'current').
+ * Inclui `dias` calculado a partir de `createdAt`.
+ * TODO: substituir por GET /me/experiences quando o backend implementar.
+ */
+export async function fetchMyExperiences() {
+  return MOCK_EXPERIENCES
+    .filter((e) => e.userId === 'current')
+    .map((e) => ({ ...e, dias: diffDays(e.createdAt) }));
+}
 
 export async function fetchExperiencesByPlaces(placeIds) {
   const ids = placeIds.map(Number);
@@ -103,20 +119,37 @@ export async function createExperience(placeId, experienceData) {
   // TODO: descomentar quando backend estiver integrado
   // const { data } = await apiClient.post(`/places/${placeId}/experiences`, experienceData);
   // return data;
-  const newExp = { ...experienceData, id: Date.now(), placeId: Number(placeId) };
+  const newExp = {
+    ...experienceData,
+    id:      Date.now(),
+    placeId: Number(placeId),
+    userId:  'current',   // marca como relato do usuário logado
+  };
   MOCK_EXPERIENCES.unshift(newExp);
   return newExp;
 }
 
 export async function updateExperience(placeId, experienceId, experienceData) {
   // TODO: substituir por apiClient.put quando disponível
-  console.warn('[mock] updateExperience:', experienceId);
-  return { ...experienceData, id: experienceId, placeId };
+  const idx = MOCK_EXPERIENCES.findIndex(
+    (e) => String(e.id) === String(experienceId) && String(e.placeId) === String(placeId)
+  );
+  if (idx !== -1) {
+    MOCK_EXPERIENCES[idx] = {
+      ...MOCK_EXPERIENCES[idx],
+      ...experienceData,
+      createdAt: new Date().toISOString(), // atualiza timestamp ao editar
+    };
+  }
+  return MOCK_EXPERIENCES[idx] ?? { ...experienceData, id: experienceId, placeId };
 }
 
 export async function deleteExperience(placeId, experienceId) {
   // TODO: substituir por apiClient.delete quando disponível
-  console.warn('[mock] deleteExperience:', experienceId);
+  const idx = MOCK_EXPERIENCES.findIndex(
+    (e) => String(e.id) === String(experienceId) && String(e.placeId) === String(placeId)
+  );
+  if (idx !== -1) MOCK_EXPERIENCES.splice(idx, 1);
   return { success: true };
 }
 

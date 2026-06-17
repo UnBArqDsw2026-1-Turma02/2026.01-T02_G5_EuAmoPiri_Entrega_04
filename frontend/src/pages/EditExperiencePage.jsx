@@ -24,7 +24,7 @@ export default function EditExperiencePage() {
     setSaving(true);
     try {
       await updateExperience(placeId, id, data);
-      navigate(`/locais/${placeId}`);
+      // não navigate aqui — ExperienceForm mostrará o modal de sucesso
     } finally {
       setSaving(false);
     }
@@ -38,17 +38,23 @@ export default function EditExperiencePage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <nav className={styles.breadcrumb}>
-          <Button variant="neutral" size="sm" as={Link} to={`/locais/${placeId}`}>
-            ← Voltar ao local
+          <Button variant="neutral" size="sm" as={Link} to="/perfil">
+            ← Voltar ao perfil
           </Button>
         </nav>
         <h1 className={styles.title}>Editar relato</h1>
         <div className={styles.formCard}>
           <ExperienceForm
             onSubmit={handleSubmit}
-            onCancel={() => navigate(`/locais/${placeId}`)}
+            onCancel={() => navigate('/perfil')}
             loading={saving}
             defaultValues={experience ?? {}}
+            successTitle="Avaliação atualizada com sucesso!"
+            successText="Suas edições já estão disponíveis no local."
+            successPrimary={{ label: 'Voltar ao meu perfil', to: '/perfil' }}
+            successSecondary={null}
+            errorTitle="Falha ao atualizar avaliação"
+            errorText="Revise os dados e tente novamente."
           />
         </div>
       </div>

@@ -1,9 +1,3 @@
-/**
- * TESTES — ProfilePage  (RF03: Gestão de Perfil do Usuário)
- *
- * Cobre: modo leitura, formulário de edição, seção de senha,
- *        seções por role (morador / turista), botões de ação.
- */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -17,8 +11,25 @@ vi.mock('../presentation/atoms/StarRating', () => ({
   default: ({ value }) => <span data-testid="star-rating">{value} estrelas</span>,
 }))
 
+vi.mock('../infra/adaptor/placeAdaptor', () => ({
+  deletePlace: vi.fn(),
+}))
+vi.mock('../infra/adaptor/experienceAdaptor', () => ({
+  fetchMyExperiences: vi.fn(),
+  deleteExperience: vi.fn(),
+}))
+
 import ProfilePage from './ProfilePage'
 import * as AuthContext from '../context/AuthContext'
+import * as placeAdaptor from '../infra/adaptor/placeAdaptor'
+import * as experienceAdaptor from '../infra/adaptor/experienceAdaptor'
+
+/* ── setup global de mocks de adaptor ── */
+beforeEach(() => {
+  vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([])
+  vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
+  vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
+})
 
 /* ── fixtures ── */
 const mockMorador = {
@@ -64,6 +75,7 @@ function asTurista(extra = {}) {
     isMorador: false,
     ...extra,
   })
+
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -318,29 +330,236 @@ describe('ProfilePage — seções do Morador', () => {
    Seção Turista — Avaliações Cadastradas
    ══════════════════════════════════════════════════════════════ */
 describe('ProfilePage — seções do Turista', () => {
-  beforeEach(() => asTurista())
-
-  it('exibe título "AVALIAÇÕES CADASTRADAS"', () => {
-    renderPage()
-    expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
+  beforeEach(() => {
+    asTurista()
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+    ])
   })
 
-  it('exibe avaliações com local e título', () => {
+  it('exibe título "AVALIAÇÕES CADASTRADAS"', async () => {
     renderPage()
-    expect(screen.getByText('Vista incrível!')).toBeInTheDocument()
-    expect(screen.getByText('Cachoeiras da região')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
+    )
   })
 
-  it('exibe botões "Editar Avaliação" e "Excluir Avaliação" para turista', () => {
+  it('exibe avaliações com local e título', async () => {
     renderPage()
-    const editButtons = screen.getAllByRole('button', { name: /editar avaliação/i })
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
-    expect(editButtons.length).toBeGreaterThan(0)
-    expect(deleteButtons.length).toBeGreaterThan(0)
+    await waitFor(() => {
+      expect(screen.getByText('Melhor botequim de Pirenópolis')).toBeInTheDocument()
+      expect(screen.getByText('Água cristalina!')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe botões "Editar Avaliação" e "Excluir Avaliação" para turista', async () => {
+    renderPage()
+    await waitFor(() => {
+      const editButtons = screen.getAllByRole('link', { name: /editar avaliação/i })
+      const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+      expect(editButtons.length).toBeGreaterThan(0)
+      expect(deleteButtons.length).toBeGreaterThan(0)
+    })
   })
 
   it('NÃO exibe seção "LOCAIS CADASTRADOS" para turista', () => {
     renderPage()
     expect(screen.queryByText('LOCAIS CADASTRADOS')).not.toBeInTheDocument()
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Exclusão de local (Morador)
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — exclusão de local (Morador)', () => {
+  beforeEach(() => {
+    asMorador()
+    vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
+  })
+
+  it('abre diálogo de confirmação ao clicar em "Excluir Local"', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+  })
+
+  it('"Cancelar" fecha o diálogo de confirmação', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
+
+    await waitFor(() =>
+      expect(screen.queryByText(/tem certeza que deseja excluir/i)).not.toBeInTheDocument()
+    )
+  })
+
+  it('após confirmar: exibe "❤ EuAmoPiri" e "Local excluído com sucesso!"', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument()
+      expect(screen.getByText('Local excluído com sucesso!')).toBeInTheDocument()
+    })
+  })
+
+  it('clicar em "Fechar" no estado de sucesso fecha o modal', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+    await waitFor(() =>
+      expect(screen.getByText('Local excluído com sucesso!')).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /fechar/i }))
+
+    await waitFor(() =>
+      expect(screen.queryByText('Local excluído com sucesso!')).not.toBeInTheDocument()
+    )
+  })
+
+  it('quando deletePlace lança exceção: exibe "❤ EuAmoPiri" e "Erro ao excluir local"', async () => {
+    vi.mocked(placeAdaptor.deletePlace).mockRejectedValue(new Error('Servidor indisponível'))
+    const user = userEvent.setup()
+    renderPage()
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument()
+      expect(screen.getByText('Erro ao excluir local')).toBeInTheDocument()
+    })
+  })
+
+  it('clicar em "Voltar" no estado de erro volta para a confirmação', async () => {
+    vi.mocked(placeAdaptor.deletePlace).mockRejectedValue(new Error('Erro'))
+    const user = userEvent.setup()
+    renderPage()
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+    await waitFor(() =>
+      expect(screen.getByText('Erro ao excluir local')).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /voltar/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Exclusão de avaliação (Turista)
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — exclusão de avaliação (Turista)', () => {
+  beforeEach(() => {
+    asTurista()
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+    ])
+    vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
+  })
+
+  it('abre diálogo de confirmação ao clicar em "Excluir Avaliação"', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+    )
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+  })
+
+  it('após confirmar: exibe "Avaliação excluída com sucesso!"', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+    )
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText('Avaliação excluída com sucesso!')).toBeInTheDocument()
+    )
+  })
+
+  it('quando deleteExperience lança exceção: exibe "Erro ao excluir avaliação"', async () => {
+    vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('Erro'))
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+    )
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText('Erro ao excluir avaliação')).toBeInTheDocument()
+    )
   })
 })

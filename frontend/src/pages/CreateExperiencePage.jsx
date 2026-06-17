@@ -30,7 +30,8 @@ export default function CreateExperiencePage() {
     try {
       await createExperience(placeId, {
         ...data,
-        userName: user?.name ?? 'Turista',
+        userName:  user?.name  ?? 'Turista',
+        placeName: place?.name ?? '',
         reactions: { heart: 0, like: 0 },
         createdAt: new Date().toISOString(),
       });

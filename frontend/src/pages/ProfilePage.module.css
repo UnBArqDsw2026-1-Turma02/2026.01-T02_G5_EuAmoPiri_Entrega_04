@@ -355,14 +355,14 @@
 }
 
 .pinIcon {
-  color: var(--color-teal);
+  color: #1A7DD9;
   flex-shrink: 0;
 }
 
 .avaliacaoLocal {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-teal);
+  color: #1A7DD9;
 }
 
 .avaliacaoDias {
@@ -384,6 +384,18 @@
   line-height: 1.5;
   flex: 1;
   margin: 0;
+}
+
+/* ── Nome do local e ícone nos relatos do Morador ── */
+.relatoLocal {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #1A7DD9;
+}
+
+.relatoPinIcon {
+  color: #1A7DD9;
+  flex-shrink: 0;
 }
 
 /* ── Botões de ação em cards ── */
@@ -469,6 +481,96 @@
 .passwordActions {
   display: flex;
   justify-content: flex-end;
+}
+
+/* ── Modal de confirmação de exclusão ── */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.confirmDialog {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.confirmTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.confirmBody {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirmError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin: 0;
+}
+
+.confirmDialogSuccess {
+  border: 2px solid var(--color-primary, #2e7d32);
+  text-align: center;
+  align-items: center;
+}
+
+.confirmDialogError {
+  border: 2px solid #e53935;
+  text-align: center;
+  align-items: center;
+}
+
+.confirmLogo {
+  font-size: var(--font-size-lg, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brown, #7F5539);
+  margin: 0;
+}
+
+.confirmSuccessIcon {
+  font-size: 2.5rem;
+  color: var(--color-primary, #2e7d32);
+  text-align: center;
+  margin: 0;
+  line-height: 1;
+}
+
+.confirmErrIcon {
+  color: #e53935;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.confirmActionsCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-1);
 }
 
 /* ── Mobile ── */

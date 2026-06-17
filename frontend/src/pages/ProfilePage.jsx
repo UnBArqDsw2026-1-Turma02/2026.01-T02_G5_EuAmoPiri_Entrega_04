@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { MdEdit, MdOutlineDelete, MdLocationOn } from 'react-icons/md';
@@ -8,6 +8,8 @@ import Button from '../presentation/atoms/Button';
 import Badge from '../presentation/atoms/Badge';
 import StarRating from '../presentation/atoms/StarRating';
 import FormField from '../presentation/molecules/FormField';
+import { deletePlace } from '../infra/adaptor/placeAdaptor';
+import { deleteExperience, fetchMyExperiences } from '../infra/adaptor/experienceAdaptor';
 import styles from './ProfilePage.module.css';
 
 /* ─── helpers ─── */
@@ -38,12 +40,6 @@ const MOCK_LOCAIS_MORADOR = [
   { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', price: '$',   rating: 4.9, avaliacoes: 1000 },
 ];
 
-const MOCK_AVALIACOES_TURISTA = [
-  { id: 1, local: 'Cachoeiras da região', titulo: 'Vista incrível!', texto: 'Com certeza voltarei na próxima viagem! O lugar é simplesmente deslumbrante.', rating: 5, dias: 6 },
-  { id: 2, local: 'Restaurante típico',   titulo: 'Comida deliciosa',  texto: 'Atendimento ótimo, ambiente acolhedor. Recomendo o prato do dia.', rating: 4, dias: 12 },
-  { id: 3, local: 'Trilha das pedras',    titulo: 'Paisagem incrível', texto: 'Recomendo muito! A trilha é bem sinalizada e o visual compensa cada passo.', rating: 5, dias: 24 },
-  { id: 4, local: 'Pousada das Cavalhadas', titulo: 'Quero morar aqui...', texto: 'Sempre indico para os amigos que vêm visitar. O café da manhã tem aquele gostinho de fazenda.', rating: 5, dias: 66 },
-];
 
 /* ─── sub-componente: linha de info em modo leitura ─── */
 function InfoRow({ label, value }) {
@@ -57,6 +53,34 @@ function InfoRow({ label, value }) {
 
 /* ─── seção Morador ─── */
 function MoradorSections() {
+  const [locais, setLocais]             = useState(MOCK_LOCAIS_MORADOR);
+  const [confirmId, setConfirmId]       = useState(null); // id do local a excluir
+  const [deleting, setDeleting]         = useState(false);
+  const [deleteErr, setDeleteErr]       = useState(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+
+  const toDelete = locais.find((l) => l.id === confirmId);
+
+  function closeConfirm() {
+    setConfirmId(null);
+    setDeleteSuccess(false);
+    setDeleteErr(null);
+  }
+
+  async function handleDeleteLocal() {
+    setDeleting(true);
+    setDeleteErr(null);
+    try {
+      await deletePlace(confirmId);
+      setLocais((prev) => prev.filter((l) => l.id !== confirmId));
+      setDeleteSuccess(true);
+    } catch {
+      setDeleteErr('Erro ao excluir. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <>
       <div className={styles.sectionCard}>
@@ -65,8 +89,8 @@ function MoradorSections() {
           {MOCK_RELATOS_MORADOR.map((r) => (
             <div key={r.id} className={styles.relatoCard}>
               <div className={styles.avaliacaoMeta}>
-                <MdLocationOn size={16} className={styles.pinIcon} />
-                <span className={styles.avaliacaoLocal}>{r.local}</span>
+                <MdLocationOn size={16} className={styles.relatoPinIcon} />
+                <span className={styles.relatoLocal}>{r.local}</span>
                 <span className={styles.avaliacaoDias}>há {r.dias} dias</span>
               </div>
               <span className={styles.relatoAutor}>{r.autor}</span>
@@ -80,7 +104,10 @@ function MoradorSections() {
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>LOCAIS CADASTRADOS</h2>
         <div className={styles.locaisLista}>
-          {MOCK_LOCAIS_MORADOR.map((l) => (
+          {locais.length === 0 && (
+            <p className={styles.empty}>Nenhum local cadastrado.</p>
+          )}
+          {locais.map((l) => (
             <div key={l.id} className={styles.localRow}>
               <div className={styles.localInfo}>
                 <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
@@ -96,10 +123,19 @@ function MoradorSections() {
                 </div>
               </div>
               <div className={styles.localActions}>
-                <Button variant="secondary" size="sm" as={Link} to={`/locais/${l.id}`}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  as={Link}
+                  to={`/morador/locais/${l.id}/editar`}
+                >
                   Editar Local
                 </Button>
-                <Button variant="rust" size="sm" onClick={() => {}}>
+                <Button
+                  variant="rust"
+                  size="sm"
+                  onClick={() => { setDeleteErr(null); setConfirmId(l.id); }}
+                >
                   Excluir Local
                 </Button>
               </div>
@@ -107,34 +143,209 @@ function MoradorSections() {
           ))}
         </div>
       </div>
+
+      {/* ── Modal de confirmação / sucesso / erro de exclusão ── */}
+      {confirmId && (
+        <div
+          className={styles.confirmOverlay}
+          onClick={(e) => e.target === e.currentTarget && !deleting && closeConfirm()}
+        >
+          <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
+            {deleteSuccess ? (
+              /* Estado de sucesso */
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
+                <h3 className={styles.confirmTitle}>Local excluído com sucesso!</h3>
+                <p className={styles.confirmBody}>O local foi removido da sua lista.</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="primary" fullWidth onClick={closeConfirm}>Fechar</Button>
+                </div>
+              </>
+            ) : deleteErr ? (
+              /* Estado de erro */
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
+                <h3 className={styles.confirmTitle}>Erro ao excluir local</h3>
+                <p className={styles.confirmBody}>{deleteErr}</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="neutral" fullWidth onClick={() => setDeleteErr(null)}>Voltar</Button>
+                </div>
+              </>
+            ) : (
+              /* Estado de confirmação */
+              <>
+                <h3 className={styles.confirmTitle}>Excluir local</h3>
+                <p className={styles.confirmBody}>
+                  Tem certeza que deseja excluir{' '}
+                  <strong>{toDelete?.nome}</strong>?{' '}
+                  Esta ação não pode ser desfeita.
+                </p>
+                <div className={styles.confirmActions}>
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    onClick={closeConfirm}
+                    disabled={deleting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="rust"
+                    size="sm"
+                    loading={deleting}
+                    onClick={handleDeleteLocal}
+                  >
+                    Excluir
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 /* ─── seção Turista ─── */
 function TuristaSections() {
+  const [avaliacoes, setAvaliacoes]       = useState([]);
+  const [confirmId, setConfirmId]         = useState(null); // id da avaliação a excluir
+  const [deleting, setDeleting]           = useState(false);
+  const [deleteErr, setDeleteErr]         = useState(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+
+  /* Carrega do adaptor para sempre refletir edições recentes */
+  useEffect(() => {
+    fetchMyExperiences().then(setAvaliacoes);
+  }, []);
+
+  const toDelete = avaliacoes.find((a) => a.id === confirmId);
+
+  function closeConfirm() {
+    setConfirmId(null);
+    setDeleteSuccess(false);
+    setDeleteErr(null);
+  }
+
+  async function handleDeleteAvaliacao() {
+    setDeleting(true);
+    setDeleteErr(null);
+    try {
+      await deleteExperience(toDelete.placeId, confirmId);
+      setAvaliacoes((prev) => prev.filter((a) => a.id !== confirmId));
+      setDeleteSuccess(true);
+    } catch {
+      setDeleteErr('Erro ao excluir. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <div className={styles.sectionCard}>
-      <h2 className={styles.sectionTitle}>AVALIAÇÕES CADASTRADAS</h2>
-      <div className={styles.avaliacoesGrid}>
-        {MOCK_AVALIACOES_TURISTA.map((a) => (
-          <div key={a.id} className={styles.avaliacaoCard}>
-            <div className={styles.avaliacaoMeta}>
-              <MdLocationOn size={16} className={styles.pinIcon} />
-              <span className={styles.avaliacaoLocal}>{a.local}</span>
-              <span className={styles.avaliacaoDias}>há {a.dias} dias</span>
+    <>
+      <div className={styles.sectionCard}>
+        <h2 className={styles.sectionTitle}>AVALIAÇÕES CADASTRADAS</h2>
+        <div className={styles.avaliacoesGrid}>
+          {avaliacoes.length === 0 && (
+            <p className={styles.empty}>Nenhuma avaliação cadastrada.</p>
+          )}
+          {avaliacoes.map((a) => (
+            <div key={a.id} className={styles.avaliacaoCard}>
+              <div className={styles.avaliacaoMeta}>
+                <MdLocationOn size={16} className={styles.pinIcon} />
+                <span className={styles.avaliacaoLocal}>{a.placeName}</span>
+                <span className={styles.avaliacaoDias}>há {a.dias} dias</span>
+              </div>
+              <StarRating value={a.rating} readonly size="sm" />
+              {a.title && <p className={styles.avaliacaoTitulo}>{a.title}</p>}
+              <p className={styles.avaliacaoTexto}>"{a.text}"</p>
+              <div className={styles.relatoActions}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  as={Link}
+                  to={`/locais/${a.placeId}/relatos/${a.id}/editar`}
+                >
+                  Editar Avaliação
+                </Button>
+                <Button
+                  variant="rust"
+                  size="sm"
+                  onClick={() => { setDeleteErr(null); setConfirmId(a.id); }}
+                >
+                  Excluir Avaliação
+                </Button>
+              </div>
             </div>
-            <StarRating value={a.rating} readonly size="sm" />
-            {a.titulo && <p className={styles.avaliacaoTitulo}>{a.titulo}</p>}
-            <p className={styles.avaliacaoTexto}>"{a.texto}"</p>
-            <div className={styles.relatoActions}>
-              <Button variant="secondary" size="sm">Editar Avaliação</Button>
-              <Button variant="rust" size="sm">Excluir Avaliação</Button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* ── Modal de confirmação / sucesso / erro de exclusão ── */}
+      {confirmId && (
+        <div
+          className={styles.confirmOverlay}
+          onClick={(e) => e.target === e.currentTarget && !deleting && closeConfirm()}
+        >
+          <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
+            {deleteSuccess ? (
+              /* Estado de sucesso */
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
+                <h3 className={styles.confirmTitle}>Avaliação excluída com sucesso!</h3>
+                <p className={styles.confirmBody}>Sua avaliação foi removida.</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="primary" fullWidth onClick={closeConfirm}>Fechar</Button>
+                </div>
+              </>
+            ) : deleteErr ? (
+              /* Estado de erro */
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
+                <h3 className={styles.confirmTitle}>Erro ao excluir avaliação</h3>
+                <p className={styles.confirmBody}>{deleteErr}</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="neutral" fullWidth onClick={() => setDeleteErr(null)}>Voltar</Button>
+                </div>
+              </>
+            ) : (
+              /* Estado de confirmação */
+              <>
+                <h3 className={styles.confirmTitle}>Excluir avaliação</h3>
+                <p className={styles.confirmBody}>
+                  Tem certeza que deseja excluir sua avaliação de{' '}
+                  <strong>{toDelete?.placeName}</strong>?{' '}
+                  Esta ação não pode ser desfeita.
+                </p>
+                <div className={styles.confirmActions}>
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    onClick={closeConfirm}
+                    disabled={deleting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="rust"
+                    size="sm"
+                    loading={deleting}
+                    onClick={handleDeleteAvaliacao}
+                  >
+                    Excluir
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

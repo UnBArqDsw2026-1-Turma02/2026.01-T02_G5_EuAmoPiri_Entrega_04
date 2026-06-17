@@ -8,7 +8,19 @@ import styles from './ExperienceForm.module.css';
 
 const COST_OPTIONS = ['$', '$$', '$$$', '$$$$', '$$$$$'];
 
-export default function ExperienceForm({ onSubmit, onCancel, loading = false, defaultValues = {} }) {
+export default function ExperienceForm({
+  onSubmit,
+  onCancel,
+  loading       = false,
+  defaultValues = {},
+  /* Customização dos modais de resultado */
+  successTitle   = 'Avaliação enviada com sucesso',
+  successText    = 'Sua experiência vai ajudar outros viajantes.',
+  successPrimary = { label: 'Avaliar outros lugares', to: '/locais' },
+  successSecondary = { label: 'Voltar para a página inicial', to: '/' },
+  errorTitle   = 'Falha ao enviar avaliação',
+  errorText    = 'Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.',
+}) {
   const {
     register,
     handleSubmit,
@@ -40,34 +52,41 @@ export default function ExperienceForm({ onSubmit, onCancel, loading = false, de
     }
   }
 
-  /* ── Modal sucesso ── */
-  if (submitStatus === 'success') {
-    return (
-      <div className={styles.resultModal}>
-        <p className={styles.resultLogo}>❤ EuAmoPiri</p>
-        <span className={styles.resultIcon} aria-hidden="true">✓</span>
-        <h2 className={styles.resultTitle}>Avaliação enviada com sucesso</h2>
-        <p className={styles.resultText}>Sua experiência vai ajudar outros viajantes.</p>
-        <Button variant="primary" fullWidth as={Link} to="/locais">Avaliar outros lugares</Button>
-        <Button variant="neutral" fullWidth as={Link} to="/">Voltar para a página inicial</Button>
-      </div>
-    );
-  }
-
-  /* ── Modal erro ── */
-  if (submitStatus === 'error') {
-    return (
-      <div className={styles.resultModal}>
-        <p className={styles.resultLogo}>❤ EuAmoPiri</p>
-        <span className={`${styles.resultIcon} ${styles.resultIconError}`} aria-hidden="true">⚠️</span>
-        <h2 className={styles.resultTitle}>Falha ao enviar avaliação</h2>
-        <p className={styles.resultText}>Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.</p>
-        <Button variant="neutral" fullWidth onClick={() => setSubmitStatus(null)}>Voltar</Button>
-      </div>
-    );
-  }
-
   return (
+    <>
+    {/* ── Overlay de sucesso ── */}
+    {submitStatus === 'success' && (
+      <div className={styles.resultModal} role="dialog" aria-modal="true">
+        <div className={styles.resultCard}>
+          <p className={styles.resultLogo}>❤ EuAmoPiri</p>
+          <span className={styles.resultIcon} aria-hidden="true">✓</span>
+          <h2 className={styles.resultTitle}>{successTitle}</h2>
+          <p className={styles.resultText}>{successText}</p>
+          <div className={styles.resultActions}>
+            <Button variant="primary" fullWidth as={Link} to={successPrimary.to}>{successPrimary.label}</Button>
+            {successSecondary && (
+              <Button variant="neutral" fullWidth as={Link} to={successSecondary.to}>{successSecondary.label}</Button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Overlay de erro ── */}
+    {submitStatus === 'error' && (
+      <div className={styles.resultModal} role="dialog" aria-modal="true">
+        <div className={`${styles.resultCard} ${styles.resultCardError}`}>
+          <p className={styles.resultLogo}>❤ EuAmoPiri</p>
+          <span className={`${styles.resultIcon} ${styles.resultIconError}`} aria-hidden="true">⚠️</span>
+          <h2 className={styles.resultTitle}>{errorTitle}</h2>
+          <p className={styles.resultText}>{errorText}</p>
+          <div className={styles.resultActions}>
+            <Button variant="neutral" fullWidth onClick={() => setSubmitStatus(null)}>Voltar</Button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <form className={styles.form} onSubmit={handleSubmit(onFormSubmit)} noValidate>
 
       {/* ── Avaliação em estrelas ── */}
@@ -157,5 +176,6 @@ export default function ExperienceForm({ onSubmit, onCancel, loading = false, de
         </Button>
       </div>
     </form>
+    </>
   );
 }

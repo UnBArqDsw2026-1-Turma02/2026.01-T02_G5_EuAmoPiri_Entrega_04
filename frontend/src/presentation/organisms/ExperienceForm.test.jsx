@@ -99,3 +99,105 @@ describe('ExperienceForm — RF05', () => {
     expect(screen.getByLabelText(/seu comentário/i)).toHaveValue('Relato pré-existente de teste longo')
   })
 })
+
+describe('ExperienceForm — overlays de resultado', () => {
+  it('exibe overlay de sucesso com logo e successTitle após submit bem-sucedido', async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    renderForm(
+      <ExperienceForm
+        onSubmit={handleSubmit}
+        successTitle="Avaliação enviada com sucesso"
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: '5 estrelas' }))
+    await user.type(
+      screen.getByLabelText(/seu comentário/i),
+      'Lugar incrível, voltaria com certeza. Pirenópolis é maravilhosa!'
+    )
+    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument()
+      expect(screen.getByText('Avaliação enviada com sucesso')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe overlay de erro com errorTitle quando onSubmit lança exceção', async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn().mockRejectedValue(new Error('Falha na rede'))
+    renderForm(
+      <ExperienceForm
+        onSubmit={handleSubmit}
+        errorTitle="Falha ao enviar avaliação"
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: '5 estrelas' }))
+    await user.type(
+      screen.getByLabelText(/seu comentário/i),
+      'Lugar incrível, voltaria com certeza. Pirenópolis é maravilhosa!'
+    )
+    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument()
+      expect(screen.getByText('Falha ao enviar avaliação')).toBeInTheDocument()
+    })
+  })
+
+  it('clicar em "Voltar" no overlay de erro oculta o overlay e exibe o formulário novamente', async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn().mockRejectedValue(new Error('Erro'))
+    renderForm(<ExperienceForm onSubmit={handleSubmit} />)
+
+    await user.click(screen.getByRole('button', { name: '5 estrelas' }))
+    await user.type(
+      screen.getByLabelText(/seu comentário/i),
+      'Lugar incrível, voltaria com certeza. Pirenópolis é maravilhosa!'
+    )
+    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }))
+
+    await waitFor(() => expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument())
+
+    await user.click(screen.getByRole('button', { name: /voltar/i }))
+
+    await waitFor(() => {
+      expect(screen.queryByText('❤ EuAmoPiri')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /enviar avaliação/i })).toBeInTheDocument()
+    })
+  })
+
+  it('props customizadas aparecem no overlay de sucesso; quando successSecondary é null apenas um botão de ação é exibido', async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn().mockResolvedValue(undefined)
+    renderForm(
+      <ExperienceForm
+        onSubmit={handleSubmit}
+        successTitle="Avaliação atualizada com sucesso!"
+        successText="Seu relato foi salvo."
+        successPrimary={{ label: 'Voltar ao meu perfil', to: '/perfil' }}
+        successSecondary={null}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: '5 estrelas' }))
+    await user.type(
+      screen.getByLabelText(/seu comentário/i),
+      'Lugar incrível, voltaria com certeza. Pirenópolis é maravilhosa!'
+    )
+    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação atualizada com sucesso!')).toBeInTheDocument()
+      expect(screen.getByText('Seu relato foi salvo.')).toBeInTheDocument()
+      expect(screen.getByText('Voltar ao meu perfil')).toBeInTheDocument()
+    })
+
+    // Apenas um botão de ação (o primário), não há botão secundário
+    const actionLinks = screen.getAllByRole('link')
+    expect(actionLinks).toHaveLength(1)
+    expect(actionLinks[0]).toHaveTextContent('Voltar ao meu perfil')
+  })
+})
