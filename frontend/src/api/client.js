@@ -42,6 +42,17 @@ apiClient.interceptors.response.use(
   }
 );
 
+export async function postFormData(url, formData) {
+  const token = localStorage.getItem('euamopiri_token');
+  const response = await axios.post(`${baseURL}${url}`, formData, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    timeout: 60000,
+  });
+  return response.data;
+}
+
 export async function patchFormData(url, formData) {
   const token = localStorage.getItem('euamopiri_token');
   const response = await axios.patch(`${baseURL}${url}`, formData, {
