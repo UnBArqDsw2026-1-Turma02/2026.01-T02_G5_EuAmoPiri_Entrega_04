@@ -61,6 +61,12 @@
   display: none;
 }
 
+.photoHint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
 .headerInfo {
   display: flex;
   flex-direction: column;
@@ -73,6 +79,11 @@
   color: var(--color-text);
   margin: 0;
   line-height: 1.2;
+}
+
+.userNameSuffix {
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
 }
 
 .userMeta {
@@ -227,6 +238,13 @@
   color: var(--color-text-muted);
 }
 
+.relatoTitulo {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+}
+
 .relatoTexto {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
@@ -244,7 +262,52 @@
   color: var(--color-text-muted);
 }
 
-/* ── Locais (morador) — lista vertical ── */
+/* ── Meus locais (morador) — scroll horizontal como no protótipo ── */
+.locaisGrid {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.locaisGrid::-webkit-scrollbar {
+  height: 4px;
+}
+.locaisGrid::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 2px;
+}
+.locaisGrid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.localCard {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 280px;
+  max-width: 320px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--color-bg-card);
+}
+
+.localThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* ── Locais (morador) — lista vertical (legado) ── */
 .locaisLista {
   display: flex;
   flex-direction: column;
@@ -282,6 +345,11 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
+  text-decoration: none;
+}
+
+.localNome:hover {
+  color: var(--color-primary);
 }
 
 .localCat {
@@ -308,6 +376,20 @@
   display: flex;
   gap: var(--space-2);
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.sectionLoading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.emptyInline {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  padding: var(--space-2) 0;
 }
 
 /* ── Avaliações (turista) — scroll horizontal ── */
@@ -612,7 +694,8 @@
     grid-template-columns: 1fr;
   }
 
-  .localRow {
+  .localRow,
+  .localCard {
     flex-direction: column;
     align-items: flex-start;
   }

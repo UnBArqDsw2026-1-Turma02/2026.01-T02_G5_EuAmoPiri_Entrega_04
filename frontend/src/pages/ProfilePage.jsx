@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { MdEdit, MdOutlineDelete, MdLocationOn } from 'react-icons/md';
@@ -7,13 +7,15 @@ import Avatar from '../presentation/atoms/Avatar';
 import Button from '../presentation/atoms/Button';
 import Badge from '../presentation/atoms/Badge';
 import StarRating from '../presentation/atoms/StarRating';
+import Spinner from '../presentation/atoms/Spinner';
 import FormField from '../presentation/molecules/FormField';
-import { deletePlace } from '../infra/adaptor/placeAdaptor';
-import { deleteExperience, fetchMyExperiences } from '../infra/adaptor/experienceAdaptor';
+import { deletePlace, fetchMyPlaces } from '../infra/adaptor/placeAdaptor';
+import { deleteExperience, fetchMyExperiences, fetchExperiencesByPlaces } from '../infra/adaptor/experienceAdaptor';
+import { enrichPlacesWithExperienceStats, timeAgo, categoryIcon } from '../utils/placeStats';
 import styles from './ProfilePage.module.css';
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png'];
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
 function roleLabel(role) {
   if (role === 'morador') return 'Morador';
@@ -38,40 +40,69 @@ function validatePhotoFile(file) {
   return null;
 }
 
-const MOCK_RELATOS_MORADOR = [
-  { id: 1, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país e tenho propriedade para dizer que já cansara de restaurantes melhores em Pirenópolis.', likes: 3 },
-  { id: 2, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
-  { id: 3, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
-];
-
-const MOCK_LOCAIS_MORADOR = [
-  { id: 1, nome: 'Botequim Mercatto Piri', categoria: 'gastronomia', icon: '🏛️', rating: 4.9, avaliacoes: 100 },
-  { id: 2, nome: 'Cachoeira da Rosário', categoria: 'natureza', icon: '🏞️', rating: 4.8, avaliacoes: 50 },
-  { id: 3, nome: 'Galeria de Arte Local', categoria: 'experiencia', icon: '🎨', rating: 4.7, avaliacoes: 10 },
-  { id: 4, nome: 'Trilha do Poço Azul', categoria: 'natureza', icon: '🌿', rating: 4.6, avaliacoes: 300 },
-  { id: 5, nome: 'Igreja Matriz de Pirenópolis', categoria: 'histórico', icon: '⛪', rating: 4.9, avaliacoes: 1000 },
-];
-
-
-/* ─── sub-componente: linha de info em modo leitura ─── */
-function InfoRow({ label, value }) {
-  return (
-    <div className={styles.infoRow}>
-      <span className={styles.infoLabel}>{label}</span>
-      <span className={styles.infoValue}>{value || '—'}</span>
-    </div>
-  );
+function totalLikes(reactions = {}) {
+  return Object.values(reactions).reduce((s, v) => s + (v || 0), 0);
 }
 
-/* ─── seção Morador ─── */
-function MoradorSections() {
-  const [locais, setLocais] = useState(MOCK_LOCAIS_MORADOR);
-  const [confirmId, setConfirmId] = useState(null); // id do local a excluir
+/* ─── seção Morador (painel consolidado em /perfil) ─── */
+function MoradorSections({ user, onRelatosCount }) {
+  const [places, setPlaces] = useState([]);
+  const [experiences, setExperiences] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteErr, setDeleteErr] = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
-  const toDelete = locais.find((l) => l.id === confirmId);
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+
+    (async () => {
+      try {
+        const myPlaces = await fetchMyPlaces(user.id);
+        if (cancelled) return;
+        setPlaces(myPlaces);
+
+        if (myPlaces.length > 0) {
+          const exps = await fetchExperiencesByPlaces(myPlaces.map((p) => p.id));
+          if (!cancelled) setExperiences(exps);
+        } else {
+          setExperiences([]);
+        }
+      } catch {
+        if (!cancelled) setLoadError('Erro ao carregar dados do painel.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  useEffect(() => {
+    onRelatosCount?.(experiences.length);
+  }, [experiences, onRelatosCount]);
+
+  const placesWithStats = useMemo(
+    () => enrichPlacesWithExperienceStats(places, experiences),
+    [places, experiences],
+  );
+
+  const placeMap = useMemo(
+    () => Object.fromEntries(placesWithStats.map((p) => [p.id, p])),
+    [placesWithStats],
+  );
+
+  const latestRelatos = useMemo(
+    () => [...experiences].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    [experiences],
+  );
+
+  const toDelete = placesWithStats.find((l) => l.id === confirmId);
 
   function closeConfirm() {
     setConfirmId(null);
@@ -84,7 +115,8 @@ function MoradorSections() {
     setDeleteErr(null);
     try {
       await deletePlace(confirmId);
-      setLocais((prev) => prev.filter((l) => l.id !== confirmId));
+      setPlaces((prev) => prev.filter((l) => l.id !== confirmId));
+      setExperiences((prev) => prev.filter((e) => e.placeId !== confirmId));
       setDeleteSuccess(true);
     } catch {
       setDeleteErr('Erro ao excluir. Tente novamente.');
@@ -93,70 +125,111 @@ function MoradorSections() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className={styles.sectionLoading}>
+        <Spinner size="md" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return <p className={styles.empty}>{loadError}</p>;
+  }
+
   return (
     <>
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>ÚLTIMOS RELATOS</h2>
         <div className={styles.relatosGrid}>
-          {MOCK_RELATOS_MORADOR.map((r) => (
-            <div key={r.id} className={styles.relatoCard}>
-              <div className={styles.avaliacaoMeta}>
-                <MdLocationOn size={16} className={styles.relatoPinIcon} />
-                <span className={styles.relatoLocal}>{r.local}</span>
-                <span className={styles.avaliacaoDias}>há {r.dias} dias</span>
-              </div>
-              <span className={styles.relatoAutor}>{r.autor}</span>
-              <p className={styles.relatoTexto}>{r.texto}</p>
-              <span className={styles.relatoLikes}>👍 {r.likes}</span>
-            </div>
-          ))}
+          {latestRelatos.length === 0 && (
+            <p className={styles.emptyInline}>Ainda não há relatos nos seus locais.</p>
+          )}
+          {latestRelatos.map((exp) => {
+            const placeName = placeMap[exp.placeId]?.name ?? 'Local';
+            const likes = totalLikes(exp.reactions);
+            return (
+              <article key={exp.id} className={styles.relatoCard}>
+                <div className={styles.avaliacaoMeta}>
+                  <MdLocationOn size={16} className={styles.relatoPinIcon} />
+                  <Link to={`/locais/${exp.placeId}`} className={styles.relatoLocal}>
+                    {placeName}
+                  </Link>
+                  <span className={styles.avaliacaoDias}>{timeAgo(exp.createdAt)}</span>
+                </div>
+                <span className={styles.relatoAutor}>{exp.userName}</span>
+                <StarRating value={exp.rating ?? 0} readonly size="sm" />
+                {exp.title && <p className={styles.relatoTitulo}>{exp.title}</p>}
+                <p className={styles.relatoTexto}>{exp.text}</p>
+                {likes > 0 && (
+                  <span className={styles.relatoLikes}>👍 {likes}</span>
+                )}
+              </article>
+            );
+          })}
         </div>
       </div>
 
       <div className={styles.sectionCard}>
-        <h2 className={styles.sectionTitle}>LOCAIS CADASTRADOS</h2>
-        <div className={styles.locaisLista}>
-          {locais.length === 0 && (
-            <p className={styles.empty}>Nenhum local cadastrado.</p>
+        <h2 className={styles.sectionTitle}>MEUS LOCAIS</h2>
+        <div className={styles.locaisGrid}>
+          {placesWithStats.length === 0 && (
+            <p className={styles.emptyInline}>Nenhum local cadastrado.</p>
           )}
-          {locais.map((l) => (
-            <div key={l.id} className={styles.localRow}>
-              <div className={styles.localInfo}>
-                <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
-                <div>
-                  <span className={styles.localNome}>{l.nome}</span>
-                  <span className={styles.localCat}>{l.categoria}</span>
-                  <div className={styles.localRating}>
-                    <StarRating value={Math.round(l.rating)} readonly size="sm" />
-                    <span className={styles.localMeta}>
-                      {l.rating.toFixed(1)} — {l.avaliacoes} Avaliações
+          {placesWithStats.map((place) => {
+            const reviewsCount = place.reviewsCount ?? 0;
+            const ratingLabel = place.rating != null ? Number(place.rating).toFixed(1) : '—';
+            return (
+              <div key={place.id} className={styles.localCard}>
+                <div className={styles.localInfo}>
+                  {place.coverImage ? (
+                    <img
+                      src={place.coverImage}
+                      alt=""
+                      className={styles.localThumb}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className={styles.localIcon} aria-hidden="true">
+                      {categoryIcon(place.category)}
                     </span>
+                  )}
+                  <div>
+                    <Link to={`/locais/${place.id}`} className={styles.localNome}>
+                      {place.name}
+                    </Link>
+                    <span className={styles.localCat}>{place.category}</span>
+                    <div className={styles.localRating}>
+                      <StarRating value={Math.round(place.rating ?? 0)} readonly size="sm" />
+                      <span className={styles.localMeta}>
+                        {ratingLabel} — {reviewsCount} {reviewsCount === 1 ? 'Avaliação' : 'Avaliações'}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                <div className={styles.localActions}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    as={Link}
+                    to={`/morador/locais/${place.id}/editar`}
+                  >
+                    Editar Local
+                  </Button>
+                  <Button
+                    variant="rust"
+                    size="sm"
+                    onClick={() => { setDeleteErr(null); setConfirmId(place.id); }}
+                  >
+                    Excluir Local
+                  </Button>
+                </div>
               </div>
-              <div className={styles.localActions}>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  as={Link}
-                  to={`/morador/locais/${l.id}/editar`}
-                >
-                  Editar Local
-                </Button>
-                <Button
-                  variant="rust"
-                  size="sm"
-                  onClick={() => { setDeleteErr(null); setConfirmId(l.id); }}
-                >
-                  Excluir Local
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* ── Modal de confirmação / sucesso / erro de exclusão ── */}
       {confirmId && (
         <div
           className={styles.confirmOverlay}
@@ -164,7 +237,6 @@ function MoradorSections() {
         >
           <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
             {deleteSuccess ? (
-              /* Estado de sucesso */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
@@ -175,7 +247,6 @@ function MoradorSections() {
                 </div>
               </>
             ) : deleteErr ? (
-              /* Estado de erro */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
@@ -186,29 +257,18 @@ function MoradorSections() {
                 </div>
               </>
             ) : (
-              /* Estado de confirmação */
               <>
                 <h3 className={styles.confirmTitle}>Excluir local</h3>
                 <p className={styles.confirmBody}>
                   Tem certeza que deseja excluir{' '}
-                  <strong>{toDelete?.nome}</strong>?{' '}
+                  <strong>{toDelete?.name}</strong>?{' '}
                   Esta ação não pode ser desfeita.
                 </p>
                 <div className={styles.confirmActions}>
-                  <Button
-                    variant="neutral"
-                    size="sm"
-                    onClick={closeConfirm}
-                    disabled={deleting}
-                  >
+                  <Button variant="neutral" size="sm" onClick={closeConfirm} disabled={deleting}>
                     Cancelar
                   </Button>
-                  <Button
-                    variant="rust"
-                    size="sm"
-                    loading={deleting}
-                    onClick={handleDeleteLocal}
-                  >
+                  <Button variant="rust" size="sm" loading={deleting} onClick={handleDeleteLocal}>
                     Excluir
                   </Button>
                 </div>
@@ -221,17 +281,20 @@ function MoradorSections() {
   );
 }
 
-function TuristaSections() {
+function TuristaSections({ onRelatosCount }) {
   const [avaliacoes, setAvaliacoes] = useState([]);
-  const [confirmId, setConfirmId] = useState(null); // id da avaliação a excluir
+  const [confirmId, setConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteErr, setDeleteErr] = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
-  /* Carrega do adaptor para sempre refletir edições recentes */
   useEffect(() => {
     fetchMyExperiences().then(setAvaliacoes);
   }, []);
+
+  useEffect(() => {
+    onRelatosCount?.(avaliacoes.length);
+  }, [avaliacoes, onRelatosCount]);
 
   const toDelete = avaliacoes.find((a) => a.id === confirmId);
 
@@ -261,7 +324,7 @@ function TuristaSections() {
         <h2 className={styles.sectionTitle}>AVALIAÇÕES CADASTRADAS</h2>
         <div className={styles.avaliacoesGrid}>
           {avaliacoes.length === 0 && (
-            <p className={styles.empty}>Nenhuma avaliação cadastrada.</p>
+            <p className={styles.emptyInline}>Nenhuma avaliação cadastrada.</p>
           )}
           {avaliacoes.map((a) => (
             <div key={a.id} className={styles.avaliacaoCard}>
@@ -295,7 +358,6 @@ function TuristaSections() {
         </div>
       </div>
 
-      {/* ── Modal de confirmação / sucesso / erro de exclusão ── */}
       {confirmId && (
         <div
           className={styles.confirmOverlay}
@@ -303,7 +365,6 @@ function TuristaSections() {
         >
           <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
             {deleteSuccess ? (
-              /* Estado de sucesso */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
@@ -314,7 +375,6 @@ function TuristaSections() {
                 </div>
               </>
             ) : deleteErr ? (
-              /* Estado de erro */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
@@ -325,7 +385,6 @@ function TuristaSections() {
                 </div>
               </>
             ) : (
-              /* Estado de confirmação */
               <>
                 <h3 className={styles.confirmTitle}>Excluir avaliação</h3>
                 <p className={styles.confirmBody}>
@@ -334,20 +393,10 @@ function TuristaSections() {
                   Esta ação não pode ser desfeita.
                 </p>
                 <div className={styles.confirmActions}>
-                  <Button
-                    variant="neutral"
-                    size="sm"
-                    onClick={closeConfirm}
-                    disabled={deleting}
-                  >
+                  <Button variant="neutral" size="sm" onClick={closeConfirm} disabled={deleting}>
                     Cancelar
                   </Button>
-                  <Button
-                    variant="rust"
-                    size="sm"
-                    loading={deleting}
-                    onClick={handleDeleteAvaliacao}
-                  >
+                  <Button variant="rust" size="sm" loading={deleting} onClick={handleDeleteAvaliacao}>
                     Excluir
                   </Button>
                 </div>
@@ -368,9 +417,9 @@ export default function ProfilePage() {
   const [feedback, setFeedback] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
+  const [relatosCount, setRelatosCount] = useState(0);
   const fileInputRef = useRef(null);
 
-  /* ── Estado da seção de senha ── */
   const [passwordData, setPasswordData] = useState({ current: '', next: '', confirm: '' });
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState(null);
@@ -480,8 +529,7 @@ export default function ProfilePage() {
     }
     setSavingPassword(true);
     try {
-      // TODO: chamar API real — await updatePassword({ current, next });
-      await new Promise((r) => setTimeout(r, 600)); // mock de latência
+      await new Promise((r) => setTimeout(r, 600));
       setPasswordData({ current: '', next: '', confirm: '' });
       setPasswordFeedback({ type: 'success', msg: 'Senha atualizada com sucesso!' });
     } catch {
@@ -515,7 +563,7 @@ export default function ProfilePage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png"
+                accept="image/jpeg,image/jpg,image/png"
                 className={styles.avatarFileInput}
                 onChange={handleAvatarChange}
                 aria-label="Alterar foto de perfil"
@@ -531,14 +579,19 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
+            {editing && selectedPhotoFile && (
+              <p className={styles.photoHint}>Nova foto selecionada. Clique em &quot;Atualizar Perfil&quot; para salvar.</p>
+            )}
 
             <div className={styles.headerInfo}>
-              <h1 className={styles.userName}>{user.name}</h1>
+              <h1 className={styles.userName}>
+                {user.name}
+                {user.profession && (
+                  <span className={styles.userNameSuffix}> | {user.profession}</span>
+                )}
+              </h1>
               <div className={styles.userMeta}>
                 <Badge variant="teal" size="sm">{roleLabel(user.role)}</Badge>
-                {user.profession && (
-                  <span className={styles.profession}>{user.profession}</span>
-                )}
               </div>
               <span className={styles.userEmail}>{user.email}</span>
               {user.bio && <p className={styles.bio}>{user.bio}</p>}
@@ -549,7 +602,7 @@ export default function ProfilePage() {
             <span className={styles.statLabel}>
               {isMorador ? 'Quantidade de relatos sobre os seus locais' : 'Relatos Cadastrados'}
             </span>
-            <span className={styles.statNumber}>5</span>
+            <span className={styles.statNumber}>{relatosCount}</span>
           </div>
         </div>
 
@@ -646,7 +699,6 @@ export default function ProfilePage() {
           </form>
         )}
 
-        {/* ── Seção: Cadastrar Nova Senha (só no modo edição) ── */}
         {editing && <form className={styles.passwordForm} onSubmit={handlePasswordUpdate} noValidate>
           <h2 className={styles.sectionTitle}>CADASTRAR NOVA SENHA</h2>
 
@@ -693,9 +745,10 @@ export default function ProfilePage() {
           </div>
         </form>}
 
-        {/* ── Seções por role (só no modo leitura) ── */}
         {!editing && (
-          isMorador ? <MoradorSections /> : <TuristaSections />
+          isMorador
+            ? <MoradorSections user={user} onRelatosCount={setRelatosCount} />
+            : <TuristaSections onRelatosCount={setRelatosCount} />
         )}
 
       </div>

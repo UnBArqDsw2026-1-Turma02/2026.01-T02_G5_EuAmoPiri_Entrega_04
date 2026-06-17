@@ -4,7 +4,7 @@
  * Card de um ponto turístico para uso na listagem PlacesPage.
  * Exibe: nome, categoria, descrição curta, endereço e avaliação.
  *
- * Reutilizado em: PlacesPage, MoradorDashboard (lista de locais do morador).
+ * Reutilizado em: PlacesPage, ProfilePage (meus locais do morador).
  */
 import { Link } from 'react-router-dom';
 import StarRating from '../atoms/StarRating';
