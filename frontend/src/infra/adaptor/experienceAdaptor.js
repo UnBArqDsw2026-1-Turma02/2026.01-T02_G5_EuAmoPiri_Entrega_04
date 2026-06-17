@@ -1,5 +1,5 @@
 /**
- * CAMADA INFRA — Adaptor de Relatos (Experiences)
+ * Adaptor de Relatos (Experiences)
  *
  * API real disponível: GET /places/:id/experiences, POST /places/:id/experiences
  * Demais operações: mockadas até o backend implementar.

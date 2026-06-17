@@ -1,5 +1,5 @@
 /**
- * CAMADA INFRA — Adaptor de Locais
+ * Adaptor de Locais
  *
  * Mapeia as chamadas de domínio para os endpoints da API REST.
  * Isola o restante da aplicação dos detalhes da API.
