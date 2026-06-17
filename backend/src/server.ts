@@ -29,7 +29,21 @@ app.use("/auth", authRoutes);
 app.use("/places", placeRoutes);
 app.use("/places", experienceRoutes);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT);
+
+server.on("listening", () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
     console.log(`Swagger disponível em http://localhost:${PORT}/api-docs`);
+});
+
+server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+        console.error(
+            `Erro: a porta ${PORT} já está em uso. ` +
+                "Encerre o processo anterior (outro terminal com npm run dev) e tente novamente."
+        );
+        process.exit(1);
+    }
+    console.error("Erro ao iniciar o servidor:", err);
+    process.exit(1);
 });
