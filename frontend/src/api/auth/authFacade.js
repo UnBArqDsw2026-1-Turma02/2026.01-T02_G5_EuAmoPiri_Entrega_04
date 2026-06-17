@@ -90,9 +90,9 @@ export async function fetchMe() {
   }
 }
 
-export async function loadProfilePhotoBlob() {
+export async function loadProfilePhotoBlob(profilePhotoUrl) {
   try {
-    return await authApi.getProfilePhotoBlob();
+    return await authApi.getProfilePhotoBlob(profilePhotoUrl);
   } catch (error) {
     if (error.status === 404) return null;
     throw error;

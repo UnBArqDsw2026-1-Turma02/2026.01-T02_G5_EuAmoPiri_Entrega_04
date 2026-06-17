@@ -5,22 +5,10 @@ import { fetchPlaceById, updatePlace } from '../infra/adaptor/placeAdaptor';
 import Button from '../presentation/atoms/Button';
 import FormField from '../presentation/molecules/FormField';
 import Spinner from '../presentation/atoms/Spinner';
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from '../utils/placeCategories';
 import styles from './EditPlacePage.module.css';
 
-const CATEGORIAS = [
-  { value: 'gastronomia', label: 'Gastronomia' },
-  { value: 'natureza',    label: 'Natureza' },
-  { value: 'cultura',     label: 'Cultura' },
-  { value: 'hospedagem',  label: 'Hospedagem' },
-  { value: 'experiencia', label: 'Experiência' },
-  { value: 'histórico',   label: 'Histórico' },
-];
-
-const PRECOS = [
-  { value: '$',   label: '$ — Econômico' },
-  { value: '$$',  label: '$$ — Moderado' },
-  { value: '$$$', label: '$$$ — Sofisticado' },
-];
+const CATEGORIAS = CATEGORY_OPTIONS;
 
 export default function EditPlacePage() {
   const { id } = useParams();
@@ -39,10 +27,9 @@ export default function EditPlacePage() {
       .then((place) => {
         reset({
           name:        place.name        ?? '',
-          category:    place.category    ?? 'gastronomia',
+          category:    place.category    ?? 'restaurante',
           description: place.description ?? '',
           address:     place.address     ?? '',
-          price:       place.price       ?? '$$',
           hours:       place.hours       ?? '',
           phone:       place.phone       ?? '',
         });
@@ -167,20 +154,6 @@ export default function EditPlacePage() {
               registration={register('address', { required: 'Endereço é obrigatório' })}
               error={errors.address?.message}
             />
-
-            {/* Preço */}
-            <div className={styles.selectGroup}>
-              <label className={styles.selectLabel} htmlFor="price">Classificação de custo</label>
-              <select
-                id="price"
-                className={styles.select}
-                {...register('price')}
-              >
-                {PRECOS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
-              </select>
-            </div>
 
             <FormField
               id="hours"

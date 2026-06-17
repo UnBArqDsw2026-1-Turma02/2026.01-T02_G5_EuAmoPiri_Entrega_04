@@ -1,30 +1,29 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Spinner from '../presentation/atoms/Spinner';
 import PageLayout from '../presentation/organisms/PageLayout';
 
 /* ─── Carregamento lazy das páginas ─── */
+const SobrePiriPage        = lazy(() => import('../pages/SobrePiriPage'));
 const PlacesPage           = lazy(() => import('../pages/PlacesPage'));
 const PlaceDetailPage      = lazy(() => import('../pages/PlaceDetailPage'));
-const LoginPage            = lazy(() => import('../pages/LoginPage'));
-const SignupPage           = lazy(() => import('../pages/SignupPage'));
+const ProfilePage          = lazy(() => import('../pages/ProfilePage'));
 const CreatePlacePage      = lazy(() => import('../pages/CreatePlacePage'));
 const EditPlacePage        = lazy(() => import('../pages/EditPlacePage'));
-const MoradorDashboard     = lazy(() => import('../pages/MoradorDashboard'));
 const CreateExperiencePage = lazy(() => import('../pages/CreateExperiencePage'));
 const EditExperiencePage   = lazy(() => import('../pages/EditExperiencePage'));
-const TuristaDashboard     = lazy(() => import('../pages/TuristaDashboard'));
-const ProfilePage          = lazy(() => import('../pages/ProfilePage'));
-const SobrePiriPage        = lazy(() => import('../pages/SobrePiriPage'));
+const LoginPage            = lazy(() => import('../pages/LoginPage'));
+const SignupPage           = lazy(() => import('../pages/SignupPage'));
 const NotFoundPage         = lazy(() => import('../pages/NotFoundPage'));
 
 /* ─── Componente de rota protegida ─── */
 function ProtectedRoute({ children, requiredRole }) {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (requiredRole && user?.role !== requiredRole) {
@@ -55,15 +54,12 @@ export default function AppRoutes() {
           <Route path="/locais/:id" element={<PlaceDetailPage />} />
           <Route path="/sobre-piri" element={<Navigate to="/" replace />} />
 
-          {/* Protegidas — qualquer usuário logado */}
+          {/* Perfil — dados pessoais + seções do morador/turista (ex-painéis) */}
           <Route path="/perfil" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           } />
 
-          {/* Protegidas — Morador */}
-          <Route path="/morador/painel" element={
-            <ProtectedRoute requiredRole="morador"><MoradorDashboard /></ProtectedRoute>
-          } />
+          {/* Morador — cadastro e edição de locais */}
           <Route path="/morador/locais/novo" element={
             <ProtectedRoute requiredRole="morador"><CreatePlacePage /></ProtectedRoute>
           } />
@@ -71,10 +67,7 @@ export default function AppRoutes() {
             <ProtectedRoute requiredRole="morador"><EditPlacePage /></ProtectedRoute>
           } />
 
-          {/* Protegidas — Turista */}
-          <Route path="/turista/painel" element={
-            <ProtectedRoute requiredRole="turista"><TuristaDashboard /></ProtectedRoute>
-          } />
+          {/* Turista — cadastro e edição de relatos */}
           <Route path="/locais/:placeId/relatos/novo" element={
             <ProtectedRoute requiredRole="turista"><CreateExperiencePage /></ProtectedRoute>
           } />

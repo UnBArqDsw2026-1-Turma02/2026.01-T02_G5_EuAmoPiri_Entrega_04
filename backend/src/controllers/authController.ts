@@ -10,6 +10,8 @@ import { ProfileError } from "../services/profileService.ts";
 import type { ProfileUpdateInput } from "../services/profileService.ts";
 import type { AccountType } from "../model/userModel.ts";
 import { formatUser } from "../views/userView.ts";
+import * as experienceService from "../services/experienceService.ts";
+import { formatMyExperienceList } from "../views/experienceView.ts";
 
 export async function register(req: Request, res: Response) {
     try {
@@ -132,7 +134,7 @@ export async function getProfilePhoto(req: Request, res: Response) {
         }
 
         res.setHeader("Content-Type", result.contentType);
-        res.setHeader("Cache-Control", "private, max-age=3600");
+        res.setHeader("Cache-Control", "private, no-cache");
         result.stream.on("error", () => {
             if (!res.headersSent) {
                 res.status(500).json({ error: "Erro ao carregar foto" });
@@ -141,5 +143,19 @@ export async function getProfilePhoto(req: Request, res: Response) {
         result.stream.pipe(res);
     } catch {
         res.status(500).json({ error: "Erro ao carregar foto" });
+    }
+}
+
+export async function getMyExperiences(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    try {
+        const experiences = await experienceService.listMyExperiences(req.user.id);
+        res.status(200).json(formatMyExperienceList(experiences));
+    } catch {
+        res.status(500).json({ error: "Erro ao carregar avaliações" });
     }
 }

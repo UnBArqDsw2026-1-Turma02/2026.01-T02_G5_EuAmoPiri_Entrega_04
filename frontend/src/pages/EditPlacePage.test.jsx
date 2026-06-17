@@ -21,9 +21,9 @@ import EditPlacePage from './EditPlacePage'
 import * as placeAdaptor from '../infra/adaptor/placeAdaptor'
 
 const mockPlace = {
-  id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia',
+  id: 1, name: 'Botequim Mercatto Piri', category: 'restaurante',
   description: 'Ótimo botequim no centro histórico.', address: 'R. Direita, 68',
-  price: '$$', hours: '11h - 22h', phone: '(62) 3331-1234',
+hours: '11h - 22h', phone: '(62) 3331-1234',
 }
 
 const renderPage = () => render(<MemoryRouter><EditPlacePage /></MemoryRouter>)

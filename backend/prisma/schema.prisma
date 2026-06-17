@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,48 +10,77 @@ datasource db {
   provider = "postgresql"
 }
 
-//tabela de locais
-model Place{
-
-  id  Int   @id @default(autoincrement())
-  name  String
-  category String
-  description String
-  createdAt DateTime @default(now())
-  experiences Experiences []
-
-}
-
 enum AccountType {
   TURISTA
   MORADOR
 }
 
+enum PlaceCategory {
+  CACHOEIRA
+  RESTAURANTE
+  POUSADA
+}
+
+model Place {
+  id          Int           @id @default(autoincrement())
+  name        String
+  category    PlaceCategory
+  description String
+  address     String
+  mapsLink    String?
+  phone       String?
+  openingDate DateTime?
+  moradorId   Int
+  morador     User          @relation(fields: [moradorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  experiences Experiences[]
+  photos      PlacePhoto[]
+}
+
+model PlacePhoto {
+  id        Int    @id @default(autoincrement())
+  placeId   Int
+  place     Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int
+}
+
 model User {
-  id           Int          @id @default(autoincrement())
-  accountType  AccountType?
-  name         String
-  email        String       @unique
-  birthDate    DateTime?
+  id              Int           @id @default(autoincrement())
+  accountType     AccountType?
+  name            String
+  email           String        @unique
+  birthDate       DateTime?
   phone           String?
   profession      String?
   biography       String?
   profilePhotoUrl String?
   passwordHash    String?
-  googleId        String?      @unique
-  createdAt       DateTime     @default(now())
-  experiences  Experiences[]
+  googleId        String?       @unique
+  createdAt       DateTime      @default(now())
+  experiences     Experiences[]
+  places          Place[]
 }
 
 model Experiences {
-
-  id  Int @id @default(autoincrement())
+  id        Int                @id @default(autoincrement())
   userName  String
-  rating  Int           // Avaliação de 0 a 5
-  createdAt DateTime @default(now()) 
-  placeId Int           // Chave estrangeira de Place
-  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  userId Int?
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  rating    Int
+  title     String?
+  text      String
+  visitDate DateTime
+  createdAt DateTime           @default(now())
+  placeId   Int
+  place     Place              @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  userId    Int?
+  user      User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  photos    ExperiencePhoto[]
+}
 
+model ExperiencePhoto {
+  id           Int         @id @default(autoincrement())
+  experienceId Int
+  experience   Experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  url          String
+  sortOrder    Int
 }

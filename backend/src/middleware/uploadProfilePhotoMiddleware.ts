@@ -2,7 +2,7 @@ import multer from "multer";
 import type { Request, Response, NextFunction } from "express";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_MIMES = new Set(["image/jpeg", "image/png"]);
+const ALLOWED_MIMES = new Set(["image/jpeg", "image/jpg", "image/png"]);
 
 const upload = multer({
     storage: multer.memoryStorage(),

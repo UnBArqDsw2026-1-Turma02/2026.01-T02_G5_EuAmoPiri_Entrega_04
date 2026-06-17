@@ -5,7 +5,7 @@ import * as storageService from "./storageService.ts";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_MIMES = new Set(["image/jpeg", "image/png"]);
+const ALLOWED_MIMES = new Set(["image/jpeg", "image/jpg", "image/png"]);
 const PROFILE_PREFIX = process.env.GCS_PROFILE_PREFIX ?? "profile_photo/";
 
 export class ProfileError extends Error {

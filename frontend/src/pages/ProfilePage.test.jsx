@@ -11,11 +11,17 @@ vi.mock('../presentation/atoms/StarRating', () => ({
   default: ({ value }) => <span data-testid="star-rating">{value} estrelas</span>,
 }))
 
+vi.mock('../presentation/atoms/Spinner', () => ({
+  default: () => <div data-testid="spinner">Carregando...</div>,
+}))
+
 vi.mock('../infra/adaptor/placeAdaptor', () => ({
   deletePlace: vi.fn(),
+  fetchMyPlaces: vi.fn(),
 }))
 vi.mock('../infra/adaptor/experienceAdaptor', () => ({
   fetchMyExperiences: vi.fn(),
+  fetchExperiencesByPlaces: vi.fn(),
   deleteExperience: vi.fn(),
 }))
 
@@ -27,6 +33,8 @@ import * as experienceAdaptor from '../infra/adaptor/experienceAdaptor'
 /* ── setup global de mocks de adaptor ── */
 beforeEach(() => {
   vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([])
+  vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue([])
+  vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue([])
   vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
   vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
 })
@@ -63,6 +71,7 @@ function asMorador(extra = {}) {
     updateProfile: vi.fn().mockResolvedValue(mockMorador),
     isAuthenticated: true,
     isMorador: true,
+    isTurista: false,
     ...extra,
   })
 }
@@ -73,6 +82,7 @@ function asTurista(extra = {}) {
     updateProfile: vi.fn().mockResolvedValue(mockTurista),
     isAuthenticated: true,
     isMorador: false,
+    isTurista: true,
     ...extra,
   })
 
@@ -96,7 +106,7 @@ describe('ProfilePage — modo leitura', () => {
 
   it('exibe profissão do usuário', () => {
     renderPage()
-    expect(screen.getByText('Desenvolvedora')).toBeInTheDocument()
+    expect(screen.getByText(/Desenvolvedora/)).toBeInTheDocument()
   })
 
   it('exibe badge com role do usuário', () => {
@@ -239,6 +249,163 @@ describe('ProfilePage — edição de perfil', () => {
 
     expect(screen.getByText(/máximo 5 mb/i)).toBeInTheDocument()
   })
+
+  it('envia nova foto ao atualizar perfil', async () => {
+    const updateProfile = vi.fn().mockResolvedValue({
+      ...mockMorador,
+      profilePhotoUrl: 'profile_photo/1-new.jpg',
+      avatarUrl: 'blob:mock',
+    })
+    vi.mocked(AuthContext.useAuth).mockReturnValue({
+      user: mockMorador,
+      updateProfile,
+      isAuthenticated: true,
+      isMorador: true,
+    })
+
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:preview'),
+      revokeObjectURL: vi.fn(),
+    })
+
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+
+    const file = new File(['photo'], 'profile.jpg', { type: 'image/jpeg' })
+    fireEvent.change(screen.getByLabelText(/alterar foto de perfil/i), { target: { files: [file] } })
+    await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
+
+    await waitFor(() => expect(updateProfile).toHaveBeenCalledTimes(1))
+    expect(updateProfile.mock.calls[0][1]).toBeInstanceOf(File)
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Painel do morador (consolidado em /perfil)
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — painel do morador', () => {
+  const MOCK_PLACES = [
+    {
+      id: 1,
+      name: 'Botequim Mercatto Piri',
+      category: 'restaurante',
+      reviewsCount: 0,
+      rating: null,
+      moradorId: 1,
+    },
+  ]
+
+  const MOCK_EXPERIENCES = [
+    {
+      id: 1,
+      placeId: 1,
+      userName: 'Maria Silva',
+      title: 'Experiência incrível!',
+      text: 'Adorei a comida caseira.',
+      rating: 5,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      placeId: 1,
+      userName: 'João',
+      title: 'Bom lugar',
+      text: 'Gostei.',
+      rating: 3,
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  beforeEach(() => {
+    asMorador()
+    vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue(MOCK_PLACES)
+    vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue(MOCK_EXPERIENCES)
+  })
+
+  it('exibe seções ÚLTIMOS RELATOS e MEUS LOCAIS', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('ÚLTIMOS RELATOS')).toBeInTheDocument()
+      expect(screen.getByText('MEUS LOCAIS')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe relatos reais da API', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('Experiência incrível!')).toBeInTheDocument()
+      expect(screen.getByText('Maria Silva')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe contagem de relatos no cabeçalho', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('2')).toBeInTheDocument()
+    })
+  })
+
+  it('calcula avaliações na sidebar quando a API não envia reviewsCount', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText(/2 Avaliações/)).toBeInTheDocument()
+      expect(screen.getByText(/4\.0/)).toBeInTheDocument()
+    })
+  })
+
+  it('chama fetchMyPlaces com o id do usuário logado', async () => {
+    renderPage()
+    await waitFor(() =>
+      expect(placeAdaptor.fetchMyPlaces).toHaveBeenCalledWith(1),
+    )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Painel do turista (consolidado em /perfil)
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — painel do turista', () => {
+  const MOCK_AVALIACOES = [
+    {
+      id: 1,
+      placeId: 2,
+      placeName: 'Restaurante LovePiri',
+      title: 'Experiência incrível!',
+      text: 'Adorei a comida caseira.',
+      rating: 5,
+      createdAt: new Date().toISOString(),
+    },
+  ]
+
+  beforeEach(() => {
+    asTurista()
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue(MOCK_AVALIACOES)
+  })
+
+  it('exibe título SUAS AVALIAÇÕES e seção de avaliações', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('SUAS AVALIAÇÕES')).toBeInTheDocument()
+      expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe avaliações reais da API', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('Experiência incrível!')).toBeInTheDocument()
+      expect(screen.getByText('Restaurante LovePiri')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe contagem de relatos no cabeçalho', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('1')).toBeInTheDocument()
+    })
+  })
 })
 
 /* ══════════════════════════════════════════════════════════════
@@ -253,7 +420,7 @@ describe('ProfilePage — exclusão de avaliação', () => {
       title: 'Melhor botequim',
       text: 'Recomendo demais!',
       rating: 5,
-      dias: 5,
+      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
     }
     vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([mockAvaliacao])
     vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('fail'))

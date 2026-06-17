@@ -4,38 +4,46 @@ import { createExperience } from '../infra/adaptor/experienceAdaptor';
 import { fetchPlaceById } from '../infra/adaptor/placeAdaptor';
 import { useAuth } from '../context/AuthContext';
 import ExperienceForm from '../presentation/organisms/ExperienceForm';
+import RoleNotice from '../presentation/molecules/RoleNotice';
 import StarRating from '../presentation/atoms/StarRating';
 import Button from '../presentation/atoms/Button';
+import { CATEGORY_LABELS } from '../utils/placeCategories';
 import styles from './CreateExperiencePage.module.css';
-
-const CATEGORY_LABELS = {
-  gastronomia: 'Gastronomia', natureza: 'Natureza', hospedagem: 'Hospedagem',
-  cultura: 'Cultura', compras: 'Compras', aventura: 'Aventura',
-};
 
 export default function CreateExperiencePage() {
   const { placeId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isTurista } = useAuth();
 
-  const [loading, setLoading]   = useState(false);
-  const [place,   setPlace]     = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [place, setPlace]       = useState(null);
 
   useEffect(() => {
     fetchPlaceById(placeId).then(setPlace).catch(() => setPlace(null));
   }, [placeId]);
 
+  if (!isTurista) {
+    return (
+      <RoleNotice
+        title="Conta de turista necessária"
+        message="Para cadastrar uma experiência, é necessário ter uma conta de turista."
+        backTo={`/locais/${placeId}`}
+        backLabel="Voltar ao local"
+      />
+    );
+  }
+
   async function handleSubmit(data) {
     setLoading(true);
     try {
       await createExperience(placeId, {
-        ...data,
-        userName:  user?.name  ?? 'Turista',
+        rating: data.rating,
+        text: data.text,
+        title: data.title,
+        visitDate: data.visitDate,
+        userName: user?.name ?? 'Turista',
         placeName: place?.name ?? '',
-        reactions: { heart: 0, like: 0 },
-        createdAt: new Date().toISOString(),
-      });
-      navigate(`/locais/${placeId}`);
+      }, data.photos ?? []);
     } finally {
       setLoading(false);
     }
@@ -44,8 +52,6 @@ export default function CreateExperiencePage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-
-        {/* ── Cabeçalho do card ── */}
         <div className={styles.cardHeader}>
           <Button variant="neutral" size="sm" as={Link} to={`/locais/${placeId}`}>← Voltar</Button>
         </div>
@@ -53,8 +59,6 @@ export default function CreateExperiencePage() {
         <h1 className={styles.pageTitle}>Cadastrar Review</h1>
 
         <div className={styles.layout}>
-
-          {/* ── Área do mini-card (grid-area: mini) ── */}
           <div className={styles.miniArea}>
             {place && (
               <div className={styles.placeMiniCard}>
@@ -72,7 +76,7 @@ export default function CreateExperiencePage() {
                   {place.rating && (
                     <div className={styles.miniCardRating}>
                       <StarRating value={Math.round(place.rating)} readonly size="sm" />
-                      <span>{place.rating.toFixed(1)}</span>
+                      <span>{Number(place.rating).toFixed(1)}</span>
                     </div>
                   )}
                 </div>
@@ -80,21 +84,19 @@ export default function CreateExperiencePage() {
             )}
           </div>
 
-          {/* ── Formulário (grid-area: form) ── */}
           <div className={styles.formArea}>
             <div className={styles.formWrap}>
               <ExperienceForm
                 onSubmit={handleSubmit}
                 onCancel={() => navigate(`/locais/${placeId}`)}
                 loading={loading}
+                successPrimary={{ label: 'Voltar ao local', to: `/locais/${placeId}` }}
+                successSecondary={{ label: 'Avaliar outros lugares', to: '/locais' }}
               />
             </div>
           </div>
 
-          {/* ── Sidebar (grid-area: sidebar) ── */}
           <aside className={styles.sidebar}>
-
-            {/* INFORMAÇÕES */}
             {place && (
               <div className={styles.sideCard}>
                 <h3 className={styles.sideTitle}>INFORMAÇÕES</h3>
@@ -102,12 +104,6 @@ export default function CreateExperiencePage() {
                   <span className={styles.infoLabel}>Categoria</span>
                   <span className={styles.infoValue}>{CATEGORY_LABELS[place.category] ?? place.category}</span>
                 </div>
-                {place.hours && (
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Horário</span>
-                    <span className={styles.infoValue}>{place.hours}</span>
-                  </div>
-                )}
                 {place.phone && (
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>Telefone</span>
@@ -116,32 +112,6 @@ export default function CreateExperiencePage() {
                 )}
               </div>
             )}
-
-            {/* ESTATÍSTICAS */}
-            {place && (
-              <div className={styles.sideCard}>
-                <h3 className={styles.sideTitle}>ESTATÍSTICAS</h3>
-                <div className={styles.statsGrid}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNum}>{place.rating?.toFixed(1) ?? '—'}</span>
-                    <span className={styles.statLabel}>Média</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNum}>{place.reviewsCount ?? '—'}</span>
-                    <span className={styles.statLabel}>Avaliações</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNum}>{place.commentsCount ?? '—'}</span>
-                    <span className={styles.statLabel}>Comentários</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statNum}>{place.visitsCount ?? '—'}</span>
-                    <span className={styles.statLabel}>Visitas</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
           </aside>
         </div>
       </div>

@@ -208,4 +208,20 @@ router.patch(
  */
 router.get("/me/photo", authMiddleware, authController.getProfilePhoto);
 
+/**
+ * @openapi
+ * /auth/me/experiences:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Listar avaliações do usuário autenticado
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de avaliações do turista
+ *       401:
+ *         description: Não autenticado
+ */
+router.get("/me/experiences", authMiddleware, authController.getMyExperiences);
+
 export default router;

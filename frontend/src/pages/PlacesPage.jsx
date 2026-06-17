@@ -15,6 +15,9 @@ import 'leaflet/dist/leaflet.css';
 import { MdSearch } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
 import { fetchPlaces } from '../infra/adaptor/placeAdaptor';
+import { fetchExperiencesByPlaces } from '../infra/adaptor/experienceAdaptor';
+import { enrichPlacesWithExperienceStats, formatPublicRating } from '../utils/placeStats';
+import { CATEGORY_LABELS } from '../utils/placeCategories';
 import StarRating from '../presentation/atoms/StarRating';
 import Button from '../presentation/atoms/Button';
 import Spinner from '../presentation/atoms/Spinner';
@@ -30,34 +33,42 @@ L.Icon.Default.mergeOptions({
 
 const PIRI_CENTER = [-15.8503, -48.9571];
 
-const CATEGORY_LABELS = {
-  gastronomia: 'Gastronomia',
-  natureza:    'Natureza',
-  hospedagem:  'Hospedagem',
-  cultura:     'Cultura',
-  compras:     'Compras',
-  aventura:    'Aventura',
-};
-
 /* ── Card compacto para a sidebar ── */
 function SidebarCard({ place, active, onClick }) {
+  const { starValue, ratingLabel, reviewsLabel } = formatPublicRating(place);
+
   return (
     <Link
       to={`/locais/${place.id}`}
       className={[styles.sidebarCard, active ? styles.sidebarCardActive : ''].join(' ')}
       onClick={onClick}
     >
-      <div className={styles.sidebarCardHeader}>
-        <span className={styles.sidebarCardName}>{place.name}</span>
-        {place.price && <span className={styles.sidebarCardPrice}>{place.price}</span>}
-      </div>
-      <span className={styles.sidebarCardCat}>
-        {CATEGORY_LABELS[place.category] ?? place.category}
-      </span>
-      <div className={styles.sidebarCardRating}>
-        <StarRating value={Math.round(place.rating ?? 0)} readonly size="sm" />
-        <span className={styles.sidebarCardRatingNum}>{place.rating?.toFixed(1)}</span>
-        <span className={styles.sidebarCardReviews}>({place.reviewsCount} avaliações)</span>
+      <div className={styles.sidebarCardBody}>
+        {place.coverImage ? (
+          <img
+            src={place.coverImage}
+            alt=""
+            className={styles.sidebarCardThumb}
+            loading="lazy"
+          />
+        ) : (
+          <div className={styles.sidebarCardThumbFallback} aria-hidden="true" />
+        )}
+        <div className={styles.sidebarCardContent}>
+          <div className={styles.sidebarCardHeader}>
+            <span className={styles.sidebarCardName}>{place.name}</span>
+          </div>
+          <span className={styles.sidebarCardCat}>
+            {CATEGORY_LABELS[place.category] ?? place.category}
+          </span>
+          <div className={styles.sidebarCardRating}>
+            <StarRating value={starValue} readonly size="sm" />
+            {ratingLabel != null && (
+              <span className={styles.sidebarCardRatingNum}>{ratingLabel}</span>
+            )}
+            <span className={styles.sidebarCardReviews}>({reviewsLabel})</span>
+          </div>
+        </div>
       </div>
     </Link>
   );
@@ -72,15 +83,38 @@ export default function PlacesPage() {
   const [search, setSearch]     = useState('');
   const [category, setCategory] = useState('');
   const [rating, setRating]     = useState('');
-  const [custo, setCusto]       = useState('');
   const [activeId, setActiveId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchPlaces()
-      .then((data) => { if (!cancelled) { setPlaces(Array.isArray(data) ? data : []); setLoading(false); } })
-      .catch((err) => { if (!cancelled) { setError(err.message); setLoading(false); } });
+    setError(null);
+
+    (async () => {
+      try {
+        const data = await fetchPlaces();
+        const list = Array.isArray(data) ? data : [];
+        if (list.length === 0) {
+          if (!cancelled) {
+            setPlaces([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const experiences = await fetchExperiencesByPlaces(list.map((p) => p.id));
+        if (!cancelled) {
+          setPlaces(enrichPlacesWithExperienceStats(list, experiences));
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message ?? 'Erro ao carregar locais');
+          setLoading(false);
+        }
+      }
+    })();
+
     return () => { cancelled = true; };
   }, []);
 
@@ -90,10 +124,9 @@ export default function PlacesPage() {
       const matchText = !q || p.name.toLowerCase().includes(q) || p.address?.toLowerCase().includes(q);
       const matchCat  = !category || p.category === category;
       const matchRat  = !rating   || (p.rating ?? 0) >= Number(rating);
-      const matchCost = !custo    || p.price === custo;
-      return matchText && matchCat && matchRat && matchCost;
+      return matchText && matchCat && matchRat;
     });
-  }, [places, search, category, rating, custo]);
+  }, [places, search, category, rating]);
 
   return (
     <div className={styles.page}>
@@ -134,15 +167,6 @@ export default function PlacesPage() {
           </select>
         </label>
 
-        <label className={styles.filterGroup}>
-          <span className={styles.filterLabel}>CUSTO</span>
-          <select className={styles.filterSelect} value={custo} onChange={(e) => setCusto(e.target.value)}>
-            <option value="">Todos</option>
-            <option value="$">$ Econômico</option>
-            <option value="$$">$$ Moderado</option>
-            <option value="$$$">$$$ Premium</option>
-          </select>
-        </label>
 
         {isMorador && (
           <Button as={Link} to="/morador/locais/novo" variant="primary" size="sm">

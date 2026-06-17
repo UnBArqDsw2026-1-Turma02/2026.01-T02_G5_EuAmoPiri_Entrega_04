@@ -1,11 +1,48 @@
+﻿import type { Prisma } from "../../generated/prisma/client.ts";
 import prisma from "../config/prisma.ts";
-import type { ExperiencesUncheckedCreateInput } from "../../generated/prisma/models/Experiences.ts";
 
+const experienceInclude = {
+    photos: { orderBy: { sortOrder: "asc" as const } },
+};
 
-export async function createExperience(data: ExperiencesUncheckedCreateInput){
-    return await prisma.experiences.create({ data });
+export async function createExperienceWithPhotos(
+    data: Prisma.ExperiencesCreateInput,
+    photos: { url: string; sortOrder: number }[]
+) {
+    return prisma.experiences.create({
+        data: {
+            ...data,
+            ...(photos.length > 0 ? { photos: { create: photos } } : {}),
+        },
+        include: experienceInclude,
+    });
 }
 
 export async function findAllExperiencesByPlaceId(placeId: number) {
-    return await prisma.experiences.findMany({ where: { placeId } });
+    return prisma.experiences.findMany({
+        where: { placeId },
+        include: experienceInclude,
+        orderBy: { createdAt: "desc" },
+    });
+}
+
+export async function findExperiencesByUserId(userId: number) {
+    return prisma.experiences.findMany({
+        where: { userId },
+        include: {
+            ...experienceInclude,
+            place: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+}
+
+export async function findExperiencePhotoById(experienceId: number, photoId: number) {
+    return prisma.experiencePhoto.findFirst({
+        where: { id: photoId, experienceId },
+    });
+}
+
+export async function findPlaceById(placeId: number) {
+    return prisma.place.findUnique({ where: { id: placeId } });
 }

@@ -1,10 +1,70 @@
-import type { PlaceCreateInput } from "../../generated/prisma/models/Place.ts";
+import type { PlaceCategory, Prisma } from "../../generated/prisma/client.ts";
 import prisma from "../config/prisma.ts";
 
-export async function createPlace(data: PlaceCreateInput){
-    return await prisma.place.create({ data });
+const placeInclude = {
+    photos: { orderBy: { sortOrder: "asc" as const } },
+    morador: { select: { id: true, name: true } },
+    experiences: { select: { rating: true } },
+};
+
+export async function createPlaceWithPhotos(
+    data: Prisma.PlaceCreateInput,
+    photos: { url: string; sortOrder: number }[]
+) {
+    return prisma.place.create({
+        data: {
+            ...data,
+            photos: { create: photos },
+        },
+        include: placeInclude,
+    });
 }
 
 export async function findAllPlaces() {
-    return await prisma.place.findMany();
+    return prisma.place.findMany({
+        include: placeInclude,
+        orderBy: { createdAt: "desc" },
+    });
+}
+
+export async function findPlaceById(id: number) {
+    return prisma.place.findUnique({
+        where: { id },
+        include: placeInclude,
+    });
+}
+
+export async function findPlacesByMoradorId(moradorId: number) {
+    return prisma.place.findMany({
+        where: { moradorId },
+        include: placeInclude,
+        orderBy: { createdAt: "desc" },
+    });
+}
+
+export async function findDuplicatePlace(name: string, address: string) {
+    const normalizedName = name.trim().toLowerCase();
+    const normalizedAddress = address.trim().toLowerCase();
+    const places = await prisma.place.findMany({
+        select: { id: true, name: true, address: true },
+    });
+    return places.find(
+        (p) =>
+            p.name.trim().toLowerCase() === normalizedName &&
+            p.address.trim().toLowerCase() === normalizedAddress
+    ) ?? null;
+}
+
+export async function findPlacePhotoById(placeId: number, photoId: number) {
+    return prisma.placePhoto.findFirst({
+        where: { id: photoId, placeId },
+    });
+}
+
+export function parsePlaceCategory(value: string): PlaceCategory | null {
+    const upper = value.trim().toUpperCase();
+    if (upper === "CACHOEIRA") return "CACHOEIRA";
+    if (upper === "RESTAURANTE") return "RESTAURANTE";
+    if (upper === "POUSADA") return "POUSADA";
+    return null;
 }

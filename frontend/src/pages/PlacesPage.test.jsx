@@ -38,6 +38,9 @@ vi.mock('react-leaflet', () => ({
 }))
 
 vi.mock('../infra/adaptor/placeAdaptor')
+vi.mock('../infra/adaptor/experienceAdaptor', () => ({
+  fetchExperiencesByPlaces: vi.fn(),
+}))
 vi.mock('../context/AuthContext')
 vi.mock('../presentation/atoms/StarRating', () => ({
   default: ({ value }) => <span aria-label={`${value} estrelas`}>{value}★</span>,
@@ -47,6 +50,7 @@ vi.mock('../presentation/atoms/Spinner', () => ({
 }))
 
 import { fetchPlaces } from '../infra/adaptor/placeAdaptor'
+import { fetchExperiencesByPlaces } from '../infra/adaptor/experienceAdaptor'
 import { useAuth } from '../context/AuthContext'
 import PlacesPage from './PlacesPage'
 
@@ -54,10 +58,9 @@ const MOCK_PLACES = [
   {
     id: 1,
     name: 'Botequim Mercatto Piri',
-    category: 'gastronomia',
+    category: 'restaurante',
     description: 'Bar regional.',
     address: 'Rua do Rosário, 15',
-    price: '$$',
     rating: 4.9,
     reviewsCount: 100,
     lat: -15.849,
@@ -66,10 +69,9 @@ const MOCK_PLACES = [
   {
     id: 2,
     name: 'Cachoeira da Rosário',
-    category: 'natureza',
+    category: 'cachoeira',
     description: 'Cachoeira cristalina.',
     address: 'Estrada da Rosário, km 3',
-    price: '$',
     rating: 4.8,
     reviewsCount: 50,
     lat: -15.8312,
@@ -83,6 +85,7 @@ const renderPage = () =>
 beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({ isMorador: false, isAuthenticated: false })
   vi.mocked(fetchPlaces).mockResolvedValue(MOCK_PLACES)
+  vi.mocked(fetchExperiencesByPlaces).mockResolvedValue([])
 })
 
 describe('PlacesPage — RF06', () => {
@@ -110,6 +113,37 @@ describe('PlacesPage — RF06', () => {
     expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
   })
 
+  it('exibe avaliação e quantidade de reviews na sidebar', async () => {
+    renderPage()
+    expect(await screen.findByText('Botequim Mercatto Piri')).toBeInTheDocument()
+    expect(screen.getByText('4.9')).toBeInTheDocument()
+    expect(screen.getByText('(100 avaliações)')).toBeInTheDocument()
+  })
+
+  it('calcula avaliações a partir dos relatos quando a API não envia stats', async () => {
+    vi.mocked(fetchPlaces).mockResolvedValue([
+      { id: 3, name: 'Pousada Piri', category: 'pousada', address: 'Rua A', lat: -15.85, lng: -48.95 },
+    ])
+    vi.mocked(fetchExperiencesByPlaces).mockResolvedValue([
+      { id: 1, placeId: 3, rating: 5 },
+      { id: 2, placeId: 3, rating: 3 },
+    ])
+    renderPage()
+    expect(await screen.findByText('Pousada Piri')).toBeInTheDocument()
+    expect(screen.getByText('4.0')).toBeInTheDocument()
+    expect(screen.getByText('(2 avaliações)')).toBeInTheDocument()
+  })
+
+  it('exibe "Sem avaliações" para locais sem relatos', async () => {
+    vi.mocked(fetchPlaces).mockResolvedValue([
+      { id: 4, name: 'Local Novo', category: 'restaurante', address: 'Rua B', lat: -15.85, lng: -48.95 },
+    ])
+    vi.mocked(fetchExperiencesByPlaces).mockResolvedValue([])
+    renderPage()
+    expect(await screen.findByText('Local Novo')).toBeInTheDocument()
+    expect(screen.getByText('(Sem avaliações)')).toBeInTheDocument()
+  })
+
   it('renderiza pins no mapa para cada local', async () => {
     renderPage()
     await screen.findByText('Botequim Mercatto Piri')
@@ -134,7 +168,7 @@ describe('PlacesPage — RF06', () => {
 
     // Usa getByRole com name para distinguir CATEGORIA dos outros selects
     const select = screen.getByRole('combobox', { name: /categoria/i })
-    await userEvent.selectOptions(select, 'natureza')
+    await userEvent.selectOptions(select, 'cachoeira')
 
     expect(screen.queryByText('Botequim Mercatto Piri')).not.toBeInTheDocument()
     expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
