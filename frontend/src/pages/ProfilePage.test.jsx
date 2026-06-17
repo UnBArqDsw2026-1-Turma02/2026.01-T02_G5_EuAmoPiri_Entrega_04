@@ -169,9 +169,9 @@ describe('ProfilePage — edição de perfil', () => {
   })
 
   it('chama updateProfile ao submeter com alteração', async () => {
-    const updateProfile = vi.fn().mockResolvedValue(mockUser)
+    const updateProfile = vi.fn().mockResolvedValue(mockMorador)
     vi.mocked(AuthContext.useAuth).mockReturnValue({
-      user: mockUser,
+      user: mockMorador,
       updateProfile,
       isAuthenticated: true,
       isMorador: true,
@@ -200,7 +200,7 @@ describe('ProfilePage — edição de perfil', () => {
   it('exibe aviso quando nenhuma alteração é detectada', async () => {
     const updateProfile = vi.fn()
     vi.mocked(AuthContext.useAuth).mockReturnValue({
-      user: mockUser,
+      user: mockMorador,
       updateProfile,
       isAuthenticated: true,
       isMorador: true,
@@ -239,14 +239,26 @@ describe('ProfilePage — edição de perfil', () => {
 
     expect(screen.getByText(/máximo 5 mb/i)).toBeInTheDocument()
   })
+})
 
-  it('exibe aviso quando usuário não está logado', () => {
-    vi.mocked(AuthContext.useAuth).mockReturnValue({
-      user: null,
-      updateProfile: vi.fn(),
-      isAuthenticated: false,
-      isMorador: false,
-    })
+/* ══════════════════════════════════════════════════════════════
+   Exclusão de avaliação (turista)
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — exclusão de avaliação', () => {
+  it('exibe erro quando falha ao excluir avaliação', async () => {
+    const mockAvaliacao = {
+      id: 2,
+      placeId: 1,
+      placeName: 'Botequim Mercatto Piri',
+      title: 'Melhor botequim',
+      text: 'Recomendo demais!',
+      rating: 5,
+      dias: 5,
+    }
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([mockAvaliacao])
+    vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('fail'))
+    asTurista()
+    const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
