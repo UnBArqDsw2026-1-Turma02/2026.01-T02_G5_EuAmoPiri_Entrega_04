@@ -29,12 +29,6 @@
   color: var(--color-brown);
 }
 
-.credits {
-  font-family: var(--font-family);
-  font-size: var(--font-size-sm);
-  color: var(--color-beige-light);
-}
-
 .links {
   display: flex;
   gap: var(--space-4);

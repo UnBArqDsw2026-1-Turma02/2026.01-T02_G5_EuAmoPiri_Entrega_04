@@ -1,12 +1,3 @@
-/**
- * CAMADA ROTAS — AppRoutes
- *
- * Define todas as rotas da aplicação com React Router v6.
- * Rotas protegidas usam o componente ProtectedRoute.
- *
- * Lazy loading: cada página é carregada sob demanda para
- * melhor performance (reutilização do sistema de módulos do Vite).
- */
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -59,10 +50,10 @@ export default function AppRoutes() {
       <Routes>
         {/* Públicas — com layout (Header + Footer) */}
         <Route element={<PageLayout />}>
-          <Route path="/"           element={<PlacesPage />} />
+          <Route path="/"           element={<SobrePiriPage />} />
           <Route path="/locais"     element={<PlacesPage />} />
           <Route path="/locais/:id" element={<PlaceDetailPage />} />
-          <Route path="/sobre-piri" element={<SobrePiriPage />} />
+          <Route path="/sobre-piri" element={<Navigate to="/" replace />} />
 
           {/* Protegidas — qualquer usuário logado */}
           <Route path="/perfil" element={

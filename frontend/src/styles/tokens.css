@@ -35,8 +35,8 @@
   --color-gray-800:       #333333;  /* Texto secundário */
 
   /* --- Semânticas (aliases) --- */
-  --color-primary:        var(--color-green-primary);
-  --color-primary-hover:  #0D5414;
+  --color-primary:        var(--color-olive-green);   /* #6B8E23 — cor dos botões no Design System */
+  --color-primary-hover:  #567018;                    /* olive-green escurecido ~15% */
   --color-accent:         var(--color-brown);
   --color-text:           var(--color-green-dark);
   --color-text-muted:     var(--color-gray-600);

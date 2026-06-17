@@ -1,0 +1,10 @@
+/* ============================================================
+   MOLÉCULA — FormField
+   Wrapper leve — o estilo visual está nos átomos Input/Textarea
+   ============================================================ */
+
+.field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}

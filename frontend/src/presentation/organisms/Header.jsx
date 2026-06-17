@@ -1,14 +1,3 @@
-/**
- * ORGANISMO — Header
- *
- * Barra de navegação principal do app.
- * Responsivo: menu hambúrguer no mobile, links inline no desktop.
- *
- * Comportamento por estado de autenticação:
- *   - Não logado:    logo + links públicos + botões Entrar / Cadastrar
- *   - Morador:       logo + links públicos + link "Meu Painel" + avatar + logout
- *   - Turista:       logo + links públicos + link "Meu Painel" + avatar + logout
- */
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { MdMenu, MdClose, MdPerson } from 'react-icons/md';
@@ -37,19 +26,16 @@ export default function Header() {
       <div className={styles.inner}>
         {/* Logo */}
         <Link to="/" className={styles.logo} aria-label="Eu Amo Piri — página inicial">
-          <span className={styles.logoHeart}>♥</span>
+          <span className={styles.logoHeart}>❤︎</span>
           <span className={styles.logoText}>Eu Amo Piri</span>
         </Link>
 
         {/* Navegação desktop */}
         <nav className={styles.nav} aria-label="Navegação principal">
+          <NavLink to="/" className={navLinkClass} end>Sobre Piri</NavLink>
           <NavLink to="/locais" className={navLinkClass}>Locais</NavLink>
-          <NavLink to="/sobre-piri" className={navLinkClass}>Sobre Piri</NavLink>
-          {isAuthenticated && (
-            <NavLink
-              to={isMorador ? '/morador/painel' : '/turista/painel'}
-              className={navLinkClass}
-            >
+          {isAuthenticated && isMorador && (
+            <NavLink to="/morador/painel" className={navLinkClass}>
               Meu Painel
             </NavLink>
           )}
@@ -60,7 +46,7 @@ export default function Header() {
           {isAuthenticated ? (
             <>
               <Link to="/perfil" className={styles.avatarLink} aria-label="Ver perfil">
-                <Avatar src={user?.avatar} name={user?.name} size="sm" />
+                <Avatar src={user?.avatarUrl} name={user?.name} size="sm" />
               </Link>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Sair
@@ -68,11 +54,11 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" as={Link} to="/login">
-                Entrar
+              <Button variant="outline" size="sm" as={Link} to="/cadastro">
+                Cadastre-se
               </Button>
-              <Button variant="primary" size="sm" as={Link} to="/cadastro">
-                Cadastrar
+              <Button variant="primary" size="sm" as={Link} to="/login">
+                Entrar
               </Button>
             </>
           )}
@@ -97,18 +83,14 @@ export default function Header() {
           className={styles.mobileMenu}
           aria-label="Menu mobile"
         >
+          <NavLink to="/" className={navLinkClass} end onClick={() => setMenuOpen(false)}>
+            Sobre Piri
+          </NavLink>
           <NavLink to="/locais" className={navLinkClass} onClick={() => setMenuOpen(false)}>
             Locais
           </NavLink>
-          <NavLink to="/sobre-piri" className={navLinkClass} onClick={() => setMenuOpen(false)}>
-            Sobre Piri
-          </NavLink>
-          {isAuthenticated && (
-            <NavLink
-              to={isMorador ? '/morador/painel' : '/turista/painel'}
-              className={navLinkClass}
-              onClick={() => setMenuOpen(false)}
-            >
+          {isAuthenticated && isMorador && (
+            <NavLink to="/morador/painel" className={navLinkClass} onClick={() => setMenuOpen(false)}>
               Meu Painel
             </NavLink>
           )}
@@ -123,11 +105,11 @@ export default function Header() {
             </>
           ) : (
             <div className={styles.mobileAuthBtns}>
-              <Button variant="outline" fullWidth as={Link} to="/login" onClick={() => setMenuOpen(false)}>
-                Entrar
+              <Button variant="outline" fullWidth as={Link} to="/cadastro" onClick={() => setMenuOpen(false)}>
+                Cadastre-se
               </Button>
-              <Button variant="primary" fullWidth as={Link} to="/cadastro" onClick={() => setMenuOpen(false)}>
-                Cadastrar
+              <Button variant="primary" fullWidth as={Link} to="/login" onClick={() => setMenuOpen(false)}>
+                Entrar
               </Button>
             </div>
           )}

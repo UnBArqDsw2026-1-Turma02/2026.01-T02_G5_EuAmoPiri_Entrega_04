@@ -62,15 +62,26 @@
   border-color: var(--color-primary-hover);
 }
 
-/* Secondary: marrom — ação secundária de destaque */
+/* Secondary: marrom escuro — editar avaliação */
 .secondary {
   background-color: var(--color-brown);
   color: var(--color-white);
   border-color: var(--color-brown);
 }
 .secondary:hover:not([aria-disabled="true"]) {
-  background-color: var(--color-brown-mid);
-  border-color: var(--color-brown-mid);
+  background-color: color-mix(in srgb, var(--color-brown) 85%, black);
+  border-color: color-mix(in srgb, var(--color-brown) 85%, black);
+}
+
+/* Rust: laranja queimado — excluir avaliação */
+.rust {
+  background-color: #C0550E;
+  color: var(--color-white);
+  border-color: #C0550E;
+}
+.rust:hover:not([aria-disabled="true"]) {
+  background-color: #A04510;
+  border-color: #A04510;
 }
 
 /* Outline: borda verde, fundo transparente */
@@ -84,6 +95,17 @@
   color: var(--color-white);
 }
 
+/* Teal: azul-esverdeado — ação de edição / perfil */
+.teal {
+  background-color: var(--color-teal);
+  color: var(--color-white);
+  border-color: var(--color-teal);
+}
+.teal:hover:not([aria-disabled="true"]) {
+  background-color: color-mix(in srgb, var(--color-teal) 85%, black);
+  border-color: color-mix(in srgb, var(--color-teal) 85%, black);
+}
+
 /* Ghost: sem borda, só texto — ação terciária */
 .ghost {
   background-color: transparent;
@@ -92,6 +114,38 @@
 }
 .ghost:hover:not([aria-disabled="true"]) {
   background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+/* Danger: vermelho — ações destrutivas (deletar perfil) */
+.danger {
+  background-color: #e53935;
+  color: var(--color-white);
+  border-color: #e53935;
+}
+.danger:hover:not([aria-disabled="true"]) {
+  background-color: #c62828;
+  border-color: #c62828;
+}
+
+/* Olive: verde oliva — custo selecionado, ações de destaque */
+.olive {
+  background-color: #6B8E23;
+  color: var(--color-white);
+  border-color: #6B8E23;
+}
+.olive:hover:not([aria-disabled="true"]) {
+  background-color: #556B1A;
+  border-color: #556B1A;
+}
+
+/* Neutral: cinza claro com texto escuro — cancelar / voltar */
+.neutral {
+  background-color: var(--color-gray-100);
+  color: var(--color-text);
+  border-color: transparent;
+}
+.neutral:hover:not([aria-disabled="true"]) {
+  background-color: var(--color-gray-200);
 }
 
 /* --- Estados --- */
@@ -116,6 +170,13 @@
 
 .hiddenText {
   visibility: hidden;
+}
+
+/* Garante que ícone + texto fiquem inline dentro do botão */
+.button > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /* --- Largura total --- */
