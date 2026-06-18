@@ -1,6 +1,3 @@
-/**
- * PÁGINA — PlaceDetailPage  (RF06 detalhe + RF12 comentários + RF13 emojis)
- */
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -112,8 +109,7 @@ function CommentsModal({ experiences, onReact, onClose, userReactions }) {
 export default function PlaceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isTurista } = useAuth();
-  const isMorador = isAuthenticated && !isTurista;
+  const { isAuthenticated, isTurista, isMorador } = useAuth();
 
   const [place,           setPlace]           = useState(null);
   const [experiences,     setExperiences]     = useState([]);
@@ -353,14 +349,14 @@ export default function PlaceDetailPage() {
               <div className={styles.commentsSectionHeader}>
                 <h2 className={styles.sectionTitle}>Comentários ({experiences.length})</h2>
                 {isTurista && (
-                  <Button size="sm" as={Link} to={`/locais/${id}/relatos/novo`}>
+                  <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarSm}>
                     + Avaliar
-                  </Button>
+                  </Link>
                 )}
                 {!isAuthenticated && (
-                  <Button variant="outline" size="sm" as={Link} to="/login">
+                  <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarOutline}>
                     Avaliar Local
-                  </Button>
+                  </Link>
                 )}
               </div>
               <div className={styles.sectionDivider} />
@@ -409,15 +405,15 @@ export default function PlaceDetailPage() {
             <span className={styles.statValue}>{place.visitsCount ?? '—'}</span>
           </div>
         </div>
-        {isTurista && (
-          <Button variant="primary" fullWidth as={Link} to={`/locais/${id}/relatos/novo`}>
+        {(isTurista || isMorador) && (
+          <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
             Avaliar Local
-          </Button>
+          </Link>
         )}
         {!isAuthenticated && (
-          <Button variant="primary" fullWidth as={Link} to="/login">
+          <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
             Avaliar Local
-          </Button>
+          </Link>
         )}
       </aside>
 
