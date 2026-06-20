@@ -13,6 +13,7 @@ datasource db {
 enum AccountType {
   TURISTA
   MORADOR
+  ADMIN
 }
 
 enum PlaceCategory {

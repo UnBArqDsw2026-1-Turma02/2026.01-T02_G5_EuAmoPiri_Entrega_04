@@ -18,7 +18,9 @@ export function mapApiUserToFrontend(apiUser) {
     ? 'morador'
     : apiUser.accountType === 'TURISTA'
       ? 'turista'
-      : null;
+      : apiUser.accountType === 'ADMIN'
+        ? 'admin'
+        : null;
 
   return {
     id: apiUser.id,

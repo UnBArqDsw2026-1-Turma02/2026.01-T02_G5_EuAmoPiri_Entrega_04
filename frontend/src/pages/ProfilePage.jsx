@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MdEdit, MdOutlineDelete, MdLocationOn } from 'react-icons/md';
 import { useAuth } from '../context/AuthContext';
+import { deleteMyAccount } from '../api/auth/authFacade';
 import Avatar from '../presentation/atoms/Avatar';
 import Button from '../presentation/atoms/Button';
 import Badge from '../presentation/atoms/Badge';
@@ -21,6 +22,7 @@ const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 function roleLabel(role) {
   if (role === 'morador') return 'Morador';
   if (role === 'turista') return 'Turista';
+  if (role === 'admin') return 'Admin';
   return role ?? 'Usuário';
 }
 
@@ -451,13 +453,17 @@ function TuristaSections({ user, onRelatosCount }) {
 
 /* ─── componente principal ─── */
 export default function ProfilePage() {
-  const { user, updateProfile, isMorador, isTurista } = useAuth();
+  const { user, updateProfile, logout, isMorador, isTurista } = useAuth();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
   const [relatosCount, setRelatosCount] = useState(0);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountErr, setDeleteAccountErr] = useState(null);
   const fileInputRef = useRef(null);
 
   const [passwordData, setPasswordData] = useState({ current: '', next: '', confirm: '' });
@@ -579,6 +585,31 @@ export default function ProfilePage() {
     }
   }
 
+  function openDeleteAccountConfirm() {
+    setDeleteAccountErr(null);
+    setShowDeleteAccount(true);
+  }
+
+  function closeDeleteAccountConfirm() {
+    if (deletingAccount) return;
+    setShowDeleteAccount(false);
+    setDeleteAccountErr(null);
+  }
+
+  async function handleDeleteAccount() {
+    setDeletingAccount(true);
+    setDeleteAccountErr(null);
+    try {
+      await deleteMyAccount();
+      await logout();
+      navigate('/');
+    } catch (err) {
+      setDeleteAccountErr(err.message ?? 'Erro ao excluir conta. Tente novamente.');
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
   if (!user) {
     return (
       <div className={styles.page}>
@@ -652,7 +683,7 @@ export default function ProfilePage() {
 
         {!editing && (
           <div className={styles.actionBtns}>
-            <Button variant="danger" size="sm" onClick={() => { }}>
+            <Button variant="danger" size="sm" onClick={openDeleteAccountConfirm}>
               <MdOutlineDelete size={16} /> Deletar Perfil
             </Button>
             <Button variant="secondary" size="sm" onClick={startEditing}>
@@ -794,6 +825,31 @@ export default function ProfilePage() {
         )}
         {!editing && isTurista && (
           <TuristaSections user={user} onRelatosCount={setRelatosCount} />
+        )}
+
+        {showDeleteAccount && (
+          <div
+            className={styles.confirmOverlay}
+            onClick={(e) => e.target === e.currentTarget && !deletingAccount && closeDeleteAccountConfirm()}
+          >
+            <div className={`${styles.confirmDialog} ${deleteAccountErr ? styles.confirmDialogError : ''}`}>
+              <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+              <p className={styles.confirmBody}>
+                Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.
+              </p>
+              {deleteAccountErr && (
+                <p className={styles.confirmError} role="alert">{deleteAccountErr}</p>
+              )}
+              <div className={styles.confirmActions}>
+                <Button variant="neutral" size="sm" onClick={closeDeleteAccountConfirm} disabled={deletingAccount}>
+                  Cancelar
+                </Button>
+                <Button variant="rust" size="sm" loading={deletingAccount} onClick={handleDeleteAccount}>
+                  Excluir
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

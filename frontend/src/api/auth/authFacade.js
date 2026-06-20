@@ -109,3 +109,12 @@ export async function updateProfile(profileData, photoFile) {
     throw new Error(extractErrorMessage(error));
   }
 }
+
+export async function deleteMyAccount() {
+  try {
+    await authApi.deleteMyAccount();
+    clearSession();
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+}

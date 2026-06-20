@@ -35,3 +35,7 @@ export async function getProfilePhotoBlob(profilePhotoUrl) {
     : String(Date.now());
   return fetchBlob(`/auth/me/photo?v=${version}`);
 }
+
+export async function deleteMyAccount() {
+  await apiClient.delete('/auth/me');
+}

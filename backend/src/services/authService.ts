@@ -30,6 +30,9 @@ function validateRegisterInput(input: RegisterInput): void {
     if (!input.accountType || !["TURISTA", "MORADOR"].includes(input.accountType)) {
         throw new AuthError("Tipo de conta inválido", 400);
     }
+    if (input.accountType === "ADMIN") {
+        throw new AuthError("Tipo de conta inválido", 400);
+    }
     if (!input.name?.trim()) {
         throw new AuthError("Nome é obrigatório", 400);
     }

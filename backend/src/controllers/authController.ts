@@ -12,6 +12,8 @@ import type { AccountType } from "../model/userModel.ts";
 import { formatUser } from "../views/userView.ts";
 import * as experienceService from "../services/experienceService.ts";
 import { formatMyExperienceList } from "../views/experienceView.ts";
+import * as accountService from "../services/accountService.ts";
+import { AccountError } from "../services/accountService.ts";
 
 export async function register(req: Request, res: Response) {
     try {
@@ -157,5 +159,56 @@ export async function getMyExperiences(req: Request, res: Response) {
         res.status(200).json(formatMyExperienceList(experiences));
     } catch {
         res.status(500).json({ error: "Erro ao carregar avaliações" });
+    }
+}
+
+function handleAccountError(error: unknown, res: Response, fallbackMessage: string) {
+    if (error instanceof AccountError) {
+        res.status(error.statusCode).json({
+            error: error.message,
+            ...(error.code ? { code: error.code } : {}),
+        });
+        return;
+    }
+    res.status(500).json({ error: fallbackMessage });
+}
+
+export async function deleteMyAccount(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    try {
+        await accountService.deleteAccount(req.user.id, {
+            id: req.user.id,
+            accountType: req.user.accountType ?? null,
+        });
+        res.status(204).send();
+    } catch (error) {
+        handleAccountError(error, res, "Erro ao excluir conta");
+    }
+}
+
+export async function deleteUserById(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    const targetUserId = Number(req.params.id);
+    if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+        res.status(400).json({ error: "ID de usuário inválido" });
+        return;
+    }
+
+    try {
+        await accountService.deleteAccount(targetUserId, {
+            id: req.user.id,
+            accountType: req.user.accountType ?? null,
+        });
+        res.status(204).send();
+    } catch (error) {
+        handleAccountError(error, res, "Erro ao excluir conta");
     }
 }

@@ -25,10 +25,24 @@ vi.mock('../infra/adaptor/experienceAdaptor', () => ({
   deleteExperience: vi.fn(),
 }))
 
+vi.mock('../api/auth/authFacade', () => ({
+  deleteMyAccount: vi.fn(),
+}))
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
 import ProfilePage from './ProfilePage'
 import * as AuthContext from '../context/AuthContext'
 import * as placeAdaptor from '../infra/adaptor/placeAdaptor'
 import * as experienceAdaptor from '../infra/adaptor/experienceAdaptor'
+import * as authFacade from '../api/auth/authFacade'
 
 /* ── setup global de mocks de adaptor ── */
 beforeEach(() => {
@@ -37,6 +51,8 @@ beforeEach(() => {
   vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue([])
   vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
   vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
+  vi.mocked(authFacade.deleteMyAccount).mockResolvedValue(undefined)
+  mockNavigate.mockReset()
 })
 
 /* ── fixtures ── */
@@ -69,6 +85,7 @@ function asMorador(extra = {}) {
   vi.mocked(AuthContext.useAuth).mockReturnValue({
     user: mockMorador,
     updateProfile: vi.fn().mockResolvedValue(mockMorador),
+    logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: true,
     isTurista: false,
@@ -80,6 +97,7 @@ function asTurista(extra = {}) {
   vi.mocked(AuthContext.useAuth).mockReturnValue({
     user: mockTurista,
     updateProfile: vi.fn().mockResolvedValue(mockTurista),
+    logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: false,
     isTurista: true,
@@ -143,6 +161,41 @@ describe('ProfilePage — botões de ação', () => {
     renderPage()
     expect(screen.getByRole('link', { name: /cadastrar novo relato/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /cadastrar novo local/i })).not.toBeInTheDocument()
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Exclusão de conta
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — exclusão de conta', () => {
+  it('abre modal de confirmação ao clicar em Deletar Perfil', async () => {
+    asMorador()
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /deletar perfil/i }))
+    expect(screen.getByText(/tem certeza que deseja excluir sua conta/i)).toBeInTheDocument()
+  })
+
+  it('exclui conta, desloga e redireciona ao confirmar', async () => {
+    const logout = vi.fn().mockResolvedValue(undefined)
+    asMorador({ logout })
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /deletar perfil/i }))
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+    await waitFor(() => expect(authFacade.deleteMyAccount).toHaveBeenCalled())
+    await waitFor(() => expect(logout).toHaveBeenCalled())
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+
+  it('exibe erro quando falha ao excluir conta', async () => {
+    vi.mocked(authFacade.deleteMyAccount).mockRejectedValue(new Error('Erro ao excluir'))
+    asMorador()
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /deletar perfil/i }))
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+    await waitFor(() => expect(screen.getByText('Erro ao excluir')).toBeInTheDocument())
   })
 })
 

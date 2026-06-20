@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Request, Response, NextFunction } from "express";
-import { requireAccountType, requireMorador, requireTurista } from "./requireAccountTypeMiddleware.ts";
+import { requireAccountType, requireMorador, requireTurista, requireAdmin } from "./requireAccountTypeMiddleware.ts";
 
 function mockRes() {
     const res = {
@@ -59,5 +59,19 @@ describe("requireAccountTypeMiddleware", () => {
         const res = mockRes();
         middleware(req, res, next);
         expect(next).toHaveBeenCalled();
+    });
+
+    it("requireAdmin permite ADMIN", () => {
+        const req = { user: { accountType: "ADMIN" } } as Request;
+        const res = mockRes();
+        requireAdmin(req, res, next);
+        expect(next).toHaveBeenCalled();
+    });
+
+    it("requireAdmin rejeita TURISTA", () => {
+        const req = { user: { accountType: "TURISTA" } } as Request;
+        const res = mockRes();
+        requireAdmin(req, res, next);
+        expect(res.status).toHaveBeenCalledWith(403);
     });
 });

@@ -146,6 +146,10 @@ export async function updateProfile(
 
     await validateEmailChange(current, input);
 
+    if (input.accountType === "ADMIN") {
+        throw new ProfileError("Tipo de conta inválido", 400);
+    }
+
     const oldPhotoKey = current.profilePhotoUrl;
     let newPhotoKey = oldPhotoKey;
 

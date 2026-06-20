@@ -224,4 +224,50 @@ router.get("/me/photo", authMiddleware, authController.getProfilePhoto);
  */
 router.get("/me/experiences", authMiddleware, authController.getMyExperiences);
 
+/**
+ * @openapi
+ * /auth/me:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: Excluir conta do usuário autenticado
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Conta excluída com sucesso
+ *       401:
+ *         description: Não autenticado
+ *       404:
+ *         description: Usuário não encontrado
+ */
+router.delete("/me", authMiddleware, authController.deleteMyAccount);
+
+/**
+ * @openapi
+ * /auth/users/{id}:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: Excluir conta por ID (admin ou dono)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Conta excluída com sucesso
+ *       400:
+ *         description: ID inválido
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado
+ *       404:
+ *         description: Usuário não encontrado
+ */
+router.delete("/users/:id", authMiddleware, authController.deleteUserById);
+
 export default router;
