@@ -4,32 +4,21 @@ import { useForm } from 'react-hook-form';
 import StarRating from '../atoms/StarRating';
 import Button from '../atoms/Button';
 import FormField from '../molecules/FormField';
+import PhotoUploadField from '../molecules/PhotoUploadField';
+import FormResultModal from '../molecules/FormResultModal';
+import { containsBlacklistedWord } from '../../utils/blacklist';
 import styles from './ExperienceForm.module.css';
 
-const COST_OPTIONS = ['$', '$$', '$$$', '$$$$', '$$$$$'];
-
-/**
- * RNF02 — Blacklist client-side
- * Detecta linguagem ofensiva antes de enviar ao backend.
- */
-const BLACKLIST = [
-  'merda', 'idiota', 'imbecil', 'burro', 'puta', 'foda', 'fodas', 'fodase',
-  'caralho', 'viado', 'desgraça', 'inferno', 'lixo', 'bosta', 'cuzão', 'otário',
-  'filhodaputa', 'arrombado', 'babaca', 'cretino', 'maldito', 'vagabundo',
-];
-
-function containsBlacklistedWord(text) {
-  if (!text) return false;
-  const normalized = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  return BLACKLIST.some((w) => normalized.includes(w));
-}
+const MIN_TEXT = 100;
+const MAX_TEXT = 2000;
 
 export default function ExperienceForm({
   onSubmit,
   onCancel,
   loading       = false,
   defaultValues = {},
-  /* Customização dos modais de resultado */
+  existingPhotos = [],
+  submitLabel   = 'Enviar Avaliação',
   successTitle   = 'Avaliação enviada com sucesso',
   successText    = 'Sua experiência vai ajudar outros viajantes.',
   successPrimary = { label: 'Avaliar outros lugares', to: '/locais' },
@@ -41,89 +30,64 @@ export default function ExperienceForm({
     register,
     handleSubmit,
     setValue,
-    getValues,
     watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      rating:    defaultValues.rating    ?? 0,
-      cost:      defaultValues.cost      ?? '',
+      rating: defaultValues.rating ?? 0,
+      title:  defaultValues.title  ?? '',
+      text:   defaultValues.text   ?? '',
       visitDate: defaultValues.visitDate ?? '',
-      title:     defaultValues.title     ?? '',
-      text:      defaultValues.text      ?? '',
     },
   });
 
   const rating = watch('rating');
-  const cost   = watch('cost');
-  const [submitStatus,  setSubmitStatus]  = useState(null); // null | 'success' | 'error'
+  const [photos, setPhotos] = useState([]);
+  const [submitStatus, setSubmitStatus] = useState(null);
   const [ratingTouched, setRatingTouched] = useState(false);
+  const [blacklistError, setBlacklistError] = useState('');
 
   async function onFormSubmit(data) {
     setRatingTouched(true);
+    setBlacklistError('');
     if (data.rating === 0) return;
+    if (!data.text?.trim()) return;
+    if (containsBlacklistedWord(data.text)) {
+      setBlacklistError('Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.');
+      setSubmitStatus('error');
+      return;
+    }
     try {
-      await onSubmit(data);
+      await onSubmit({ ...data, photos });
       setSubmitStatus('success');
     } catch {
       setSubmitStatus('error');
     }
   }
 
-  /**
-   * RNF02 — Verifica blacklist ANTES da validação do react-hook-form.
-   * Se o texto contiver palavra proibida, exibe o overlay de erro imediatamente,
-   * sem depender de minLength/required.
-   */
-  function handleFormSubmit(e) {
-    const text = getValues('text');
-    if (containsBlacklistedWord(text)) {
-      e.preventDefault();
-      setSubmitStatus('error');
-      return;
-    }
-    // Passa para a validação normal do react-hook-form
-    handleSubmit(onFormSubmit)(e);
-  }
-
   return (
     <>
-    {/* ── Overlay de sucesso ── */}
     {submitStatus === 'success' && (
-      <div className={styles.resultModal} role="dialog" aria-modal="true">
-        <div className={styles.resultCard}>
-          <p className={styles.resultLogo}>❤ EuAmoPiri</p>
-          <span className={styles.resultIcon} aria-hidden="true">✓</span>
-          <h2 className={styles.resultTitle}>{successTitle}</h2>
-          <p className={styles.resultText}>{successText}</p>
-          <div className={styles.resultActions}>
-            <Button variant="primary" fullWidth as={Link} to={successPrimary.to}>{successPrimary.label}</Button>
-            {successSecondary && (
-              <Button variant="neutral" fullWidth as={Link} to={successSecondary.to}>{successSecondary.label}</Button>
-            )}
-          </div>
-        </div>
-      </div>
+      <FormResultModal
+        variant="success"
+        title={successTitle}
+        text={successText}
+        primaryAction={successPrimary}
+        secondaryAction={successSecondary}
+      />
     )}
 
-    {/* ── Overlay de erro ── */}
     {submitStatus === 'error' && (
-      <div className={styles.resultModal} role="dialog" aria-modal="true">
-        <div className={`${styles.resultCard} ${styles.resultCardError}`}>
-          <p className={styles.resultLogo}>❤ EuAmoPiri</p>
-          <span className={`${styles.resultIcon} ${styles.resultIconError}`} aria-hidden="true">⚠️</span>
-          <h2 className={styles.resultTitle}>{errorTitle}</h2>
-          <p className={styles.resultText}>{errorText}</p>
-          <div className={styles.resultActions}>
-            <Button variant="neutral" fullWidth onClick={() => setSubmitStatus(null)}>Voltar</Button>
-          </div>
-        </div>
-      </div>
+      <FormResultModal
+        variant="error"
+        title={errorTitle}
+        text={blacklistError || errorText}
+        onClose={() => setSubmitStatus(null)}
+      />
     )}
 
-    <form className={styles.form} onSubmit={handleFormSubmit} noValidate>
+    <form className={styles.form} onSubmit={handleSubmit(onFormSubmit)} noValidate>
 
-      {/* ── Avaliação em estrelas ── */}
       <div className={styles.field}>
         <span className={styles.fieldLabel}>Qual sua avaliação?</span>
         <div className={styles.box}>
@@ -143,36 +107,14 @@ export default function ExperienceForm({
         </div>
       </div>
 
-      {/* ── Data da visita ── */}
       <FormField
         id="visitDate"
         label="Data da visita"
         type="date"
-        registration={register('visitDate')}
+        registration={register('visitDate', { required: 'Data da visita é obrigatória' })}
+        error={errors.visitDate?.message}
       />
 
-      {/* ── Classificação de custo ── */}
-      <div className={styles.field}>
-        <span className={styles.fieldLabel}>Qual foi o custo?</span>
-        <div className={styles.box}>
-          <span className={styles.boxLabel}>CLASSIFICAÇÃO DE CUSTO</span>
-          <div className={styles.costRow}>
-            {COST_OPTIONS.map((opt) => (
-              <Button
-                key={opt}
-                type="button"
-                variant={cost === opt ? 'olive' : 'outline'}
-                size="sm"
-                onClick={() => setValue('cost', opt)}
-              >
-                {opt}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Diretrizes ── */}
       <div className={styles.guidelines}>
         <p className={styles.guidelinesTitle}>COMPARTILHE SUA EXPERIÊNCIA COM RESPEITO 🤝</p>
         <p className={styles.guidelinesText}>
@@ -180,7 +122,6 @@ export default function ExperienceForm({
         </p>
       </div>
 
-      {/* ── Título + Comentário numa caixinha ── */}
       <div className={styles.field}>
         <span className={styles.fieldLabel}>Deixe seu comentário</span>
         <div className={styles.box}>
@@ -195,31 +136,61 @@ export default function ExperienceForm({
             label="SEU COMENTÁRIO"
             multiline
             rows={4}
-            maxLength={2000}
-            placeholder="Compartilhe sua experiência (mínimo 20 caracteres)..."
+            maxLength={MAX_TEXT}
+            placeholder="Compartilhe sua experiência (mínimo 100 caracteres)..."
             registration={register('text', {
-              required:  'O comentário não pode estar vazio',
-              minLength: { value: 20, message: 'Mínimo de 20 caracteres' },
-              maxLength: { value: 2000, message: 'Máximo de 2000 caracteres' },
+              required: 'O comentário não pode estar vazio',
+              validate: (value) => {
+                if (rating > 0 && !value?.trim()) {
+                  return 'O comentário é obrigatório quando há avaliação em estrelas';
+                }
+                if (value?.trim() && value.trim().length < MIN_TEXT) {
+                  return `Mínimo de ${MIN_TEXT} caracteres`;
+                }
+                return true;
+              },
+              minLength: { value: MIN_TEXT, message: `Mínimo de ${MIN_TEXT} caracteres` },
+              maxLength: { value: MAX_TEXT, message: `Máximo de ${MAX_TEXT} caracteres` },
             })}
-            error={errors.text?.message}
+            error={errors.text?.message || blacklistError}
           />
-    
         </div>
       </div>
 
-      {/* ── Ações ── */}
+      {existingPhotos.length > 0 && (
+        <div className={styles.existingPhotos}>
+          <span className={styles.fieldLabel}>Fotos atuais</span>
+          <div className={styles.existingPhotosGrid}>
+            {existingPhotos.map((photo) => (
+              <img key={photo.id} src={photo.url} alt="" className={styles.existingPhoto} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <PhotoUploadField
+        photos={photos}
+        onChange={setPhotos}
+        min={0}
+        max={3}
+        label={existingPhotos.length > 0 ? 'Substituir fotos (opcional)' : 'Fotos (opcional)'}
+        hint={existingPhotos.length > 0
+          ? 'Envie até 3 novas fotos para substituir as atuais. Deixe vazio para manter as existentes.'
+          : 'Envie até 3 fotos da sua visita.'}
+      />
+
       <div className={styles.actions}>
         {onCancel && (
-          <Button type="button" variant="neutral" onClick={onCancel}>
+          <Button variant="neutral" type="button" onClick={onCancel} disabled={loading}>
             Cancelar
           </Button>
         )}
-        <Button type="submit" variant="primary" loading={loading}>
-          Enviar Avaliação
+        <Button variant="primary" type="submit" loading={loading}>
+          {submitLabel}
         </Button>
       </div>
     </form>
     </>
   );
 }
+

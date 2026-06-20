@@ -149,3 +149,100 @@ export async function listMyExperiences(userId: number) {
     return experienceModel.findExperiencesByUserId(userId);
 }
 
+async function assertExperienceOwner(
+    placeId: number,
+    experienceId: number,
+    userId: number
+) {
+    const experience = await experienceModel.findExperienceById(experienceId);
+    if (!experience) {
+        throw new ExperienceError("Relato não encontrado", 404);
+    }
+    if (experience.placeId !== placeId) {
+        throw new ExperienceError("Relato não pertence a este local", 400, "INVALID_PLACE");
+    }
+    if (experience.userId !== userId) {
+        throw new ExperienceError("Acesso negado: você não é o autor deste relato", 403, "FORBIDDEN_OWNER");
+    }
+    return experience;
+}
+
+async function uploadExperiencePhotoRecords(
+    experienceId: number,
+    files: Express.Multer.File[]
+): Promise<{ url: string; sortOrder: number }[]> {
+    const photoRecords: { url: string; sortOrder: number }[] = [];
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file) continue;
+        const key = buildExperiencePhotoKey(experienceId, i, file.mimetype);
+        await storageService.uploadBuffer(key, file.buffer, file.mimetype);
+        photoRecords.push({ url: key, sortOrder: i });
+    }
+    return photoRecords;
+}
+
+async function deleteExperiencePhotoKeys(keys: string[]) {
+    await Promise.all(keys.map((key) => storageService.deleteObject(key).catch(() => {})));
+}
+
+export async function updateExperience(
+    userId: number,
+    placeId: number,
+    experienceId: number,
+    input: CreateExperienceInput,
+    files: Express.Multer.File[]
+) {
+    const existing = await assertExperienceOwner(placeId, experienceId, userId);
+    const validated = await validateExperienceInput(placeId, input, files);
+
+    const hasNewPhotos = files.length > 0;
+    const oldPhotoKeys = (existing.photos ?? []).map((p) => p.url);
+    let newPhotoRecords: { url: string; sortOrder: number }[] = [];
+
+    if (hasNewPhotos) {
+        try {
+            newPhotoRecords = await uploadExperiencePhotoRecords(experienceId, files);
+        } catch {
+            await deleteExperiencePhotoKeys(newPhotoRecords.map((p) => p.url));
+            throw new ExperienceError("Erro ao salvar fotos do relato", 500);
+        }
+    }
+
+    try {
+        await experienceModel.updateExperienceById(experienceId, {
+            rating: validated.rating,
+            text: validated.text,
+            visitDate: validated.visitDate,
+            title: validated.title ?? null,
+        });
+
+        if (hasNewPhotos) {
+            await experienceModel.replaceExperiencePhotos(experienceId, newPhotoRecords);
+            await deleteExperiencePhotoKeys(oldPhotoKeys);
+        }
+    } catch {
+        if (hasNewPhotos) {
+            await deleteExperiencePhotoKeys(newPhotoRecords.map((p) => p.url));
+        }
+        throw new ExperienceError("Erro ao atualizar o relato", 500);
+    }
+
+    const list = await experienceModel.findAllExperiencesByPlaceId(placeId);
+    const full = list.find((e) => e.id === experienceId);
+    if (!full) throw new ExperienceError("Erro ao atualizar o relato", 500);
+    return full;
+}
+
+export async function deleteExperience(
+    userId: number,
+    placeId: number,
+    experienceId: number
+) {
+    const experience = await assertExperienceOwner(placeId, experienceId, userId);
+    const photoKeys = (experience.photos ?? []).map((p) => p.url);
+
+    await experienceModel.deleteExperienceById(experienceId);
+    await deleteExperiencePhotoKeys(photoKeys);
+}
+

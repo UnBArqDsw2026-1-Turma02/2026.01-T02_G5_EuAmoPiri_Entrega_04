@@ -1,4 +1,16 @@
-import apiClient, { postFormData } from '../../api/client';
+﻿/**
+ * Adaptor de Relatos (Experiences) — integração com API REST.
+ */
+import apiClient, { postFormData, patchFormData } from '../../api/client';
+import { fetchPlaces } from './placeAdaptor';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
+
+function mapExperience(exp) {
+  return {
+    ...exp,
+    photos: (exp.photos ?? []).map((p) => ({ ...p, url: resolveMediaUrl(p.url) })),
+  };
+}
 
 /* ─── Dados mock ─── */
 const now = Date.now();
@@ -115,36 +127,24 @@ export async function fetchExperiencesByPlaces(placeIds) {
   return results.flat();
 }
 
-export async function createExperience(placeId, experienceData, photoFiles = []) {
-  try {
-    const fd = new FormData();
-    fd.append('rating',    String(experienceData.rating    ?? 5));
-    fd.append('text',      experienceData.text             ?? '');
-    fd.append('visitDate', experienceData.visitDate        ?? new Date().toISOString().slice(0, 10));
-    if (experienceData.title) fd.append('title', experienceData.title);
-    (photoFiles ?? []).forEach((file) => { if (file instanceof File) fd.append('photos', file); });
+export async function updateExperience(placeId, experienceId, experienceData, photoFiles = []) {
+  const formData = new FormData();
+  formData.append('rating', String(experienceData.rating));
+  formData.append('text', experienceData.text);
+  formData.append('visitDate', experienceData.visitDate);
+  if (experienceData.title) formData.append('title', experienceData.title);
+  (photoFiles ?? []).forEach((file) => formData.append('photos', file));
 
-    const data = await postFormData(`/places/${placeId}/experiences`, fd);
-    return { ...data, dias: 0 };
-  } catch {
-    const newExp = { ...experienceData, id: Date.now(), placeId: Number(placeId), dias: 0 };
-    MOCK_EXPERIENCES.push(newExp);
-    return newExp;
-  }
+  const data = await patchFormData(
+    `/places/${placeId}/experiences/${experienceId}`,
+    formData
+  );
+  return mapExperience(data);
 }
 
-export async function updateExperience(placeId, id, experienceData) {
-  try {
-    const { data } = await apiClient.put(`/places/${placeId}/experiences/${id}`, experienceData);
-    return data;
-  } catch {
-    const idx = MOCK_EXPERIENCES.findIndex((e) => String(e.id) === String(id));
-    if (idx !== -1) {
-      MOCK_EXPERIENCES[idx] = { ...MOCK_EXPERIENCES[idx], ...experienceData };
-      return MOCK_EXPERIENCES[idx];
-    }
-    throw new Error('Experience not found');
-  }
+export async function deleteExperience(placeId, experienceId) {
+  await apiClient.delete(`/places/${placeId}/experiences/${experienceId}`);
+  return { success: true };
 }
 
 export async function deleteExperience(placeId, id) {

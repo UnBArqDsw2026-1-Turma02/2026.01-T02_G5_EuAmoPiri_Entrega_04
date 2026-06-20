@@ -1,4 +1,7 @@
-import apiClient, { postFormData } from '../../api/client';
+/**
+ * Adaptor de Locais — integração com API REST.
+ */
+import apiClient, { postFormData, patchFormData } from '../../api/client';
 import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 /* ─── Mapeamento de fotos do backend ─── */
@@ -168,31 +171,21 @@ export async function createPlace(placeData) {
   }
 }
 
-export async function updatePlace(id, placeData) {
-  // Sem endpoint PUT/PATCH no backend — atualiza apenas localmente
-  const idx = MOCK_PLACES.findIndex((p) => String(p.id) === String(id));
-  if (idx !== -1) {
-    MOCK_PLACES[idx] = { ...MOCK_PLACES[idx], ...placeData };
-    return MOCK_PLACES[idx];
+export async function updatePlace(id, formData) {
+  try {
+    const data = await patchFormData(`/places/${id}`, formData);
+    return mapPlace(data);
+  } catch (error) {
+    if (error.response) throw error;
+    const wrapped = new Error(error.message ?? 'Erro ao atualizar o local.');
+    wrapped.cause = error;
+    throw wrapped;
   }
-  const localIdx = LOCAL_PLACES.findIndex((p) => String(p.id) === String(id));
-  if (localIdx !== -1) {
-    LOCAL_PLACES[localIdx] = { ...LOCAL_PLACES[localIdx], ...placeData };
-    saveLocalPlaces(LOCAL_PLACES);
-    return LOCAL_PLACES[localIdx];
-  }
-  throw new Error('Local não encontrado');
 }
 
 export async function deletePlace(id) {
-  // Sem endpoint DELETE no backend — remove apenas localmente
-  const idx = MOCK_PLACES.findIndex((p) => String(p.id) === String(id));
-  if (idx !== -1) MOCK_PLACES.splice(idx, 1);
-  const localIdx = LOCAL_PLACES.findIndex((p) => String(p.id) === String(id));
-  if (localIdx !== -1) {
-    LOCAL_PLACES.splice(localIdx, 1);
-    saveLocalPlaces(LOCAL_PLACES);
-  }
+  await apiClient.delete(`/places/${id}`);
+  return { success: true };
 }
 
 export async function fetchMyPlaces() {

@@ -68,3 +68,60 @@ export async function getExperiencePhoto(req: Request, res: Response) {
         res.status(500).json({ error: "Erro ao carregar foto" });
     }
 }
+
+export async function updateExperience(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    const placeId = Number(req.params.placeId);
+    const experienceId = Number(req.params.experienceId);
+    if (Number.isNaN(placeId) || Number.isNaN(experienceId)) {
+        res.status(400).json({ error: "Parâmetros inválidos" });
+        return;
+    }
+
+    try {
+        const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+        const updated = await experienceService.updateExperience(
+            req.user.id,
+            placeId,
+            experienceId,
+            req.body,
+            files
+        );
+        res.status(200).json(formatExperience(updated, placeId));
+    } catch (err) {
+        if (err instanceof ExperienceError) {
+            res.status(err.statusCode).json({ error: err.message, code: err.code });
+            return;
+        }
+        res.status(500).json({ error: "Erro ao atualizar o relato" });
+    }
+}
+
+export async function deleteExperience(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    const placeId = Number(req.params.placeId);
+    const experienceId = Number(req.params.experienceId);
+    if (Number.isNaN(placeId) || Number.isNaN(experienceId)) {
+        res.status(400).json({ error: "Parâmetros inválidos" });
+        return;
+    }
+
+    try {
+        await experienceService.deleteExperience(req.user.id, placeId, experienceId);
+        res.status(204).send();
+    } catch (err) {
+        if (err instanceof ExperienceError) {
+            res.status(err.statusCode).json({ error: err.message, code: err.code });
+            return;
+        }
+        res.status(500).json({ error: "Erro ao excluir o relato" });
+    }
+}
