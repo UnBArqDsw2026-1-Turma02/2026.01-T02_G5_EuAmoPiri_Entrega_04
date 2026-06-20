@@ -1,7 +1,7 @@
 ﻿/**
  * Adaptor de Relatos (Experiences) — integração com API REST.
  */
-import apiClient, { postFormData } from '../../api/client';
+import apiClient, { postFormData, patchFormData } from '../../api/client';
 import { fetchPlaces } from './placeAdaptor';
 import { resolveMediaUrl } from '../../utils/mediaUrl';
 
@@ -89,13 +89,23 @@ export async function createExperience(placeId, experienceData, photoFiles = [])
   return mapExperience(data);
 }
 
-export async function updateExperience(placeId, experienceId, experienceData) {
-  console.warn('[mock] updateExperience chamado para id:', experienceId);
-  return { ...experienceData, id: experienceId, placeId: Number(placeId) };
+export async function updateExperience(placeId, experienceId, experienceData, photoFiles = []) {
+  const formData = new FormData();
+  formData.append('rating', String(experienceData.rating));
+  formData.append('text', experienceData.text);
+  formData.append('visitDate', experienceData.visitDate);
+  if (experienceData.title) formData.append('title', experienceData.title);
+  (photoFiles ?? []).forEach((file) => formData.append('photos', file));
+
+  const data = await patchFormData(
+    `/places/${placeId}/experiences/${experienceId}`,
+    formData
+  );
+  return mapExperience(data);
 }
 
 export async function deleteExperience(placeId, experienceId) {
-  console.warn('[mock] deleteExperience chamado para id:', experienceId);
+  await apiClient.delete(`/places/${placeId}/experiences/${experienceId}`);
   return { success: true };
 }
 

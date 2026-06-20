@@ -12,12 +12,15 @@ vi.mock('react-router-dom', async (importOriginal) => {
   }
 })
 
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 1, name: 'Turista Teste' } }),
+}))
+
 vi.mock('../infra/adaptor/experienceAdaptor', () => ({
-  fetchExperiencesByPlace: vi.fn(),
+  fetchMyExperiences: vi.fn(),
   updateExperience: vi.fn(),
 }))
 
-// Mock StarRating since it's complex
 vi.mock('../presentation/atoms/StarRating', () => ({
   default: ({ value, onChange, readonly }) =>
     readonly
@@ -29,23 +32,23 @@ import EditExperiencePage from './EditExperiencePage'
 import * as experienceAdaptor from '../infra/adaptor/experienceAdaptor'
 
 const mockExperience = {
-  id: 2, placeId: 1, userId: 'current',
+  id: 2, placeId: 1, userId: 1,
   placeName: 'Botequim Mercatto Piri',
   title: 'Melhor botequim de Pirenópolis',
-  text: 'Recomendo demais! A qualidade da comida é impecável e os preços são justos.',
-  rating: 5, visitDate: '2026-06-01', dias: 5,
+  text: 'Recomendo demais! A qualidade da comida é impecável e os preços são justos. Ambiente acolhedor e atendimento excelente para toda a família.',
+  rating: 5, visitDate: '2026-06-01',
 }
 
 const renderPage = () => render(<MemoryRouter><EditExperiencePage /></MemoryRouter>)
 
 describe('EditExperiencePage', () => {
   beforeEach(() => {
-    vi.mocked(experienceAdaptor.fetchExperiencesByPlace).mockResolvedValue([mockExperience])
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([mockExperience])
     vi.mocked(experienceAdaptor.updateExperience).mockResolvedValue(mockExperience)
   })
 
   it('mostra Spinner enquanto carrega', () => {
-    vi.mocked(experienceAdaptor.fetchExperiencesByPlace).mockReturnValue(new Promise(() => { }))
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockReturnValue(new Promise(() => { }))
     renderPage()
     expect(screen.getByRole('status', { name: /carregando/i })).toBeInTheDocument()
   })
@@ -72,15 +75,15 @@ describe('EditExperiencePage', () => {
       expect(screen.getByDisplayValue(mockExperience.text)).toBeInTheDocument()
     )
 
-    // Clica na estrela para garantir rating selecionado
     await user.click(screen.getByRole('button', { name: '5 estrelas' }))
-    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }))
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
     await waitFor(() =>
       expect(experienceAdaptor.updateExperience).toHaveBeenCalledWith(
         '1',
         '2',
-        expect.objectContaining({ text: mockExperience.text })
+        expect.objectContaining({ text: mockExperience.text }),
+        expect.any(Array)
       )
     )
   })
@@ -94,7 +97,7 @@ describe('EditExperiencePage', () => {
     )
 
     await user.click(screen.getByRole('button', { name: '5 estrelas' }))
-    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }))
+    await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
     await waitFor(() =>
       expect(screen.getByText('Avaliação atualizada com sucesso!')).toBeInTheDocument()

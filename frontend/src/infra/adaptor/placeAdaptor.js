@@ -1,7 +1,7 @@
 /**
  * Adaptor de Locais — integração com API REST.
  */
-import apiClient, { postFormData } from '../../api/client';
+import apiClient, { postFormData, patchFormData } from '../../api/client';
 import { resolveMediaUrl } from '../../utils/mediaUrl';
 
 function mapPlace(place) {
@@ -43,13 +43,20 @@ export async function createPlace(formData) {
   }
 }
 
-export async function updatePlace(id, placeData) {
-  console.warn('[mock] updatePlace chamado para id:', id);
-  return { ...placeData, id };
+export async function updatePlace(id, formData) {
+  try {
+    const data = await patchFormData(`/places/${id}`, formData);
+    return mapPlace(data);
+  } catch (error) {
+    if (error.response) throw error;
+    const wrapped = new Error(error.message ?? 'Erro ao atualizar o local.');
+    wrapped.cause = error;
+    throw wrapped;
+  }
 }
 
 export async function deletePlace(id) {
-  console.warn('[mock] deletePlace chamado para id:', id);
+  await apiClient.delete(`/places/${id}`);
   return { success: true };
 }
 
