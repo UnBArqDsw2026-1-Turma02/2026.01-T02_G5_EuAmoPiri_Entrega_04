@@ -78,35 +78,6 @@ router.post("/login", authController.login);
 
 /**
  * @openapi
- * /auth/google:
- *   post:
- *     tags: [Auth]
- *     summary: Login com Google OAuth
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/GoogleAuthRequest'
- *     responses:
- *       200:
- *         description: Autenticação Google bem-sucedida
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/AuthResponse'
- *                 - type: object
- *                   properties:
- *                     isNewUser:
- *                       type: boolean
- *       401:
- *         description: Token Google inválido
- */
-router.post("/google", authController.googleLogin);
-
-/**
- * @openapi
  * /auth/me:
  *   get:
  *     tags: [Auth]

@@ -44,13 +44,6 @@ const options = {
                         password: { type: "string" },
                     },
                 },
-                GoogleAuthRequest: {
-                    type: "object",
-                    required: ["credential"],
-                    properties: {
-                        credential: { type: "string", description: "id_token retornado pelo Google OAuth" },
-                    },
-                },
                 User: {
                     type: "object",
                     properties: {

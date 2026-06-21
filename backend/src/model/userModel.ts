@@ -6,10 +6,6 @@ export async function findByEmail(email: string): Promise<User | null> {
     return prisma.user.findUnique({ where: { email } });
 }
 
-export async function findByGoogleId(googleId: string): Promise<User | null> {
-    return prisma.user.findUnique({ where: { googleId } });
-}
-
 export async function findById(id: number): Promise<User | null> {
     return prisma.user.findUnique({ where: { id } });
 }

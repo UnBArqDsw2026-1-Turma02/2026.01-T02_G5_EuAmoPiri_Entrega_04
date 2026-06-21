@@ -11,7 +11,6 @@ export function formatUser(user: User) {
         profession: user.profession,
         biography: user.biography,
         profilePhotoUrl: user.profilePhotoUrl,
-        googleId: user.googleId,
         createdAt: user.createdAt,
     };
 }

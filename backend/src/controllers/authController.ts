@@ -55,20 +55,6 @@ export function login(req: Request, res: Response, next: NextFunction) {
     })(req, res, next);
 }
 
-export async function googleLogin(req: Request, res: Response) {
-    try {
-        const { credential } = req.body as { credential?: string };
-        const result = await authService.loginWithGoogle(credential ?? "");
-        res.status(200).json(result);
-    } catch (error) {
-        if (error instanceof AuthError) {
-            res.status(error.statusCode).json({ error: error.message });
-            return;
-        }
-        res.status(500).json({ error: "Erro ao autenticar com Google" });
-    }
-}
-
 export function me(req: Request, res: Response) {
     if (!req.user) {
         res.status(401).json({ error: "Não autenticado" });

@@ -28,7 +28,6 @@ function buildUserFromTokenPayload(payload: { sub: number; email: string }): Exp
         profession: null,
         biography: null,
         profilePhotoUrl: null,
-        googleId: null,
         createdAt: new Date(0),
     };
 }
