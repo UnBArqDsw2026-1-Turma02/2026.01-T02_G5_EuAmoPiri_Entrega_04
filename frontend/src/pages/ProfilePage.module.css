@@ -10,6 +10,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  min-width: 0;
+  width: 100%;
 }
 
 /* ── Cabeçalho do perfil ── */
@@ -186,6 +188,9 @@
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .sectionTitle {
@@ -207,11 +212,25 @@
 /* ── Relatos (morador) — scroll horizontal idêntico ao Turista ── */
 .relatosGrid {
   display: flex;
+  flex-wrap: nowrap;
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
-  padding-bottom: var(--space-2);
-  scroll-snap-type: x mandatory;
+  overflow-y: hidden;
+  padding-bottom: var(--space-3);
+  scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-x;
+}
+
+.relatosGrid.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
 }
 
 .relatosGrid::-webkit-scrollbar {
@@ -234,9 +253,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  min-width: 280px;
-  max-width: 320px;
-  flex-shrink: 0;
+  flex: 0 0 300px;
+  width: 300px;
   scroll-snap-align: start;
   background: var(--color-bg-card);
   box-sizing: border-box;
@@ -356,6 +374,15 @@
   margin-top: 2px;
 }
 
+.localThumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-gray-100);
+}
+
 .localNome {
   display: block;
   font-size: var(--font-size-sm);
@@ -411,11 +438,25 @@
 /* ── Avaliações (turista) — scroll horizontal ── */
 .avaliacoesGrid {
   display: flex;
+  flex-wrap: nowrap;
   gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
-  padding-bottom: var(--space-2);
-  scroll-snap-type: x mandatory;
+  overflow-y: hidden;
+  padding-bottom: var(--space-3);
+  scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-x;
+}
+
+.avaliacoesGrid.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
 }
 
 .avaliacoesGrid::-webkit-scrollbar {
@@ -438,9 +479,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  min-width: 280px;
-  max-width: 320px;
-  flex-shrink: 0;
+  flex: 0 0 300px;
+  width: 300px;
   scroll-snap-align: start;
   background: var(--color-bg-card);
   box-sizing: border-box;
@@ -711,8 +751,10 @@
     grid-template-columns: 1fr;
   }
 
-  .avaliacoesGrid {
-    grid-template-columns: 1fr;
+  .relatoCard,
+  .avaliacaoCard {
+    flex: 0 0 min(300px, 85vw);
+    width: min(300px, 85vw);
   }
 
   .localRow,

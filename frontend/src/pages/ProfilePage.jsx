@@ -16,6 +16,7 @@ import {
   fetchExperiencesByPlaces,
   fetchMyExperiences,
 } from '../infra/adaptor/experienceAdaptor';
+import { categoryLabel } from '../utils/placeCategories';
 import styles from './ProfilePage.module.css';
 
 /* ─── helpers ─── */
@@ -32,19 +33,85 @@ function formatDate(iso) {
   return `${d}/${m}/${y}`;
 }
 
-/* ─── mock de dados (substituir por API quando disponível) ─── */
-const MOCK_RELATOS_MORADOR = [
-  { id: 1, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país e tenho propriedade para dizer que já cansara de restaurantes melhores em Pirenópolis.', likes: 3 },
-  { id: 2, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
-  { id: 3, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
-];
+function useHorizontalDragScroll(draggingClass) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let scrollStart = 0;
+
+    function onPointerDown(e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      isDragging = true;
+      startX = e.clientX;
+      scrollStart = el.scrollLeft;
+      el.setPointerCapture?.(e.pointerId);
+      el.classList.add(draggingClass);
+    }
+
+    function endDrag(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove(draggingClass);
+      if (el.hasPointerCapture?.(e.pointerId)) {
+        el.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      el.scrollLeft = scrollStart - (e.clientX - startX);
+    }
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown);
+      el.removeEventListener('pointermove', onPointerMove);
+      el.removeEventListener('pointerup', endDrag);
+      el.removeEventListener('pointercancel', endDrag);
+    };
+  }, [draggingClass]);
+
+  return ref;
+}
+
+/* ─── helpers de relatos (morador) ─── */
+function diffDaysFrom(iso) {
+  if (!iso) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}
+
+function countReactionTotal(reactions) {
+  if (!reactions) return 0;
+  return (reactions.like ?? 0) + (reactions.heart ?? 0);
+}
+
+function mapMoradorRelato(exp, placeNamesById) {
+  return {
+    id: `${exp.placeId}-${exp.id}`,
+    placeId: exp.placeId,
+    local: exp.placeName ?? placeNamesById[exp.placeId] ?? 'Local',
+    autor: exp.userName ?? 'Anônimo',
+    dias: exp.dias ?? diffDaysFrom(exp.createdAt),
+    texto: exp.text ?? '',
+    likes: countReactionTotal(exp.reactions),
+  };
+}
 
 const MOCK_LOCAIS_MORADOR = [
-  { id: 1, nome: 'Botequim Mercatto Piri',          categoria: 'gastronomia', icon: '🏛️', price: '$$',  rating: 4.9, avaliacoes: 100 },
-  { id: 2, nome: 'Cachoeira da Rosário',             categoria: 'natureza',    icon: '🏞️', price: '$',   rating: 4.8, avaliacoes: 50  },
-  { id: 3, nome: 'Galeria de Arte Local',            categoria: 'experiencia', icon: '🎨', price: '$$',  rating: 4.7, avaliacoes: 10  },
-  { id: 4, nome: 'Trilha do Poço Azul',              categoria: 'natureza',    icon: '🌿', price: '$$$', rating: 4.6, avaliacoes: 300 },
-  { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', price: '$',   rating: 4.9, avaliacoes: 1000 },
+  { id: 1, nome: 'Botequim Mercatto Piri',          categoria: 'gastronomia', icon: '🏛️', rating: 4.9, avaliacoes: 100 },
+  { id: 2, nome: 'Cachoeira da Rosário',             categoria: 'natureza',    icon: '🏞️', rating: 4.8, avaliacoes: 50  },
+  { id: 3, nome: 'Galeria de Arte Local',            categoria: 'experiencia', icon: '🎨', rating: 4.7, avaliacoes: 10  },
+  { id: 4, nome: 'Trilha do Poço Azul',              categoria: 'natureza',    icon: '🌿', rating: 4.6, avaliacoes: 300 },
+  { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', rating: 4.9, avaliacoes: 1000 },
 ];
 
 
@@ -70,24 +137,64 @@ function mapPlace(p) {
     nome:      p.name      ?? p.nome      ?? '—',
     categoria: p.category  ?? p.categoria ?? '—',
     icon:      p.icon ?? CATEGORY_ICONS[p.category ?? p.categoria] ?? '📍',
-    price:     p.price     ?? '—',
+    coverImage: p.coverImage ?? p.photos?.[0]?.url ?? null,
     rating:    p.rating    ?? 0,
     avaliacoes: p.reviewsCount ?? p.avaliacoes ?? 0,
   };
 }
 
 /* ─── seção Morador ─── */
-function MoradorSections() {
+function MoradorSections({ onPlacesCountChange }) {
   const [locais, setLocais]             = useState([]);
+  const [relatos, setRelatos]           = useState([]);
+  const [loadingRelatos, setLoadingRelatos] = useState(true);
   const [confirmId, setConfirmId]       = useState(null); // id do local a excluir
   const [deleting, setDeleting]         = useState(false);
   const [deleteErr, setDeleteErr]       = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const relatosScrollRef = useHorizontalDragScroll(styles.dragging);
 
   useEffect(() => {
-    fetchMyPlaces()
-      .then((data) => setLocais((data ?? []).map(mapPlace)))
-      .catch(() => setLocais(MOCK_LOCAIS_MORADOR));
+    let cancelled = false;
+
+    async function loadMoradorData() {
+      setLoadingRelatos(true);
+      try {
+        const placesData = await fetchMyPlaces();
+        const mappedPlaces = (placesData ?? []).map(mapPlace);
+        if (cancelled) return;
+        setLocais(mappedPlaces);
+        onPlacesCountChange?.(mappedPlaces.length);
+
+        const placeNamesById = Object.fromEntries(
+          mappedPlaces.map((p) => [p.id, p.nome])
+        );
+        const ids = mappedPlaces.map((p) => p.id);
+
+        if (ids.length === 0) {
+          setRelatos([]);
+          onPlacesCountChange?.(0);
+          return;
+        }
+
+        const experiences = await fetchExperiencesByPlaces(ids);
+        const sorted = [...experiences].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        if (cancelled) return;
+        setRelatos(sorted.map((exp) => mapMoradorRelato(exp, placeNamesById)));
+      } catch {
+        if (!cancelled) {
+          setLocais(MOCK_LOCAIS_MORADOR);
+          setRelatos([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingRelatos(false);
+      }
+    }
+
+    loadMoradorData();
+    return () => { cancelled = true; };
   }, []);
 
   const toDelete = locais.find((l) => l.id === confirmId);
@@ -103,7 +210,12 @@ function MoradorSections() {
     setDeleteErr(null);
     try {
       await deletePlace(confirmId);
-      setLocais((prev) => prev.filter((l) => l.id !== confirmId));
+      setLocais((prev) => {
+        const next = prev.filter((l) => l.id !== confirmId);
+        onPlacesCountChange?.(next.length);
+        return next;
+      });
+      setRelatos((prev) => prev.filter((r) => r.placeId !== confirmId));
       setDeleteSuccess(true);
     } catch {
       setDeleteErr('Erro ao excluir. Tente novamente.');
@@ -116,8 +228,14 @@ function MoradorSections() {
     <>
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>ÚLTIMOS RELATOS</h2>
-        <div className={styles.relatosGrid}>
-          {MOCK_RELATOS_MORADOR.map((r) => (
+        <div className={styles.relatosGrid} ref={relatosScrollRef}>
+          {loadingRelatos && (
+            <p className={styles.empty}>Carregando relatos...</p>
+          )}
+          {!loadingRelatos && relatos.length === 0 && (
+            <p className={styles.empty}>Nenhum relato nos seus locais ainda.</p>
+          )}
+          {!loadingRelatos && relatos.map((r) => (
             <div key={r.id} className={styles.relatoCard}>
               <div className={styles.avaliacaoMeta}>
                 <MdLocationOn size={16} className={styles.relatoPinIcon} />
@@ -141,14 +259,23 @@ function MoradorSections() {
           {locais.map((l) => (
             <div key={l.id} className={styles.localRow}>
               <div className={styles.localInfo}>
-                <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
+                {l.coverImage ? (
+                  <img
+                    src={l.coverImage}
+                    alt=""
+                    className={styles.localThumb}
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
+                )}
                 <div>
                   <span className={styles.localNome}>{l.nome}</span>
-                  <span className={styles.localCat}>{l.categoria}</span>
+                  <span className={styles.localCat}>{categoryLabel(l.categoria)}</span>
                   <div className={styles.localRating}>
                     <StarRating value={Math.round(l.rating)} readonly size="sm" />
                     <span className={styles.localMeta}>
-                      {l.rating.toFixed(1)} &nbsp;{l.price}&nbsp; {l.avaliacoes} Avaliações
+                      {l.rating.toFixed(1)} &nbsp;{l.avaliacoes} Avaliações
                     </span>
                   </div>
                 </div>
@@ -247,6 +374,7 @@ function TuristaSections({ onCountChange }) {
   const [deleting, setDeleting]           = useState(false);
   const [deleteErr, setDeleteErr]         = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const avaliacoesScrollRef = useHorizontalDragScroll(styles.dragging);
 
   /* Carrega do adaptor para sempre refletir edições recentes */
   useEffect(() => {
@@ -284,7 +412,7 @@ function TuristaSections({ onCountChange }) {
     <>
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>RELATOS CADASTRADOS</h2>
-        <div className={styles.avaliacoesGrid}>
+        <div className={styles.avaliacoesGrid} ref={avaliacoesScrollRef}>
           {avaliacoes.length === 0 && (
             <p className={styles.empty}>Nenhum relato cadastrado.</p>
           )}
@@ -404,15 +532,7 @@ export default function ProfilePage() {
     if (!user || !isMorador) return;
 
     fetchMyPlaces()
-      .then(async (places) => {
-        const ids = (places ?? []).map((p) => p.id);
-        if (ids.length === 0) {
-          setRelatosCount(0);
-          return;
-        }
-        const experiences = await fetchExperiencesByPlaces(ids);
-        setRelatosCount(experiences.length);
-      })
+      .then((places) => setRelatosCount((places ?? []).length))
       .catch(() => setRelatosCount(0));
   }, [user, isMorador]);
 
@@ -601,7 +721,7 @@ export default function ProfilePage() {
 
           <div className={styles.profileRight}>
             <span className={styles.statLabel}>
-              {isMorador ? 'Quantidade de relatos sobre os seus locais' : 'Relatos Cadastrados'}
+              {isMorador ? 'Quantidade de locais cadastrados no Eu Amo Piri' : 'Relatos Cadastrados'}
             </span>
             <span className={styles.statNumber}>{relatosCount}</span>
           </div>
@@ -776,7 +896,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {!editing && isMorador && <MoradorSections />}
+        {!editing && isMorador && <MoradorSections onPlacesCountChange={setRelatosCount} />}
         {!editing && isTurista && (
           <TuristaSections onCountChange={setRelatosCount} />
         )}

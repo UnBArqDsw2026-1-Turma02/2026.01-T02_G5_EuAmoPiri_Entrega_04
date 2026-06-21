@@ -73,6 +73,7 @@ export default function AppRoutes() {
           <Route path="/perfil" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           } />
+          <Route path="/morador/perfil" element={<Navigate to="/perfil" replace />} />
 
           <Route path="/morador/locais/novo" element={
             <ProtectedRoute requiredRole="morador"><CreatePlacePage /></ProtectedRoute>

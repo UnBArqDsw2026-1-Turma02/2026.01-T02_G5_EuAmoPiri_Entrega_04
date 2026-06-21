@@ -17,6 +17,7 @@ vi.mock('../infra/adaptor/placeAdaptor', () => ({
 }))
 vi.mock('../infra/adaptor/experienceAdaptor', () => ({
   fetchMyExperiences: vi.fn(),
+  fetchExperiencesByPlaces: vi.fn(),
   deleteExperience: vi.fn(),
 }))
 
@@ -42,6 +43,7 @@ import * as authFacade from '../api/auth/authFacade'
 /* ── setup global de mocks de adaptor ── */
 beforeEach(() => {
   vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([])
+  vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue([])
   vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
   vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue([])
   vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
@@ -51,8 +53,8 @@ beforeEach(() => {
 
 /* ── fixtures ── */
 const mockPlaces = [
-  { id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia', price: '$$', rating: 4, reviewsCount: 5, moradorId: 1 },
-  { id: 2, name: 'Cachoeira da Rosário', category: 'natureza', price: '$', rating: 5, reviewsCount: 3, moradorId: 1 },
+  { id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia', rating: 4, reviewsCount: 5, moradorId: 1 },
+  { id: 2, name: 'Cachoeira da Rosário', category: 'natureza', rating: 5, reviewsCount: 3, moradorId: 1 },
 ]
 
 const mockMorador = {
@@ -347,9 +349,29 @@ describe('ProfilePage — seção de senha', () => {
    Seção Morador — Últimos Relatos e Locais Cadastrados
    ══════════════════════════════════════════════════════════════ */
 describe('ProfilePage — seções do Morador', () => {
+  const mockMoradorRelatos = [
+    {
+      id: 9,
+      placeId: 1,
+      userName: 'Josefina Souza',
+      text: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país.',
+      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      reactions: { like: 3, heart: 0 },
+    },
+    {
+      id: 10,
+      placeId: 2,
+      userName: 'Marcos Oliveira',
+      text: 'Ambiente muito bonito e a comida estava saborosa.',
+      createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+      reactions: { like: 2, heart: 1 },
+    },
+  ]
+
   beforeEach(() => {
     asMorador()
     vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue(mockPlaces)
+    vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue(mockMoradorRelatos)
   })
 
   it('exibe título "ÚLTIMOS RELATOS"', () => {
@@ -357,11 +379,14 @@ describe('ProfilePage — seções do Morador', () => {
     expect(screen.getByText('ÚLTIMOS RELATOS')).toBeInTheDocument()
   })
 
-  it('exibe relatos com local, autor e contagem de likes', () => {
+  it('exibe relatos com local, autor e contagem de likes', async () => {
     renderPage()
-    expect(screen.getAllByText('Restaurante LovePiri').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Josefina Souza').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/👍/)[0]).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getAllByText('Botequim Mercatto Piri').length).toBeGreaterThan(0)
+      expect(screen.getByText('Josefina Souza')).toBeInTheDocument()
+      expect(screen.getByText('Marcos Oliveira')).toBeInTheDocument()
+    })
+    expect(screen.getAllByText(/👍 3/).length).toBeGreaterThan(0)
   })
 
   it('NÃO exibe botões de editar/excluir nos relatos recebidos', () => {
@@ -388,8 +413,8 @@ describe('ProfilePage — seções do Morador', () => {
   it('exibe nomes dos locais cadastrados', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Botequim Mercatto Piri')).toBeInTheDocument()
-      expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
+      expect(screen.getAllByText('Botequim Mercatto Piri').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Cachoeira da Rosário').length).toBeGreaterThan(0)
     })
   })
 })
@@ -401,8 +426,8 @@ describe('ProfilePage — seções do Turista', () => {
   beforeEach(() => {
     asTurista()
     vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
-      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
-      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 3 },
     ])
   })
 
@@ -577,8 +602,8 @@ describe('ProfilePage — exclusão de relato (Turista)', () => {
   beforeEach(() => {
     asTurista()
     vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
-      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
-      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 3 },
     ])
     vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
   })
