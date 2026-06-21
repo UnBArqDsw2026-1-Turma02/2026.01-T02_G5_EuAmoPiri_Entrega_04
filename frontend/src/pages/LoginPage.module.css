@@ -39,33 +39,6 @@
   text-align: left;
 }
 
-/* Customização do botão do Google */
-.googleBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  background-color: #ffffff;
-  border: 1px solid #dcdcdc;
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #555555;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.googleBtn:hover {
-  background-color: #f7f9f7;
-}
-
-.googleIcon {
-  width: 18px;
-  height: 18px;
-}
-
 .serverError {
   color: #d32f2f;
   font-size: 0.8rem;
@@ -89,15 +62,4 @@
 
 .link:hover {
   text-decoration: underline;
-}
-
-/* Deixa o botão Verde Oliva */
-.primaryButton {
-  background-color: #658c2b !important;
-  border-color: #658c2b !important;
-  color: #ffffff !important;
-}
-
-.primaryButton:hover {
-  background-color: #547524 !important;
 }
