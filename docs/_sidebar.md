@@ -11,5 +11,5 @@
     - [4.5. Foto de Perfil — GCS (Visão Arquitetural)](/docs/requisitos/RF03-backend/4.5.EdicaoPerfil.md)
     - [4.6. Comentários e Reações em Relatos (RF12 / RF13)](/docs/requisitos/RF12-RF13-backend/4.6.ComentariosReacoes.md)
     - [4.7. Denúncia e Moderação (Visão Arquitetural)](/docs/requisitos/RF-denuncia-backend/4.7.DenunciaModeracao.md)
-    - [4.8. Catálogo Google Places — Pirenópolis (Visão Arquitetural)](/docs/requisitos/RF-google-places-backend/4.8.CatalogoGooglePlaces.md)
+    - [4.8. Sincronização Google Places — Pirenópolis (Visão Arquitetural)](/docs/requisitos/RF-google-places-backend/4.8.SincronizacaoGooglePlaces.md)
     - [4.3. Participações - Arquitetura & Reutilização de Software](/docs/ArquiteturaReutilizacao/4.3.ParticipacoesArqReutilizacao.md)
