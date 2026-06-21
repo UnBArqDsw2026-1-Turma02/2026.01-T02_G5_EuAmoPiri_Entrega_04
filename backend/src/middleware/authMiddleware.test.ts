@@ -64,7 +64,6 @@ describe("authMiddlewareAllowDeletedUser", () => {
             biography: null,
             profilePhotoUrl: null,
             passwordHash: null,
-            googleId: null,
             createdAt: new Date(),
         });
 

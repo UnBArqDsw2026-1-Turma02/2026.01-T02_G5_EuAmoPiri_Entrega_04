@@ -24,7 +24,6 @@ const baseUser: User = {
     biography: "Amo Pirenópolis!",
     profilePhotoUrl: null,
     passwordHash: "hash",
-    googleId: null,
     createdAt: new Date("2026-01-01"),
 };
 

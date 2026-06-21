@@ -24,7 +24,6 @@ const baseUser = {
     biography: null,
     profilePhotoUrl: "profile_photo/5.jpg",
     passwordHash: null,
-    googleId: null,
     createdAt: new Date(),
     places: [],
     experiences: [
