@@ -69,6 +69,32 @@ export async function getPlaceById(req: Request, res: Response) {
     }
 }
 
+export async function getPlaceCover(req: Request, res: Response) {
+    const placeId = Number(req.params.id);
+    if (Number.isNaN(placeId)) {
+        res.status(400).json({ error: "ID inválido" });
+        return;
+    }
+
+    try {
+        const result = await placeService.getPlaceCoverStream(placeId);
+        if (!result) {
+            res.status(404).json({ error: "Capa não encontrada" });
+            return;
+        }
+        res.setHeader("Content-Type", result.contentType);
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        result.stream.on("error", () => {
+            if (!res.headersSent) {
+                res.status(500).json({ error: "Erro ao carregar capa" });
+            }
+        });
+        result.stream.pipe(res);
+    } catch {
+        res.status(500).json({ error: "Erro ao carregar capa" });
+    }
+}
+
 export async function getPlacePhoto(req: Request, res: Response) {
     const placeId = Number(req.params.placeId);
     const photoId = Number(req.params.photoId);

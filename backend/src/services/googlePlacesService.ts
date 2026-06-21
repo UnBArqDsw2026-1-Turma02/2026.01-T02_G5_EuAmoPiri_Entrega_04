@@ -96,6 +96,40 @@ function buildPhotoUrl(photoName: string | undefined, apiKey: string): string | 
     return `https://places.googleapis.com/v1/${photoName}/media?${params.toString()}`;
 }
 
+/** Reaplica a chave atual do servidor a uma URL Places Photo persistida no banco. */
+export function refreshExternalPhotoUrl(storedUrl: string): string {
+    try {
+        const url = new URL(storedUrl);
+        if (!url.hostname.includes("places.googleapis.com")) {
+            return storedUrl;
+        }
+        const apiKey = getApiKey();
+        url.searchParams.set("key", apiKey);
+        url.searchParams.set("maxHeightPx", "400");
+        url.searchParams.set("maxWidthPx", "400");
+        return url.toString();
+    } catch {
+        return storedUrl;
+    }
+}
+
+/** Busca a capa Google server-side (evita expor a chave no navegador). */
+export async function fetchExternalPhotoMedia(
+    storedUrl: string
+): Promise<{ stream: NodeJS.ReadableStream; contentType: string } | null> {
+    const photoUrl = refreshExternalPhotoUrl(storedUrl);
+    const response = await fetch(photoUrl, { redirect: "follow" });
+    if (!response.ok || !response.body) {
+        return null;
+    }
+    const { Readable } = await import("node:stream");
+    const contentType = response.headers.get("content-type") ?? "image/jpeg";
+    return {
+        stream: Readable.fromWeb(response.body as import("node:stream/web").ReadableStream),
+        contentType,
+    };
+}
+
 function formatGooglePlace(place: GoogleTextSearchPlace, apiKey: string): GooglePlaceDto | null {
     const name = place.displayName?.text?.trim();
     const lat = place.location?.latitude;

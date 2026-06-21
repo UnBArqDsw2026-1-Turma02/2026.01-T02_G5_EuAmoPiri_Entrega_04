@@ -1,6 +1,7 @@
 import type { PlaceCategory } from "../../generated/prisma/client.ts";
 import * as placeModel from "../model/placeModel.ts";
 import * as storageService from "./storageService.ts";
+import { fetchExternalPhotoMedia } from "./googlePlacesService.ts";
 import { buildPlacePhotoKey } from "../utils/storageKeys.ts";
 import { validatePhotoFiles, PhotoValidationError } from "../utils/photoValidation.ts";
 
@@ -127,6 +128,21 @@ export async function getPlacePhotoStream(placeId: number, photoId: number) {
         stream: storageService.getReadStream(photo.url),
         contentType: storageService.getContentTypeFromKey(photo.url),
     };
+}
+
+export async function getPlaceCoverStream(placeId: number) {
+    const place = await placeModel.findPlaceById(placeId);
+    if (!place) return null;
+
+    if (place.photos?.[0]) {
+        return getPlacePhotoStream(placeId, place.photos[0].id);
+    }
+
+    if (place.externalPhotoUrl) {
+        return fetchExternalPhotoMedia(place.externalPhotoUrl);
+    }
+
+    return null;
 }
 
 export async function listPlaces(moradorId?: number) {

@@ -125,6 +125,15 @@ router.post(
 
 /**
  * @openapi
+ * /places/{id}/cover:
+ *   get:
+ *     tags: [Places]
+ *     summary: Stream da capa do local (proxy GCS ou Google Places)
+ */
+router.get("/:id/cover", placeController.getPlaceCover);
+
+/**
+ * @openapi
  * /places/{id}:
  *   get:
  *     tags: [Places]

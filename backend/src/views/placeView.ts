@@ -57,6 +57,7 @@ export function formatPlace(place: PlaceWithPhotos) {
     const coverFromPhoto = place.photos?.[0]
         ? `/places/${place.id}/photos/${place.photos[0].id}`
         : null;
+    const coverFromGoogle = place.externalPhotoUrl ? `/places/${place.id}/cover` : null;
 
     return {
         id: place.id,
@@ -75,7 +76,7 @@ export function formatPlace(place: PlaceWithPhotos) {
         lng: place.longitude,
         rating,
         reviewsCount,
-        coverImage: coverFromPhoto ?? place.externalPhotoUrl ?? null,
+        coverImage: coverFromPhoto ?? coverFromGoogle ?? null,
         photos: (place.photos ?? []).map((p) => formatPhoto(p, place.id)),
         createdAt: place.createdAt,
     };

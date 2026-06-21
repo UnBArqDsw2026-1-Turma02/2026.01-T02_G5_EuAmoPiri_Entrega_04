@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fetchAllGooglePlacesFromApi, searchTextQueryAll } from "./googlePlacesService.ts";
+import {
+    fetchAllGooglePlacesFromApi,
+    fetchExternalPhotoMedia,
+    refreshExternalPhotoUrl,
+    searchTextQueryAll,
+} from "./googlePlacesService.ts";
 
 const mockPlace = {
     id: "places/ChIJ123",
@@ -69,5 +74,39 @@ describe("googlePlacesService", () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(2);
         expect(raw).toHaveLength(2);
+    });
+
+    it("atualiza a chave da URL externa persistida", () => {
+        const stored =
+            "https://places.googleapis.com/v1/places/ChIJ123/photos/abc/media?maxHeightPx=400&maxWidthPx=400&key=old-key";
+        const refreshed = refreshExternalPhotoUrl(stored);
+        expect(refreshed).toContain("key=test-key");
+        expect(refreshed).not.toContain("old-key");
+    });
+
+    it("busca foto externa via fetch server-side", async () => {
+        const stored =
+            "https://places.googleapis.com/v1/places/ChIJ123/photos/abc/media?maxHeightPx=400&maxWidthPx=400&key=old-key";
+        const body = new ReadableStream({
+            start(controller) {
+                controller.enqueue(new Uint8Array([1, 2, 3]));
+                controller.close();
+            },
+        });
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            headers: new Headers({ "content-type": "image/jpeg" }),
+            body,
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const result = await fetchExternalPhotoMedia(stored);
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            expect.stringContaining("key=test-key"),
+            { redirect: "follow" }
+        );
+        expect(result?.contentType).toBe("image/jpeg");
+        expect(result?.stream).toBeDefined();
     });
 });

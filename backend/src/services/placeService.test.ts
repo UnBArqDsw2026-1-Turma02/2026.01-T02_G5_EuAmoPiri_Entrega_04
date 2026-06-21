@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as placeModel from "../model/placeModel.ts";
 import * as storageService from "./storageService.ts";
-import { PlaceError, updatePlace, deletePlace } from "./placeService.ts";
+import * as googlePlacesService from "./googlePlacesService.ts";
+import { PlaceError, getPlaceCoverStream, updatePlace, deletePlace } from "./placeService.ts";
 
 vi.mock("../model/placeModel.ts", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../model/placeModel.ts")>();
@@ -15,6 +16,13 @@ vi.mock("../model/placeModel.ts", async (importOriginal) => {
     };
 });
 vi.mock("./storageService.ts");
+vi.mock("./googlePlacesService.ts", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./googlePlacesService.ts")>();
+    return {
+        ...actual,
+        fetchExternalPhotoMedia: vi.fn(),
+    };
+});
 
 const basePlace = {
     id: 1,
@@ -95,6 +103,29 @@ describe("placeService update/delete", () => {
             statusCode: 403,
             code: "FORBIDDEN_OWNER",
         });
+    });
+});
+
+describe("getPlaceCoverStream", () => {
+    it("usa proxy Google quando local não tem fotos no GCS", async () => {
+        const googlePlace = {
+            ...basePlace,
+            photos: [],
+            externalPhotoUrl: "https://places.googleapis.com/v1/places/x/photos/y/media?key=z",
+        };
+        const mockStream = { pipe: vi.fn() };
+        vi.mocked(placeModel.findPlaceById).mockResolvedValue(googlePlace as never);
+        vi.mocked(googlePlacesService.fetchExternalPhotoMedia).mockResolvedValue({
+            stream: mockStream as never,
+            contentType: "image/jpeg",
+        });
+
+        const result = await getPlaceCoverStream(1);
+
+        expect(googlePlacesService.fetchExternalPhotoMedia).toHaveBeenCalledWith(
+            googlePlace.externalPhotoUrl
+        );
+        expect(result?.contentType).toBe("image/jpeg");
     });
 });
 
