@@ -1,0 +1,778 @@
+.page {
+  min-height: 60vh;
+  padding: var(--space-8) var(--space-4);
+  background: var(--color-bg-page);
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── Cabeçalho do perfil ── */
+.profileHeader {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.profileLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex: 1;
+}
+
+.avatarWrap {
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Botão de upload de foto */
+.avatarUploadBtn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+.avatarUploadBtn:hover {
+  background: var(--color-primary-hover);
+}
+
+.avatarFileInput {
+  display: none;
+}
+
+.photoHint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.userName {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.userNameSuffix {
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.userMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.profession {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.userEmail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.bio {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: var(--space-1) 0 0;
+  line-height: 1.5;
+}
+
+/* Divisor vertical + stat */
+.profileRight {
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 160px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.statLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.statNumber {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+/* ── Botões de ação ── */
+.actionBtns {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.actionBtns > * {
+  flex: 1;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+@media (max-width: 768px) {
+  .actionBtns {
+    flex-direction: column;
+    align-items: center;
+  }
+  .actionBtns > * {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* ── Feedback ── */
+.feedback {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.success {
+  background: #E8F5E9;
+  color: var(--color-green-primary);
+  border: 1px solid var(--color-green-light);
+}
+
+.error {
+  background: #FFEBEE;
+  color: var(--color-error);
+  border: 1px solid #FFCDD2;
+}
+
+/* ── Cards de seção ── */
+.sectionCard {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.pageRoleTitle {
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Relatos (morador) — scroll horizontal idêntico ao Turista ── */
+.relatosGrid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--space-3);
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-x;
+}
+
+.relatosGrid.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.relatosGrid::-webkit-scrollbar {
+  height: 4px;
+}
+.relatosGrid::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 2px;
+}
+.relatosGrid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.relatoCard {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 0 0 300px;
+  width: 300px;
+  scroll-snap-align: start;
+  background: var(--color-bg-card);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.relatoAutor {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.relatoTitulo {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.relatoTexto {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.relatoLikes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ── Meus locais (morador) — scroll horizontal como no protótipo ── */
+.locaisGrid {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.locaisGrid::-webkit-scrollbar {
+  height: 4px;
+}
+.locaisGrid::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 2px;
+}
+.locaisGrid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.localCard {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 280px;
+  max-width: 320px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--color-bg-card);
+}
+
+.localThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* ── Locais (morador) — lista vertical (legado) ── */
+.locaisLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.localRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-card);
+}
+
+.localInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.localIcon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.localThumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-gray-100);
+}
+
+.localNome {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.localNome:hover {
+  color: var(--color-primary);
+}
+
+.localCat {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.localRating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.localMeta {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.localActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.sectionLoading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.emptyInline {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  padding: var(--space-2) 0;
+}
+
+/* ── Avaliações (turista) — scroll horizontal ── */
+.avaliacoesGrid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--space-3);
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  cursor: grab;
+  touch-action: pan-x;
+}
+
+.avaliacoesGrid.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.avaliacoesGrid::-webkit-scrollbar {
+  height: 4px;
+}
+.avaliacoesGrid::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 2px;
+}
+.avaliacoesGrid::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.avaliacaoCard {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 0 0 300px;
+  width: 300px;
+  scroll-snap-align: start;
+  background: var(--color-bg-card);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.avaliacaoMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.pinIcon {
+  color: #1A7DD9;
+  flex-shrink: 0;
+}
+
+.avaliacaoLocal {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #1A7DD9;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.avaliacaoLocal:hover {
+  text-decoration: underline;
+}
+
+.avaliacaoDias {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.avaliacaoTitulo {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.avaliacaoTexto {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Nome do local e ícone nos relatos do Morador ── */
+.relatoLocal {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #1A7DD9;
+}
+
+.relatoPinIcon {
+  color: #1A7DD9;
+  flex-shrink: 0;
+}
+
+/* ── Botões de ação em cards ── */
+.relatoActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  touch-action: manipulation;
+  position: relative;
+  z-index: 1;
+}
+
+.relatoActions > * {
+  width: 100%;
+}
+
+/* ── Formulário de edição ── */
+.form {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.formActions > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-8);
+}
+
+/* ── Seção: Cadastrar Nova Senha ── */
+.passwordForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.passwordConfirmField {
+  grid-column: 1 / -1;
+  max-width: calc(50% - var(--space-2));
+}
+
+@media (max-width: 640px) {
+  .passwordConfirmField {
+    max-width: 100%;
+  }
+}
+
+.passwordActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Modal de confirmação de exclusão ── */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.confirmDialog {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.confirmTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.confirmBody {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirmError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin: 0;
+}
+
+.confirmDialogSuccess {
+  border: 2px solid var(--color-primary, #2e7d32);
+  text-align: center;
+  align-items: center;
+}
+
+.confirmDialogError {
+  border: 2px solid #e53935;
+  text-align: center;
+  align-items: center;
+}
+
+.confirmLogo {
+  font-size: var(--font-size-lg, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brown, #7F5539);
+  margin: 0;
+}
+
+.confirmSuccessIcon {
+  font-size: 2.5rem;
+  color: var(--color-primary, #2e7d32);
+  text-align: center;
+  margin: 0;
+  line-height: 1;
+}
+
+.confirmErrIcon {
+  color: #e53935;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.confirmActionsCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-1);
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .page {
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .profileHeader {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-4);
+  }
+
+  .profileLeft {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .headerInfo {
+    align-items: center;
+  }
+
+  .profileRight {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding-left: 0;
+    padding-top: var(--space-4);
+    width: 100%;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .relatoCard,
+  .avaliacaoCard {
+    flex: 0 0 min(300px, 85vw);
+    width: min(300px, 85vw);
+  }
+
+  .localRow,
+  .localCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .localActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .relatoFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,87 @@
+/* ============================================================
+   ÁTOMO — Textarea
+   ============================================================ */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.label {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.textarea {
+  width: 100%;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  background-color: var(--color-white);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  line-height: 1.5;
+}
+
+.textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.textarea.hasError {
+  border-color: var(--color-error);
+}
+
+.textarea.hasError:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 20%, transparent);
+}
+
+.textarea:disabled {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+  opacity: 0.6;
+  color: var(--color-text-muted);
+}
+
+/* Resize modes */
+.resize-vertical  { resize: vertical; }
+.resize-none      { resize: none; }
+.resize-both      { resize: both; }
+
+/* Footer: erro à esquerda, contador à direita */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-height: var(--font-size-xs);
+}
+
+.errorMsg {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  font-family: var(--font-family);
+}
+
+.counter {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+  margin-left: auto;
+}
+
+.counter.nearLimit {
+  color: var(--color-error);
+  font-weight: var(--font-weight-semibold);
+}

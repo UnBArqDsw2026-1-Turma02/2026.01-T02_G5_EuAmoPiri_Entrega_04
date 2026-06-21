@@ -1,0 +1,188 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── Wrapper de campo ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fieldLabel {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+/* ── Caixinha (estrelas, comentário) ── */
+.box {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-bg-page);
+}
+
+.boxLabel {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.fieldError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+}
+
+/* ── Bloco de diretrizes ── */
+.guidelines {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: var(--color-bg-page);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.guidelinesTitle {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.guidelinesText {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Modal de resultado (sucesso / erro) — overlay fixo sobre a página ── */
+.resultModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* Card branco centralizado */
+.resultCard {
+  background: var(--color-bg-card, #fff);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-8) var(--space-6);
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  border: 2px solid var(--color-primary, #2e7d32); /* verde por padrão */
+}
+
+.resultCardError {
+  border-color: #e53935;
+}
+
+.resultLogo {
+  font-size: var(--font-size-lg, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brown, #7F5539);
+  margin: 0;
+}
+
+.resultIcon {
+  font-size: 2.5rem;
+  color: var(--color-primary, #2e7d32);
+  line-height: 1;
+}
+
+.resultIconError {
+  color: #e53935;
+}
+
+.resultTitle {
+  font-size: var(--font-size-xl, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text, #1a1a1a);
+  margin: 0;
+}
+
+.resultText {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.resultActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* ── Botões de ação ── */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.actions > * {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions > * {
+    flex: none;
+    width: 100%;
+  }
+}
+
+.existingPhotos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.existingPhotosGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.existingPhoto {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}

@@ -1,0 +1,98 @@
+.page {
+  display: flex; justify-content: center; align-items: center; min-height: 100vh;
+  background: linear-gradient(135deg, #3d4a41 0%, #634a35 100%); padding: 20px; font-family: 'Inter', sans-serif;
+}
+
+.card {
+  background-color: #ffffff; border-radius: 8px; padding: 40px 32px; width: 100%; max-width: 480px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); text-align: center;
+}
+
+.stepsContainer {
+  display: flex; align-items: center; justify-content: center; margin-bottom: 32px; gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-1, 4px);
+}
+
+.stepItem {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; width: 60px;
+}
+
+.stepNumber {
+  width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+  font-size: 0.85rem; font-weight: 700;
+}
+
+.stepLabel {
+  font-size: 0.65rem; font-weight: 700; color: #888888;
+}
+
+.activeStep .stepNumber { background-color: #658c2b; color: #ffffff; }
+.activeStep .stepLabel { color: #333333; }
+
+.inactiveStep .stepNumber { background-color: #e0e0e0; color: #888888; }
+
+.stepLine, .stepLineActive {
+  height: 2px; flex-grow: 1; max-width: 60px; margin-top: -16px;
+}
+.stepLine { background-color: #e0e0e0; }
+.stepLineActive { background-color: #658c2b; }
+
+.logo { color: #72492d; font-weight: 700; font-size: 1.5rem; margin-bottom: 8px; }
+.title { color: #333333; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: #666666; font-size: 0.85rem; line-height: 1.5; margin-bottom: 24px; }
+.form { display: flex; flex-direction: column; gap: 16px; text-align: left; }
+
+.label { font-size: 0.75rem; font-weight: 700; color: #333333; }
+
+/* Grid dos inputs do código */
+.codeGrid {
+  display: flex; gap: 8px; justify-content: space-between; margin-bottom: 8px;
+}
+
+.codeInput {
+  flex: 1;
+  min-width: 0;
+  max-width: 48px;
+  height: 48px;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  outline: none;
+}
+
+.codeInput:focus { border-color: #658c2b; }
+
+.primaryButton {
+  background-color: #658c2b !important; border-color: #658c2b !important; color: #ffffff !important;
+}
+
+.actions { display: flex; gap: 12px; margin-top: 12px; }
+.actions > button { flex: 1; }
+
+.footerText { margin-top: 24px; font-size: 0.8rem; color: #666666; }
+.resendLink { color: #658c2b; font-weight: 600; cursor: pointer; }
+.resendLink:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+
+  .card {
+    padding: 24px 16px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions > button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,275 @@
+.page {
+  min-height: 60vh;
+  padding: var(--space-8) var(--space-4);
+  background: var(--color-bg-page);
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ── Card do formulário ── */
+.formCard {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ── Grid 2 colunas ── */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.categoryRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.existingPhotos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.existingPhotosLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.existingPhotosGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.existingPhoto {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Select customizado ── */
+.selectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.selectLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.select {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: var(--color-bg-card);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-4) center;
+  padding-right: var(--space-8);
+}
+
+.select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.fieldError {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+}
+
+/* ── Feedback ── */
+.feedback {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.success {
+  background: #E8F5E9;
+  color: var(--color-green-primary);
+  border: 1px solid var(--color-green-light);
+}
+
+.error {
+  background: #FFEBEE;
+  color: var(--color-error);
+  border: 1px solid #FFCDD2;
+}
+
+/* ── Overlay de resultado (sucesso / erro) ── */
+.resultOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.resultCard {
+  background: var(--color-bg-card, #fff);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-8) var(--space-6);
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  border: 2px solid var(--color-primary, #2e7d32);
+}
+
+.resultCardError {
+  border-color: #e53935;
+}
+
+.resultLogo {
+  font-size: var(--font-size-lg, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-brown, #7F5539);
+  margin: 0;
+}
+
+.resultIcon {
+  font-size: 2.5rem;
+  color: var(--color-primary, #2e7d32);
+  line-height: 1;
+}
+
+.resultIconError {
+  color: #e53935;
+}
+
+.resultTitle {
+  font-size: var(--font-size-xl, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text, #1a1a1a);
+  margin: 0;
+}
+
+.resultText {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.resultActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* ── Botões ── */
+.formActions {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.formActions > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ── Fotos: badge de capa e botão de definir capa ── */
+.capaBadge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--color-primary, #2e7d32);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.setCoverBtn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 2px 5px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.setCoverBtn:hover { background: rgba(0, 0, 0, 0.7); }
+
+/* ── Mobile / tablet ── */
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formActions {
+    flex-direction: column-reverse;
+  }
+
+  .formActions > * {
+    width: 100%;
+  }
+}
