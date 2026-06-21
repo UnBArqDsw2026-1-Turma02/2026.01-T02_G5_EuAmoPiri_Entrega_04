@@ -30,7 +30,6 @@ export default function PlaceCard({ place }) {
     address,
     rating,
     reviewsCount,
-    price,
   } = place;
 
   const truncated = description?.length > 100
@@ -46,7 +45,6 @@ export default function PlaceCard({ place }) {
         >
           {CATEGORY_LABELS[category] ?? category}
         </Badge>
-        {price && <span className={styles.price}>{price}</span>}
       </div>
 
       <h3 className={styles.name}>{name}</h3>

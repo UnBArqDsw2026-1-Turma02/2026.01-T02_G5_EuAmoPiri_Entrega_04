@@ -35,7 +35,7 @@ function formatDateInput(value) {
 export default function EditPlacePage() {
   const { id } = useParams();
   const location = useLocation();
-  const returnTo = location.state?.returnTo ?? '/morador/perfil';
+  const returnTo = location.state?.returnTo ?? '/perfil';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -271,18 +271,7 @@ export default function EditPlacePage() {
               })}
               error={errors.address?.message}
             />
-            <div className={styles.selectGroup}>
-              <label className={styles.selectLabel} htmlFor="price">Faixa de preço</label>
-              <select
-                id="price"
-                className={styles.select}
-                {...register('price')}
-              >
-                {PRICE_OPTIONS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
+
             <FormField
               id="phone"
               label="Telefone"

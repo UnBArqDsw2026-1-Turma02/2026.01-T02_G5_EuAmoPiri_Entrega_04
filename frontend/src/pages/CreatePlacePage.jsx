@@ -1,23 +1,17 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { createPlace } from '../infra/adaptor/placeAdaptor';
+import { createPlace, apiErrorMessage } from '../infra/adaptor/placeAdaptor';
 import Button from '../presentation/atoms/Button';
 import FormField from '../presentation/molecules/FormField';
+import { CREATE_PLACE_CATEGORY_OPTIONS } from '../utils/placeCategories';
 import baseStyles from './EditPlacePage.module.css';
 import styles from './CreatePlacePage.module.css';
 
 const CATEGORY_OPTIONS = [
-  { value: '',            label: 'Selecione uma categoria' },
-  { value: 'gastronomia', label: 'Gastronomia / Restaurante' },
-  { value: 'natureza',    label: 'Natureza / Cachoeira' },
-  { value: 'hospedagem',  label: 'Hospedagem / Pousada' },
-  { value: 'cultura',     label: 'Cultura' },
-  { value: 'compras',     label: 'Compras' },
-  { value: 'aventura',    label: 'Aventura' },
+  { value: '', label: 'Selecione uma categoria' },
+  ...CREATE_PLACE_CATEGORY_OPTIONS,
 ];
-
-const PRICE_OPTIONS = ['$', '$$', '$$$', '$$$$'];
 
 export default function CreatePlacePage() {
   const navigate = useNavigate();
@@ -27,6 +21,7 @@ export default function CreatePlacePage() {
   const [submitStatus, setSubmitStatus] = useState(null); // null | 'success' | 'error'
   const [photos, setPhotos]             = useState([]);   // Array de { file, previewUrl }
   const [photoError, setPhotoError]     = useState(null);
+  const [submitError, setSubmitError]   = useState(null);
   const [dragOver, setDragOver]         = useState(false);
 
   const {
@@ -34,7 +29,7 @@ export default function CreatePlacePage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({ defaultValues: { price: '$' } });
+  } = useForm();
 
   /* ── Gerenciamento das fotos ── */
   function addFiles(fileList) {
@@ -73,25 +68,22 @@ export default function CreatePlacePage() {
       return;
     }
     setPhotoError(null);
+    setSubmitError(null);
     setSaving(true);
     try {
-      // Em produção as fotos seriam enviadas ao storage; aqui usamos o previewUrl como placeholder
-      const photoUrls = photos.map((p) => p.previewUrl);
       await createPlace({
-        ...data,
-        photos: photoUrls,
-        coverImage: photoUrls[0],
-        mapsLink: data.mapsLink || null,
-        openingDate: data.openingDate || null,
-        moradorId: 1,
-        rating: 0,
-        reviewsCount: 0,
-        commentsCount: 0,
-        visitsCount: '0',
-        createdAt: new Date().toISOString(),
+        name: data.name,
+        address: data.address,
+        category: data.category,
+        description: data.description,
+        mapsLink: data.mapsLink || undefined,
+        phone: data.phone || undefined,
+        openingDate: data.openingDate || undefined,
+        photos,
       });
       setSubmitStatus('success');
-    } catch {
+    } catch (err) {
+      setSubmitError(apiErrorMessage(err, 'Verifique os dados e tente novamente.'));
       setSubmitStatus('error');
     } finally {
       setSaving(false);
@@ -130,9 +122,9 @@ export default function CreatePlacePage() {
             <p className={baseStyles.resultLogo}>❤ EuAmoPiri</p>
             <span className={`${baseStyles.resultIcon} ${baseStyles.resultIconError}`} aria-hidden="true">⚠️</span>
             <h2 className={baseStyles.resultTitle}>Falha ao cadastrar local</h2>
-            <p className={baseStyles.resultText}>Verifique os dados e tente novamente.</p>
+            <p className={baseStyles.resultText}>{submitError ?? 'Verifique os dados e tente novamente.'}</p>
             <div className={baseStyles.resultActions}>
-              <Button variant="neutral" fullWidth onClick={() => setSubmitStatus(null)}>
+              <Button variant="neutral" fullWidth onClick={() => { setSubmitStatus(null); setSubmitError(null); }}>
                 Voltar ao formulário
               </Button>
             </div>
@@ -187,19 +179,6 @@ export default function CreatePlacePage() {
               registration={register('address', { required: 'Endereço é obrigatório' })}
               error={errors.address?.message}
             />
-
-            <div className={baseStyles.selectGroup}>
-              <label className={baseStyles.selectLabel} htmlFor="price">Faixa de preço *</label>
-              <select
-                id="price"
-                className={baseStyles.select}
-                {...register('price', { required: 'Preço é obrigatório' })}
-              >
-                {PRICE_OPTIONS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
 
             <FormField
               id="phone"
