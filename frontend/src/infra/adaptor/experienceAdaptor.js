@@ -127,6 +127,20 @@ export async function fetchExperiencesByPlaces(placeIds) {
   return results.flat();
 }
 
+export async function createExperience(placeId, experienceData, photoFiles = []) {
+  const formData = new FormData();
+  formData.append('rating', String(experienceData.rating));
+  formData.append('text', experienceData.text);
+  formData.append('visitDate', experienceData.visitDate);
+  if (experienceData.title) formData.append('title', experienceData.title);
+  (photoFiles ?? []).forEach((file) => {
+    if (file instanceof File) formData.append('photos', file);
+  });
+
+  const data = await postFormData(`/places/${placeId}/experiences`, formData);
+  return mapExperience(data);
+}
+
 export async function updateExperience(placeId, experienceId, experienceData, photoFiles = []) {
   const formData = new FormData();
   formData.append('rating', String(experienceData.rating));

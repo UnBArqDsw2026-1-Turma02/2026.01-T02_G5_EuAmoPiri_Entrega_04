@@ -55,7 +55,8 @@
   border-bottom: 1px solid var(--color-gray-200, #e5e5e5);
 }
 
-/* Botão "Avaliar Local" / "+ Avaliar" — link com estilo de botão */
+/* Botão "Cadastrar relato" / "+ Relato" — link com estilo de botão */
+a.btnAvaliar,
 .btnAvaliar {
   display: inline-flex;
   align-items: center;
@@ -63,30 +64,42 @@
   width: 100%;
   padding: 0.6rem 1rem;
   background: var(--color-primary, #2e7d32);
-  color: #fff;
+  color: var(--color-white);
   border-radius: var(--radius-md, 6px);
   font-size: var(--font-size-sm, 0.875rem);
   font-weight: var(--font-weight-medium, 500);
   text-decoration: none;
   transition: filter 0.15s ease;
 }
-.btnAvaliar:hover { filter: brightness(1.1); }
+a.btnAvaliar:hover,
+.btnAvaliar:hover {
+  color: var(--color-white);
+  text-decoration: none;
+  filter: brightness(1.1);
+}
 
+a.btnAvaliarSm,
 .btnAvaliarSm {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.35rem 0.75rem;
   background: var(--color-primary, #2e7d32);
-  color: #fff;
+  color: var(--color-white);
   border-radius: var(--radius-md, 6px);
   font-size: var(--font-size-sm, 0.875rem);
   font-weight: var(--font-weight-medium, 500);
   text-decoration: none;
   transition: filter 0.15s ease;
 }
-.btnAvaliarSm:hover { filter: brightness(1.1); }
+a.btnAvaliarSm:hover,
+.btnAvaliarSm:hover {
+  color: var(--color-white);
+  text-decoration: none;
+  filter: brightness(1.1);
+}
 
+a.btnAvaliarOutline,
 .btnAvaliarOutline {
   display: inline-flex;
   align-items: center;
@@ -101,7 +114,12 @@
   text-decoration: none;
   transition: background 0.15s ease;
 }
-.btnAvaliarOutline:hover { background: color-mix(in srgb, var(--color-primary, #2e7d32) 8%, transparent); }
+a.btnAvaliarOutline:hover,
+.btnAvaliarOutline:hover {
+  color: var(--color-primary, #2e7d32);
+  text-decoration: none;
+  background: color-mix(in srgb, var(--color-primary, #2e7d32) 8%, transparent);
+}
 
 /* Botões de dono do local */
 .ownerActions {
@@ -110,7 +128,9 @@
 }
 
 .btnEdit,
-.btnDelete {
+.btnDelete,
+a.btnEdit,
+a.btnDelete {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -121,7 +141,8 @@
   font-weight: var(--font-weight-medium, 500);
   cursor: pointer;
   transition: filter 0.15s ease;
-  color: #fff;
+  color: var(--color-white);
+  text-decoration: none;
 }
 
 .btnEdit {
@@ -284,6 +305,16 @@
   line-height: 1.6;
 }
 
+.catalogNotice {
+  margin: var(--space-3, 0.75rem) 0 0;
+  padding: var(--space-3, 0.75rem);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  background: var(--color-gray-100, #f5f5f0);
+  border-radius: var(--radius-md, 8px);
+  border-left: 3px solid var(--color-primary, #2e7d32);
+}
+
 /* ── Títulos de seção ── */
 .sectionTitle {
   font-size: var(--font-size-base, 1rem);
@@ -345,11 +376,28 @@
 }
 
 /* Rating bars */
-.ratingBars {
+.ratingBarsWrap {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 0;
+}
+
+.ratingBars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ratingBarsCaption {
+  margin: var(--space-1) 0 0;
+  font-size: 0.65rem;
+  color: var(--color-text-muted, #6b7280);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
 }
 
 .ratingBarRow {
@@ -439,6 +487,8 @@
   padding: var(--space-4);
   margin-bottom: var(--space-3);
   background: var(--color-white, #fff);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .commentHeader {
@@ -480,6 +530,8 @@
   font-size: var(--font-size-sm, 0.875rem);
   color: var(--color-text, #1a1a1a);
   margin: 0 0 var(--space-2) 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .commentText {
@@ -487,6 +539,9 @@
   color: var(--color-text-muted, #6b7280);
   margin: 0;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 /* Reações */

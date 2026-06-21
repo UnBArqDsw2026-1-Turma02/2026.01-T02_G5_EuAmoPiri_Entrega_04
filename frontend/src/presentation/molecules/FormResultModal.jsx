@@ -22,12 +22,32 @@ export default function FormResultModal({
         <div className={styles.actions}>
           {primaryAction && (
             primaryAction.to
-              ? <Button variant="primary" fullWidth as={Link} to={primaryAction.to}>{primaryAction.label}</Button>
+              ? (
+                <Button
+                  variant="primary"
+                  fullWidth
+                  as={Link}
+                  to={primaryAction.to}
+                  replace={primaryAction.replace ?? false}
+                >
+                  {primaryAction.label}
+                </Button>
+              )
               : <Button variant="primary" fullWidth onClick={primaryAction.onClick}>{primaryAction.label}</Button>
           )}
           {secondaryAction && (
             secondaryAction.to
-              ? <Button variant="neutral" fullWidth as={Link} to={secondaryAction.to}>{secondaryAction.label}</Button>
+              ? (
+                <Button
+                  variant="neutral"
+                  fullWidth
+                  as={Link}
+                  to={secondaryAction.to}
+                  replace={secondaryAction.replace ?? false}
+                >
+                  {secondaryAction.label}
+                </Button>
+              )
               : <Button variant="neutral" fullWidth onClick={secondaryAction.onClick}>{secondaryAction.label}</Button>
           )}
           {onClose && !secondaryAction && (

@@ -87,6 +87,7 @@ function asMorador(extra = {}) {
     logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: true,
+    isTurista: false,
     ...extra,
   })
 }
@@ -98,9 +99,9 @@ function asTurista(extra = {}) {
     logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: false,
+    isTurista: true,
     ...extra,
   })
-
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -365,8 +366,8 @@ describe('ProfilePage — seções do Morador', () => {
 
   it('NÃO exibe botões de editar/excluir nos relatos recebidos', () => {
     renderPage()
-    expect(screen.queryByRole('button', { name: /editar avaliação/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /excluir avaliação/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /editar relato/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /excluir relato/i })).not.toBeInTheDocument()
   })
 
   it('exibe título "LOCAIS CADASTRADOS"', () => {
@@ -394,7 +395,7 @@ describe('ProfilePage — seções do Morador', () => {
 })
 
 /* ══════════════════════════════════════════════════════════════
-   Seção Turista — Avaliações Cadastradas
+   Seção Turista — Relatos Cadastrados
    ══════════════════════════════════════════════════════════════ */
 describe('ProfilePage — seções do Turista', () => {
   beforeEach(() => {
@@ -405,14 +406,14 @@ describe('ProfilePage — seções do Turista', () => {
     ])
   })
 
-  it('exibe título "AVALIAÇÕES CADASTRADAS"', async () => {
+  it('exibe título "RELATOS CADASTRADOS"', async () => {
     renderPage()
     await waitFor(() =>
-      expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
+      expect(screen.getByText('RELATOS CADASTRADOS')).toBeInTheDocument()
     )
   })
 
-  it('exibe avaliações com local e título', async () => {
+  it('exibe relatos com local e título', async () => {
     renderPage()
     await waitFor(() => {
       expect(screen.getByText('Melhor botequim de Pirenópolis')).toBeInTheDocument()
@@ -420,11 +421,11 @@ describe('ProfilePage — seções do Turista', () => {
     })
   })
 
-  it('exibe botões "Editar Avaliação" e "Excluir Avaliação" para turista', async () => {
+  it('exibe botões "Editar relato" e "Excluir relato" para turista', async () => {
     renderPage()
     await waitFor(() => {
-      const editButtons = screen.getAllByRole('link', { name: /editar avaliação/i })
-      const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+      const editButtons = screen.getAllByRole('link', { name: /editar relato/i })
+      const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
       expect(editButtons.length).toBeGreaterThan(0)
       expect(deleteButtons.length).toBeGreaterThan(0)
     })
@@ -570,9 +571,9 @@ describe('ProfilePage — exclusão de local (Morador)', () => {
 })
 
 /* ══════════════════════════════════════════════════════════════
-   Exclusão de avaliação (Turista)
+   Exclusão de relato (Turista)
    ══════════════════════════════════════════════════════════════ */
-describe('ProfilePage — exclusão de avaliação (Turista)', () => {
+describe('ProfilePage — exclusão de relato (Turista)', () => {
   beforeEach(() => {
     asTurista()
     vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
@@ -582,15 +583,15 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
   })
 
-  it('abre diálogo de confirmação ao clicar em "Excluir Avaliação"', async () => {
+  it('abre diálogo de confirmação ao clicar em "Excluir relato"', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: /excluir relato/i }).length).toBeGreaterThan(0)
     )
 
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
     await user.click(deleteButtons[0])
 
     await waitFor(() =>
@@ -598,15 +599,15 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     )
   })
 
-  it('após confirmar: exibe "Avaliação excluída com sucesso!"', async () => {
+  it('após confirmar: exibe "Relato excluído com sucesso!"', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: /excluir relato/i }).length).toBeGreaterThan(0)
     )
 
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
     await user.click(deleteButtons[0])
 
     await waitFor(() =>
@@ -616,20 +617,20 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     await user.click(screen.getByRole('button', { name: /^excluir$/i }))
 
     await waitFor(() =>
-      expect(screen.getByText('Avaliação excluída com sucesso!')).toBeInTheDocument()
+      expect(screen.getByText('Relato excluído com sucesso!')).toBeInTheDocument()
     )
   })
 
-  it('quando deleteExperience lança exceção: exibe "Erro ao excluir avaliação"', async () => {
+  it('quando deleteExperience lança exceção: exibe "Erro ao excluir relato"', async () => {
     vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('Erro'))
     const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: /excluir relato/i }).length).toBeGreaterThan(0)
     )
 
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
     await user.click(deleteButtons[0])
 
     await waitFor(() =>
@@ -639,7 +640,7 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     await user.click(screen.getByRole('button', { name: /^excluir$/i }))
 
     await waitFor(() =>
-      expect(screen.getByText('Erro ao excluir avaliação')).toBeInTheDocument()
+      expect(screen.getByText('Erro ao excluir relato')).toBeInTheDocument()
     )
   })
 })

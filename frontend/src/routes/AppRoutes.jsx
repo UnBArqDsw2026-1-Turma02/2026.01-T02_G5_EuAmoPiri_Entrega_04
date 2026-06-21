@@ -19,7 +19,11 @@ const NotFoundPage         = lazy(() => import('../pages/NotFoundPage'));
 
 /* ─── Componente de rota protegida ─── */
 function ProtectedRoute({ children, requiredRole }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) {
+    return <PageLoader />;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -50,28 +54,24 @@ export default function AppRoutes() {
         <Route element={<PageLayout />}>
           <Route path="/"           element={<SobrePiriPage />} />
           <Route path="/locais"     element={<PlacesPage />} />
-          <Route path="/locais/:id" element={<PlaceDetailPage />} />
-          <Route path="/sobre-piri" element={<Navigate to="/" replace />} />
-
-          {/* Protegidas — qualquer usuário logado */}
-          <Route path="/perfil" element={
-            <ProtectedRoute><ProfilePage /></ProtectedRoute>
-          } />
-
-          {/* Protegidas — Morador */}
-          <Route path="/morador/locais/novo" element={
-            <ProtectedRoute requiredRole="morador"><CreatePlacePage /></ProtectedRoute>
-          } />
-          <Route path="/morador/locais/:id/editar" element={
-            <ProtectedRoute requiredRole="morador"><EditPlacePage /></ProtectedRoute>
-          } />
-
-          {/* Protegidas — Turista */}
           <Route path="/locais/:placeId/relatos/novo" element={
             <ProtectedRoute requiredRole="turista"><CreateExperiencePage /></ProtectedRoute>
           } />
           <Route path="/locais/:placeId/relatos/:id/editar" element={
             <ProtectedRoute requiredRole="turista"><EditExperiencePage /></ProtectedRoute>
+          } />
+          <Route path="/locais/:id" element={<PlaceDetailPage />} />
+          <Route path="/sobre-piri" element={<Navigate to="/" replace />} />
+
+          <Route path="/perfil" element={
+            <ProtectedRoute><ProfilePage /></ProtectedRoute>
+          } />
+
+          <Route path="/morador/locais/novo" element={
+            <ProtectedRoute requiredRole="morador"><CreatePlacePage /></ProtectedRoute>
+          } />
+          <Route path="/morador/locais/:id/editar" element={
+            <ProtectedRoute requiredRole="morador"><EditPlacePage /></ProtectedRoute>
           } />
         </Route>
 

@@ -24,8 +24,8 @@ describe('CreateExperiencePage', () => {
 
   it('exibe formulário para turista', async () => {
     render(<MemoryRouter><CreateExperiencePage /></MemoryRouter>);
-    expect(await screen.findByText(/cadastrar review/i)).toBeInTheDocument();
-    expect(screen.getByText(/qual sua avaliação/i)).toBeInTheDocument();
+    expect(await screen.findByText(/cadastrar relato/i)).toBeInTheDocument();
+    expect(screen.getByText(/qual a nota do seu relato/i)).toBeInTheDocument();
   });
 
   it('exibe RoleNotice para morador', async () => {

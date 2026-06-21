@@ -565,42 +565,20 @@
 
 /* ── Seção: Cadastrar Nova Senha ── */
 .passwordForm {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.passwordFields {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-width: 400px;
+.passwordConfirmField {
+  grid-column: 1 / -1;
+  max-width: calc(50% - var(--space-2));
 }
 
-.passwordInput {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full, 9999px);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  background: var(--color-bg-card);
-  outline: none;
-  transition: border-color var(--transition-fast);
-  box-sizing: border-box;
-}
-
-.passwordInput::placeholder {
-  color: var(--color-text-muted);
-}
-
-.passwordInput:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
+@media (max-width: 640px) {
+  .passwordConfirmField {
+    max-width: 100%;
+  }
 }
 
 .passwordActions {

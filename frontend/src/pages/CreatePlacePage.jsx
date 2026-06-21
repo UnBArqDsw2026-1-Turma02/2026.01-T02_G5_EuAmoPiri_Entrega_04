@@ -32,6 +32,7 @@ export default function CreatePlacePage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm({ defaultValues: { price: '$' } });
 
@@ -222,6 +223,7 @@ export default function CreatePlacePage() {
             multiline
             rows={4}
             maxLength={2000}
+            watch={watch}
             placeholder="Descreva o local, seus atrativos e diferenciais..."
             registration={register('description', { required: 'Descrição é obrigatória' })}
             error={errors.description?.message}

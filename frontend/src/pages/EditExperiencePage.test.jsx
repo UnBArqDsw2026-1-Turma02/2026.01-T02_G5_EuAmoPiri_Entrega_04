@@ -88,7 +88,7 @@ describe('EditExperiencePage', () => {
     )
   })
 
-  it('após submit bem-sucedido: mostra overlay de sucesso com "Avaliação atualizada com sucesso!"', async () => {
+  it('após submit bem-sucedido: mostra overlay de sucesso com "Relato atualizado com sucesso!"', async () => {
     const user = userEvent.setup()
     renderPage()
 
@@ -100,7 +100,7 @@ describe('EditExperiencePage', () => {
     await user.click(screen.getByRole('button', { name: /salvar alterações/i }))
 
     await waitFor(() =>
-      expect(screen.getByText('Avaliação atualizada com sucesso!')).toBeInTheDocument()
+      expect(screen.getByText('Relato atualizado com sucesso!')).toBeInTheDocument()
     )
   })
 

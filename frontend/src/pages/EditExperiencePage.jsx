@@ -100,10 +100,10 @@ export default function EditExperiencePage() {
             defaultValues={experience ?? {}}
             existingPhotos={experience?.photos ?? []}
             submitLabel="Salvar alterações"
-            successTitle="Avaliação atualizada com sucesso!"
-            successPrimary={{ label: 'Voltar ao meu perfil', to: '/perfil' }}
-            successSecondary={null}
-            errorTitle="Falha ao atualizar avaliação"
+            successTitle="Relato atualizado com sucesso!"
+            successPrimary={{ label: 'Voltar ao local', to: `/locais/${placeId}`, replace: true }}
+            successSecondary={{ label: 'Voltar ao meu perfil', to: '/perfil' }}
+            errorTitle="Falha ao atualizar relato"
           />
         </div>
       </div>

@@ -18,8 +18,8 @@ describe('ExperienceForm', () => {
     await user.click(screen.getByRole('button', { name: '5 estrelas' }));
     await user.type(screen.getByLabelText(/data da visita/i), '2026-06-01');
     await user.type(screen.getByPlaceholderText(/compartilhe sua experiência/i), blacklistText);
-    await user.click(screen.getByRole('button', { name: /enviar avaliação/i }));
+    await user.click(screen.getByRole('button', { name: /enviar relato/i }));
 
-    expect(await screen.findByText(/falha ao enviar avaliação/i)).toBeInTheDocument();
+    expect(await screen.findByText(/falha ao enviar relato/i)).toBeInTheDocument();
   });
 });
