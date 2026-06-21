@@ -1,7 +1,9 @@
 import { Router } from "express";
 import * as experienceController from "../controllers/experienceController.ts";
 import { authMiddleware, optionalAuthMiddleware } from "../middleware/authMiddleware.ts";
-import { requireTurista } from "../middleware/requireAccountTypeMiddleware.ts";
+import { requireTurista, requireTuristaOrAdmin } from "../middleware/requireAccountTypeMiddleware.ts";
+import * as experienceReportController from "../controllers/experienceReportController.ts";
+import * as commentReportController from "../controllers/commentReportController.ts";
 import { uploadExperiencePhotos, handlePhotoUploadError } from "../middleware/uploadPhotosMiddleware.ts";
 import * as commentController from "../controllers/commentController.ts";
 import * as reactionController from "../controllers/reactionController.ts";
@@ -366,6 +368,87 @@ router.post(
     authMiddleware,
     requireTurista,
     reactionController.reactToExperience
+);
+
+/**
+ * @openapi
+ * /places/{placeId}/experiences/{experienceId}/report:
+ *   post:
+ *     tags: [Experiences]
+ *     summary: Denunciar relato (Turista ou Admin)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: placeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: experienceId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateReportRequest'
+ *     responses:
+ *       201:
+ *         description: Denúncia registrada
+ *       403:
+ *         description: Próprio relato ou papel incorreto
+ *       409:
+ *         description: Denúncia duplicada
+ */
+router.post(
+    "/:placeId/experiences/:experienceId/report",
+    authMiddleware,
+    requireTuristaOrAdmin,
+    experienceReportController.reportExperience
+);
+
+/**
+ * @openapi
+ * /places/{placeId}/experiences/{experienceId}/comments/{commentId}/report:
+ *   post:
+ *     tags: [Experiences]
+ *     summary: Denunciar comentário (Turista ou Admin)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: placeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: experienceId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateReportRequest'
+ *     responses:
+ *       201:
+ *         description: Denúncia registrada
+ */
+router.post(
+    "/:placeId/experiences/:experienceId/comments/:commentId/report",
+    authMiddleware,
+    requireTuristaOrAdmin,
+    commentReportController.reportComment
 );
 
 export default router;

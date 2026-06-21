@@ -12,9 +12,9 @@ import {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(() => getCurrentUser());
+  const [user, setUser] = useState(() => getCurrentUser());
   const [loading, setLoading] = useState(Boolean(getToken()));
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,12 +97,14 @@ export function AuthProvider({ children }) {
       loading,
       error,
       isAuthenticated: Boolean(user),
-      isMorador:       user?.role === 'morador',
-      isTurista:       user?.role === 'turista',
-      login:           handleLogin,
-      register:        handleRegister,
-      logout:          handleLogout,
-      updateProfile:   handleUpdateProfile,
+      isMorador: user?.role === 'morador',
+      isTurista: user?.role === 'turista',
+      isAdmin: user?.role === 'admin',
+      canReport: Boolean(user) && (user?.role === 'turista' || user?.role === 'admin'),
+      login: handleLogin,
+      register: handleRegister,
+      logout: handleLogout,
+      updateProfile: handleUpdateProfile,
     }}>
       {children}
     </AuthContext.Provider>

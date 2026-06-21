@@ -170,6 +170,23 @@ const options = {
                             nullable: true,
                         },
                         createdAt: { type: "string", format: "date-time" },
+                        status: { type: "string", enum: ["ACTIVE", "REPORTED", "HIDDEN"] },
+                    },
+                },
+                CreateReportRequest: {
+                    type: "object",
+                    required: ["reason"],
+                    properties: {
+                        reason: { type: "string", enum: ["ODIO", "FALSO", "SENSIVEL", "OUTRO"] },
+                        description: { type: "string", maxLength: 500 },
+                    },
+                },
+                ReportResponse: {
+                    type: "object",
+                    properties: {
+                        message: { type: "string" },
+                        reportCount: { type: "integer" },
+                        status: { type: "string", enum: ["REPORTED"] },
                     },
                 },
                 ExperienceComment: {
@@ -196,6 +213,7 @@ const options = {
                             },
                         },
                         createdAt: { type: "string", format: "date-time" },
+                        status: { type: "string", enum: ["ACTIVE", "REPORTED", "HIDDEN"] },
                     },
                 },
                 CreateCommentRequest: {

@@ -21,3 +21,4 @@ export function requireAccountType(...allowed: AccountType[]) {
 export const requireMorador = requireAccountType("MORADOR");
 export const requireTurista = requireAccountType("TURISTA");
 export const requireAdmin = requireAccountType("ADMIN");
+export const requireTuristaOrAdmin = requireAccountType("TURISTA", "ADMIN");

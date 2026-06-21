@@ -143,17 +143,61 @@ export async function updateExperience(placeId, experienceId, experienceData, ph
 }
 
 export async function deleteExperience(placeId, experienceId) {
-  await apiClient.delete(`/places/${placeId}/experiences/${experienceId}`);
+  try {
+    await apiClient.delete(`/places/${placeId}/experiences/${experienceId}`);
+  } catch {
+    const idx = MOCK_EXPERIENCES.findIndex((e) => String(e.id) === String(experienceId));
+    if (idx !== -1) MOCK_EXPERIENCES.splice(idx, 1);
+  }
   return { success: true };
 }
 
-export async function deleteExperience(placeId, id) {
-  try {
-    await apiClient.delete(`/places/${placeId}/experiences/${id}`);
-  } catch {
-    const idx = MOCK_EXPERIENCES.findIndex((e) => String(e.id) === String(id));
-    if (idx !== -1) MOCK_EXPERIENCES.splice(idx, 1);
-  }
+export async function fetchCommentsByExperience(placeId, experienceId) {
+  const { data } = await apiClient.get(
+    `/places/${placeId}/experiences/${experienceId}/comments`
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+export async function reportExperience(placeId, experienceId, payload) {
+  const { data } = await apiClient.post(
+    `/places/${placeId}/experiences/${experienceId}/report`,
+    payload
+  );
+  return data;
+}
+
+export async function reportComment(placeId, experienceId, commentId, payload) {
+  const { data } = await apiClient.post(
+    `/places/${placeId}/experiences/${experienceId}/comments/${commentId}/report`,
+    payload
+  );
+  return data;
+}
+
+export async function fetchModerationQueue() {
+  const { data } = await apiClient.get('/admin/moderation?status=REPORTED');
+  return data;
+}
+
+export async function restoreExperienceModeration(experienceId) {
+  const { data } = await apiClient.patch(`/admin/experiences/${experienceId}/restore`);
+  return data;
+}
+
+export async function hideExperienceModeration(experienceId) {
+  const { data } = await apiClient.patch(`/admin/experiences/${experienceId}/hide`);
+  return data;
+}
+
+export async function restoreCommentModeration(commentId) {
+  const { data } = await apiClient.patch(`/admin/comments/${commentId}/restore`);
+  return data;
+}
+
+export async function hideCommentModeration(commentId) {
+  const { data } = await apiClient.patch(`/admin/comments/${commentId}/hide`);
+  return data;
 }
 
 export async function reactToExperience(placeId, id, reaction) {

@@ -7,6 +7,7 @@ import { getSwaggerSpec } from "./config/swagger.ts";
 import placeRoutes from "./routes/placeRoutes.ts";
 import experienceRoutes from "./routes/experienceRoutes.ts";
 import authRoutes from "./routes/authRoutes.ts";
+import adminRoutes from "./routes/adminRoutes.ts";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,6 +58,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 app.use("/places", placeRoutes);
 app.use("/places", experienceRoutes);
 
