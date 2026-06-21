@@ -34,13 +34,16 @@ export default function LoginPage() {
     <div className={styles.page}>
       <div className={styles.card}>
 
+        {/* Identidade Visual */}
         <p className={styles.logo}>❤ EuAmoPiri</p>
-        <h1 className={styles.title}>Entrar na sua conta</h1>
+        <p className={styles.subtitle}>Bem-vindo de volta!</p>
 
         <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
+          
+          {/* Campo EMAIL reestilizado em maiúsculo via CSS */}
           <FormField
             id="email"
-            label="E-mail"
+            label="EMAIL"
             type="email"
             placeholder="seu@email.com"
             registration={register('email', {
@@ -50,9 +53,10 @@ export default function LoginPage() {
             error={errors.email?.message}
           />
 
+          {/* Campo SENHA */}
           <FormField
             id="password"
-            label="Senha"
+            label="SENHA"
             type="password"
             placeholder="••••••••"
             registration={register('password', {
@@ -66,15 +70,33 @@ export default function LoginPage() {
             <p className={styles.serverError} role="alert">{serverError}</p>
           )}
 
-          <Button variant="primary" type="submit" fullWidth loading={isSubmitting}>
-            Entrar
+          {/* Adicione a className para forçar o verde oliva do layout */}
+          <Button 
+          variant="teal" 
+          type="submit" 
+          fullWidth 
+          loading={isSubmitting}
+          className={styles.primaryButton} >
+          Entrar
           </Button>
+
+          {/* Botão Social Google */}
+          <button type="button" className={styles.googleBtn}>
+            <img 
+              src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png" 
+              alt="Google logo" 
+              className={styles.googleIcon}
+            />
+            Continuar com o Google
+          </button>
         </form>
 
-        <p className={styles.footer}>
-          Não tem conta?{' '}
-          <Link to="/cadastro" className={styles.link}>Cadastre-se</Link>
-        </p>
+        {/* Links inferiores alinhados nas extremidades */}
+        <div className={styles.footerLinks}>
+          <Link to="/recuperar-senha" className={styles.link}>Esqueci a senha</Link>
+          <Link to="/cadastro" className={styles.link}>Criar conta</Link>
+        </div>
+
       </div>
     </div>
   );

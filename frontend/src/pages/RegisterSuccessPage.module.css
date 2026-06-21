@@ -1,0 +1,17 @@
+.page {
+  display: flex; justify-content: center; align-items: center; min-height: 100vh;
+  background: linear-gradient(135deg, #3d4a41 0%, #634a35 100%); padding: 20px; font-family: 'Inter', sans-serif;
+}
+.card {
+  background-color: #ffffff; border-radius: 8px; padding: 48px 40px; width: 100%; max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); text-align: center;
+}
+.logo { color: #72492d; font-weight: 700; font-size: 1.5rem; margin-bottom: 24px; }
+.title { color: #333333; font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: #666666; font-size: 0.9rem; margin-bottom: 32px; }
+
+/* Ícone de check animado/estilizado */
+.iconContainer { display: flex; justify-content: center; margin-bottom: 24px; }
+.checkmark { width: 56px; height: 56px; border-radius: 50%; stroke: #333333; stroke-width: 4; stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px #333333; }
+.checkmarkCircle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 4; stroke-miterlimit: 10; stroke: #658c2b; fill: none; }
+.checkmarkCheck { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke: #333333; }

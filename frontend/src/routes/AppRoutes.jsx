@@ -5,9 +5,16 @@ import Spinner from '../presentation/atoms/Spinner';
 import PageLayout from '../presentation/organisms/PageLayout';
 
 /* ─── Carregamento lazy das páginas ─── */
+const RegisterPage         = lazy(() => import('../pages/RegisterPage'));
+const RegisterPasswordPage = lazy(() => import('../pages/RegisterPasswordPage')); 
+const RegisterSuccessPage  = lazy(() => import('../pages/RegisterSuccessPage'));  
 const PlacesPage           = lazy(() => import('../pages/PlacesPage'));
 const PlaceDetailPage      = lazy(() => import('../pages/PlaceDetailPage'));
 const LoginPage            = lazy(() => import('../pages/LoginPage'));
+const LoginPasswordPage    = lazy(() => import('../pages/LoginPasswordPage')); 
+const LoginCodePage        = lazy(() => import('../pages/LoginCodePage'));
+const LoginNovaSenhaPage   = lazy(() => import('../pages/LoginNovaSenhaPage'));
+const LoginSuccessPage     = lazy(() => import('../pages/LoginSuccessPage'));
 const SignupPage           = lazy(() => import('../pages/SignupPage'));
 const CreatePlacePage      = lazy(() => import('../pages/CreatePlacePage'));
 const EditPlacePage        = lazy(() => import('../pages/EditPlacePage'));
@@ -76,8 +83,16 @@ export default function AppRoutes() {
         </Route>
 
         {/* Sem layout (tela cheia — login e cadastro) */}
-        <Route path="/login"    element={<LoginPage />} />
-        <Route path="/cadastro" element={<SignupPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* FLUXO CORRIGIDO: Todas as sub-rotas seguindo a mesma estrutura linear */}
+        <Route path="/recuperar-senha" element={<LoginPasswordPage />} />
+        <Route path="/recuperar-senha/codigo" element={<LoginCodePage />} />
+        <Route path="/recuperar-senha/nova-senha" element={<LoginNovaSenhaPage />} />
+        <Route path="/recuperar-senha/sucesso" element={<LoginSuccessPage />} />
+        <Route path="/cadastro" element={<RegisterPage />} />
+        <Route path="/cadastro/seguranca" element={<RegisterPasswordPage />} />
+        <Route path="/cadastro/sucesso"   element={<RegisterSuccessPage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />

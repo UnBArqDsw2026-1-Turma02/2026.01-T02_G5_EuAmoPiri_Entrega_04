@@ -1,0 +1,154 @@
+/* Container principal que ocupa a tela toda com o gradiente de fundo */
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #3d4a41 0%, #634a35 100%);
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* O Card branco centralizado */
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 40px 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+/* centralizo o Eu Amo Piri*/
+.logo {
+  color: #72492d;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0 0 8px 0;
+}
+
+.title {
+  color: #333333;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  color: #666666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0 0 24px 0;
+}
+
+/* Barra de Progresso */
+.progressContainer {
+  margin-bottom: 24px;
+}
+
+.progressBar {
+  height: 4px;
+  background-color: #e0e0e0;
+  border-radius: 2px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+/* O preenchimento verde da etapa atual */
+.progressBar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 33.3%; /* Etapa 1 de 3 */
+  background-color: #658c2b;
+  border-radius: 2px;
+}
+
+.progressText {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #888888;
+  letter-spacing: 0.5px;
+}
+
+/* Formulário e Espaçamento dos Campos */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left; /* Garante que as labels fiquem alinhadas à esquerda */
+}
+
+/* Seção do Tipo de Conta (Turista / Morador) */
+.accountTypeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #333333;
+  letter-spacing: 0.5px;
+}
+
+.toggleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Botões do Seletor (Inativos) */
+.toggleBtn {
+  background-color: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.9rem;
+  color: #888888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+/* Botão do Seletor quando está ATIVO (Selecionado) */
+.activeToggle {
+  background-color: #dbecce; /* Verde clarinho do protótipo */
+  border-color: #92b866;     /* Borda oliva */
+  color: #557030;            /* Texto verde escuro */
+  font-weight: 600;
+}
+
+/* Rodapé */
+.footer {
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+.link {
+  color: #658c2b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Alinhamento dos Botões de (Cancelar e Próximo) */
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.actions > button,
+.actions > a {
+  flex: 1;
+}
