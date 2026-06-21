@@ -47,6 +47,7 @@ export function formatExperience(
         photos: (experience.photos ?? []).map((p) => formatPhoto(p, pid, experience.id)),
         reactions: extras?.reactions ?? emptyReactionCounts(),
         commentsCount: extras?.commentsCount ?? 0,
+        status: experience.status,
         createdAt: experience.createdAt,
     };
 

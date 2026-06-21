@@ -2,6 +2,7 @@ type CommentWithRelato = {
     id: number;
     text: string;
     userId: number;
+    status: string;
     createdAt: Date;
     user: { id: number; name: string };
     experience: {
@@ -18,6 +19,7 @@ export function formatComment(comment: CommentWithRelato) {
         text: comment.text,
         userId: comment.userId,
         userName: comment.user.name,
+        status: comment.status,
         createdAt: comment.createdAt,
         relato: {
             id: comment.experience.id,

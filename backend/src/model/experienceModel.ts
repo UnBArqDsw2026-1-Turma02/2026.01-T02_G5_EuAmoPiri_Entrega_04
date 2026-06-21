@@ -1,5 +1,7 @@
-﻿import type { Prisma } from "../../generated/prisma/client.ts";
+﻿import type { ContentStatus, Prisma } from "../../generated/prisma/client.ts";
 import prisma from "../config/prisma.ts";
+
+const PUBLIC_STATUS_FILTER = { not: "HIDDEN" as ContentStatus };
 
 const experienceInclude = {
     photos: { orderBy: { sortOrder: "asc" as const } },
@@ -20,7 +22,7 @@ export async function createExperienceWithPhotos(
 
 export async function findAllExperiencesByPlaceId(placeId: number) {
     return prisma.experiences.findMany({
-        where: { placeId },
+        where: { placeId, status: PUBLIC_STATUS_FILTER },
         include: experienceInclude,
         orderBy: { createdAt: "desc" },
     });
@@ -28,7 +30,7 @@ export async function findAllExperiencesByPlaceId(placeId: number) {
 
 export async function findExperiencesByUserId(userId: number) {
     return prisma.experiences.findMany({
-        where: { userId },
+        where: { userId, status: PUBLIC_STATUS_FILTER },
         include: {
             ...experienceInclude,
             place: { select: { id: true, name: true } },
@@ -85,4 +87,24 @@ export async function replaceExperiencePhotos(
 
 export async function findPlaceById(placeId: number) {
     return prisma.place.findUnique({ where: { id: placeId } });
+}
+
+export async function updateExperienceStatus(id: number, status: ContentStatus) {
+    return prisma.experiences.update({
+        where: { id },
+        data: { status },
+        include: experienceInclude,
+    });
+}
+
+export async function findReportedExperiences() {
+    return prisma.experiences.findMany({
+        where: { status: "REPORTED" },
+        include: {
+            ...experienceInclude,
+            place: { select: { id: true, name: true } },
+            _count: { select: { reports: true } },
+        },
+        orderBy: { createdAt: "desc" },
+    });
 }
