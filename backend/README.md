@@ -22,8 +22,7 @@ Este documento explica tudo o que outro desenvolvedor precisa saber para clonar 
 | **Node.js** | Runtime JavaScript |
 | **TypeScript** | Tipagem estática |
 | **Express 5** | Servidor HTTP e rotas |
-| **Passport.js** | Autenticação (Facade + Strategy) |
-| **google-auth-library** | Validação OAuth Google |
+| **Passport.js** | Autenticação JWT (local + bearer) |
 | **Swagger** | Documentação interativa da API (`/api-docs`) |
 | **Prisma 7** | ORM e migrations do banco |
 | **PostgreSQL** | Banco de dados relacional |
@@ -581,7 +580,8 @@ backend/
 │   │   └── swagger.ts         # OpenAPI spec
 │   ├── services/
 │   │   ├── authService.ts
-│   │   └── googleAuthService.ts
+│   │   ├── profileService.ts
+│   │   └── storageService.ts
 │   ├── model/
 │   │   ├── placeModel.ts
 │   │   ├── experienceModel.ts
@@ -664,8 +664,7 @@ Definidos em `prisma/schema.prisma`:
 | `profession` | String? | Profissão |
 | `biography` | String? | Biografia |
 | `profilePhotoUrl` | String? | Chave do objeto no GCS (ex.: `profile_photo/1-1718650000.jpg`) |
-| `passwordHash` | String? | Hash bcrypt (null se login só Google) |
-| `googleId` | String? | ID Google OAuth |
+| `passwordHash` | String? | Hash bcrypt |
 | `createdAt` | DateTime | Data de criação (automática) |
 
 ---
@@ -689,7 +688,6 @@ Documentação arquitetural completa (bibliotecas, padrões Facade/Strategy, ADR
 |--------|------|------|-----------|
 | `POST` | `/auth/register` | Não | Cadastro (nome, email, senha, etc.) |
 | `POST` | `/auth/login` | Não | Login email/senha → JWT |
-| `POST` | `/auth/google` | Não | Login Google (body: `{ "credential": "<id_token>" }`) |
 | `GET` | `/auth/me` | Bearer JWT | Dados do usuário logado |
 | `PATCH` | `/auth/me` | Bearer JWT | Atualiza perfil (multipart; campo `profilePhoto` opcional) |
 | `GET` | `/auth/me/photo` | Bearer JWT | Stream da foto de perfil (proxy GCS) |
@@ -778,7 +776,7 @@ Invoke-RestMethod -Uri "http://localhost:3000/places/1/experiences" -Method GET
 
 ## Frontend de teste
 
-Pasta `frontend/` na raiz do repositório — interface mínima para validar login, cadastro, Google OAuth e rotas protegidas.
+Pasta `frontend/` na raiz do repositório — interface para validar login, cadastro e rotas protegidas.
 
 O módulo de auth no frontend fica em `src/api/auth/` (SRP: `authApi`, `authMapper`, `authSessionStorage`, `authFacade`) com HTTP global em `src/api/client.js`. Ver `frontend/README.md` e [`4.5.FotoPerfilGCS.md`](../docs/requisitos/RF-edit-perfil/4.5.FotoPerfilGCS.md).
 
@@ -789,14 +787,13 @@ npm install
 npm run dev
 ```
 
-Acesse `http://localhost:5173`. Configure `VITE_GOOGLE_CLIENT_ID` com o mesmo Client ID do backend.
+Acesse `http://localhost:5173`.
 
 Variáveis adicionais no `.env` do backend:
 
 ```env
 JWT_SECRET=sua-chave-secreta
 JWT_EXPIRES_IN=7d
-GOOGLE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
 CORS_ORIGIN=http://localhost:5173
 ```
 
