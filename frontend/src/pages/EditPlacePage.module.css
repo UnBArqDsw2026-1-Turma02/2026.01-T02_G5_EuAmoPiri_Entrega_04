@@ -249,7 +249,13 @@
 }
 .setCoverBtn:hover { background: rgba(0, 0, 0, 0.7); }
 
-/* ── Mobile ── */
+/* ── Mobile / tablet ── */
+@media (max-width: 768px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .page {
     padding: var(--space-5) var(--space-3);

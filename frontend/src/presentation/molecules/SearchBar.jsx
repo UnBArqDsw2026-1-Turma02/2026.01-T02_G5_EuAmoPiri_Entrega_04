@@ -25,6 +25,7 @@ export default function SearchBar({
   onSearch,
   placeholder = 'Buscar...',
   className = '',
+  showSubmit = true,
 }) {
   const inputRef = useRef(null);
 
@@ -72,9 +73,11 @@ export default function SearchBar({
         )}
       </div>
 
-      <button type="submit" className={styles.submitBtn} aria-label="Buscar">
-        Buscar
-      </button>
+      {showSubmit && (
+        <button type="submit" className={styles.submitBtn} aria-label="Buscar">
+          Buscar
+        </button>
+      )}
     </form>
   );
 }

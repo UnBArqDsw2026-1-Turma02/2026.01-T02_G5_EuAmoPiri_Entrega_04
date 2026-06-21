@@ -54,3 +54,23 @@
 .footerText { margin-top: 24px; font-size: 0.8rem; color: #666666; }
 .loginLink { color: #658c2b; font-weight: 600; text-decoration: none; }
 .loginLink:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+
+  .card {
+    padding: 24px 16px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions > button {
+    width: 100%;
+  }
+}

@@ -156,6 +156,17 @@
   flex: 1;
 }
 
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions > * {
+    flex: none;
+    width: 100%;
+  }
+}
+
 .existingPhotos {
   display: flex;
   flex-direction: column;

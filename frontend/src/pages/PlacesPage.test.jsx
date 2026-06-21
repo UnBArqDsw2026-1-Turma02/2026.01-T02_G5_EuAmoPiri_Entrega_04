@@ -19,7 +19,10 @@ vi.mock('react-leaflet', () => ({
   TileLayer: () => null,
   Marker: () => <div data-testid="map-marker" />,
   Popup: () => null,
-  useMap: () => ({ flyTo: vi.fn() }),
+  useMap: () => ({ invalidateSize: vi.fn() }),
+}))
+vi.mock('../presentation/molecules/MapResizeHandler', () => ({
+  default: () => null,
 }))
 
 vi.mock('../infra/adaptor/placeAdaptor')
@@ -97,10 +100,13 @@ describe('PlacesPage — RF06', () => {
     expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
   })
 
-  it('filtra locais por categoria via chips (BDD 2)', async () => {
+  it('filtra locais por categoria via menu de filtros mobile', async () => {
     renderPage()
     await screen.findByText('Botequim Mercatto Piri')
-    await userEvent.click(screen.getByRole('button', { name: 'Cachoeiras' }))
+
+    await userEvent.click(screen.getByRole('button', { name: /^filtros/i }))
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Cachoeiras' }))
+
     expect(screen.queryByText('Botequim Mercatto Piri')).not.toBeInTheDocument()
     expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
   })
@@ -110,5 +116,25 @@ describe('PlacesPage — RF06', () => {
     await screen.findByText('Botequim Mercatto Piri')
     expect(screen.getByRole('link', { name: /botequim mercatto piri/i }))
       .toHaveAttribute('href', '/locais/1')
+  })
+
+  it('usa SearchBar com filtro ao digitar', async () => {
+    renderPage()
+    await screen.findByText('Botequim Mercatto Piri')
+
+    const searchInput = screen.getByRole('searchbox', { name: /campo de busca/i })
+    await userEvent.type(searchInput, 'Cachoeira')
+
+    expect(screen.queryByText('Botequim Mercatto Piri')).not.toBeInTheDocument()
+    expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
+  })
+
+  it('exibe lista de locais com contagem', async () => {
+    renderPage()
+    await screen.findByText('Botequim Mercatto Piri')
+
+    expect(screen.getByRole('complementary', { name: /lista de locais/i })).toBeInTheDocument()
+    expect(screen.getByText('2 locais')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^filtros/i })).toBeInTheDocument()
   })
 })

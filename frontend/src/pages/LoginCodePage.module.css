@@ -10,6 +10,9 @@
 
 .stepsContainer {
   display: flex; align-items: center; justify-content: center; margin-bottom: 32px; gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-1, 4px);
 }
 
 .stepItem {
@@ -22,7 +25,7 @@
 }
 
 .stepLabel {
-  font-size: 0.65rem; font-weight: 700; color: #888888; white-space: nowrap;
+  font-size: 0.65rem; font-weight: 700; color: #888888;
 }
 
 .activeStep .stepNumber { background-color: #658c2b; color: #ffffff; }
@@ -49,8 +52,16 @@
 }
 
 .codeInput {
-  width: 100%; max-width: 54px; height: 54px; text-align: center; font-size: 1.2rem; font-weight: 600;
-  border: 1px solid #dcdcdc; border-radius: 6px; outline: none;
+  flex: 1;
+  min-width: 0;
+  max-width: 48px;
+  height: 48px;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  outline: none;
 }
 
 .codeInput:focus { border-color: #658c2b; }
@@ -65,3 +76,23 @@
 .footerText { margin-top: 24px; font-size: 0.8rem; color: #666666; }
 .resendLink { color: #658c2b; font-weight: 600; cursor: pointer; }
 .resendLink:hover { text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+
+  .card {
+    padding: 24px 16px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions > button {
+    width: 100%;
+  }
+}

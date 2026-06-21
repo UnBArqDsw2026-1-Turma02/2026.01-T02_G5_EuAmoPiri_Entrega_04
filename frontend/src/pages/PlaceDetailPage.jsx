@@ -40,9 +40,9 @@ const REACTION_EMOJIS = [
 
 const REACTION_LABELS = { heart: 'Amei', like: 'Gostei' };
 
-function canReportContent(canReport, currentUserId, authorUserId) {
-  if (!canReport) return false;
-  if (authorUserId == null || currentUserId == null) return true;
+function shouldShowContentOptions(currentUserId, authorUserId) {
+  if (authorUserId == null) return true;
+  if (currentUserId == null) return true;
   return Number(authorUserId) !== Number(currentUserId);
 }
 
@@ -192,7 +192,7 @@ function ExperienceComments({
             <span className={styles.commentAuthor}>{comment.userName}</span>
             <div className={styles.commentHeaderRight}>
               <span className={styles.commentTime}>{timeAgo(comment.createdAt)}</span>
-              {canReportContent(canReport, currentUserId, comment.userId) && (
+              {shouldShowContentOptions(currentUserId, comment.userId) && (
                 <ContentOptionsMenu
                   label="Opções do comentário"
                   onReport={() => onReportComment(experienceId, comment)}
@@ -257,7 +257,7 @@ function CommentCard({
         <span className={styles.commentAuthor}>{exp.userName}</span>
         <div className={styles.commentHeaderRight}>
           <span className={styles.commentTime}>{timeAgo(exp.createdAt)}</span>
-          {canReportContent(canReport, currentUserId, exp.userId) && (
+          {shouldShowContentOptions(currentUserId, exp.userId) && (
             <ContentOptionsMenu
               label="Opções do relato"
               onReport={() => onReportExperience?.(exp)}
@@ -446,12 +446,32 @@ export default function PlaceDetailPage() {
     }
   }
 
+  function tryOpenReport(openFn) {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/locais/${id}` } });
+      return;
+    }
+    if (!canReport) {
+      setReportFeedback({
+        type: 'error',
+        title: 'Denúncia indisponível',
+        text: 'Apenas contas de turista ou administrador podem denunciar relatos e comentários.',
+      });
+      return;
+    }
+    openFn();
+  }
+
   function openExperienceReport(exp) {
-    setReportTarget({ type: 'experience', experienceId: exp.id });
+    tryOpenReport(() => {
+      setReportTarget({ type: 'experience', experienceId: exp.id });
+    });
   }
 
   function openCommentReport(experienceId, comment) {
-    setReportTarget({ type: 'comment', experienceId, commentId: comment.id });
+    tryOpenReport(() => {
+      setReportTarget({ type: 'comment', experienceId, commentId: comment.id });
+    });
   }
 
   function handleCommentAdded(experienceId) {
@@ -762,7 +782,7 @@ export default function PlaceDetailPage() {
 
       {reportFeedback && (
         <FormResultModal
-          variant="success"
+          variant={reportFeedback.type === 'error' ? 'error' : 'success'}
           title={reportFeedback.title}
           text={reportFeedback.text}
           onClose={() => setReportFeedback(null)}

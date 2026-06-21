@@ -152,3 +152,24 @@
 .actions > a {
   flex: 1;
 }
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+
+  .card {
+    padding: 24px 16px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions > button,
+  .actions > a {
+    width: 100%;
+  }
+}

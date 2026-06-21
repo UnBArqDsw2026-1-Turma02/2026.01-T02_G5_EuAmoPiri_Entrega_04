@@ -63,3 +63,21 @@
 .link:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  .page {
+    padding: var(--space-3, 12px);
+    align-items: flex-start;
+    padding-top: var(--space-6, 24px);
+  }
+
+  .card {
+    padding: var(--space-6, 24px) var(--space-4, 16px);
+  }
+
+  .footerLinks {
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    align-items: center;
+  }
+}

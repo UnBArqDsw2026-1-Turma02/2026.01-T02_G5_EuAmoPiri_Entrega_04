@@ -91,6 +91,7 @@
   --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.12);
 
   /* --- Breakpoints (referência — usar via media queries) --- */
+  /* Padrão do projeto: mobile ≤768px | tablet/desktop ≥768px */
   /* --bp-sm: 480px  → mobile grande  */
   /* --bp-md: 768px  → tablet         */
   /* --bp-lg: 1024px → desktop        */
