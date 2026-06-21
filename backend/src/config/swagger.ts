@@ -1,11 +1,5 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
-const API_URL = process.env.API_URL?.replace(/\/$/, "");
-
-const servers = API_URL
-    ? [{ url: API_URL, description: "Produção" }]
-    : [{ url: "/", description: "Servidor atual" }];
-
 const options = {
     definition: {
         openapi: "3.0.0",
@@ -14,7 +8,6 @@ const options = {
             version: "1.0.0",
             description: "API REST do Eu Amo Piri — locais, experiências e autenticação",
         },
-        servers,
         components: {
             securitySchemes: {
                 BearerAuth: {
@@ -206,4 +199,12 @@ const options = {
     apis: ["./src/routes/*.ts", "./src/controllers/*.ts"],
 };
 
-export const swaggerSpec = swaggerJsdoc(options);
+const baseSwaggerSpec = swaggerJsdoc(options);
+
+/** Injeta a URL do servidor em runtime (dev, Render, etc.). */
+export function getSwaggerSpec(serverUrl: string) {
+    return {
+        ...baseSwaggerSpec,
+        servers: [{ url: serverUrl, description: "Servidor atual" }],
+    };
+}
