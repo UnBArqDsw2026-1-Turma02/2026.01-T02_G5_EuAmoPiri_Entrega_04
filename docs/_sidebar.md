@@ -18,21 +18,29 @@
 
   - **Reutilização no Frontend**
 
+    - [Visão geral](/ArquiteturaReutilizacao/frontend/00.VisaoGeral.md)
+
     - [RF01 — Autenticação](/requisitos/RF01-backend/4.4.Autenticacao.md)
 
     - [RF03 — Perfil](/requisitos/rf03-perfil.md)
 
     - [RF04 — Cadastro de local](/requisitos/rf04-cadastro-local.md)
 
+    - [RF05/RF08 — Relatos](/ArquiteturaReutilizacao/frontend/05.RelatosExperiencia.md)
+
+    - [RF06/RF15 — Consulta e filtros](/ArquiteturaReutilizacao/frontend/06.ConsultaLocais.md)
+
     - [RF07 — Edição de locais](/requisitos/rf07-edicao-locais.md)
 
     - [RF08 — Edição de relatos](/requisitos/rf08-edicao-relatos.md)
+
+    - [RF09/RF10 — Painéis](/ArquiteturaReutilizacao/frontend/07.PaineisUsuario.md)
 
     - [RF11 — Denúncia e moderação](/requisitos/RF-denuncia-backend/4.7.DenunciaModeracao.md)
 
     - [RF12/RF13 — Comentários e reações](/requisitos/RF12-RF13-backend/4.6.ComentariosReacoes.md)
 
-    - [RF15 — Google Places](/requisitos/RF-google-places-backend/4.8.SincronizacaoGooglePlaces.md)
+    - [RF15 — Google Places (UI)](/requisitos/RF-google-places-backend/4.8.SincronizacaoGooglePlaces.md)
 
   - **Reutilização no Backend**
 
