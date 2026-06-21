@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { createExperience } from '../infra/adaptor/experienceAdaptor';
+import { useNavigate, useParams, Link } from 'react-router-dom'; clear
 import { fetchPlaceById } from '../infra/adaptor/placeAdaptor';
 import { useAuth } from '../context/AuthContext';
 import ExperienceForm from '../presentation/organisms/ExperienceForm';
@@ -16,7 +15,7 @@ export default function CreateExperiencePage() {
   const { user, isTurista } = useAuth();
 
   const [loading, setLoading] = useState(false);
-  const [place, setPlace]       = useState(null);
+  const [place, setPlace] = useState(null);
 
   useEffect(() => {
     fetchPlaceById(placeId).then(setPlace).catch(() => setPlace(null));
