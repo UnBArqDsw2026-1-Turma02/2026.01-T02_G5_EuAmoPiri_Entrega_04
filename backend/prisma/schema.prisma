@@ -1,117 +1,163 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-}
-
-datasource db {
-  provider = "postgresql"
-}
-
-enum AccountType {
-  TURISTA
-  MORADOR
-  ADMIN
-}
-
-enum PlaceCategory {
-  CACHOEIRA
-  RESTAURANTE
-  POUSADA
-}
-
-enum ReactionType {
-  HEART
-  LIKE
-}
-
-model Place {
-  id          Int           @id @default(autoincrement())
-  name        String
-  category    PlaceCategory
-  description String
-  address     String
-  mapsLink    String?
-  phone       String?
-  openingDate DateTime?
-  moradorId   Int
-  morador     User          @relation(fields: [moradorId], references: [id], onDelete: Cascade)
-  createdAt   DateTime      @default(now())
-  experiences Experiences[]
-  photos      PlacePhoto[]
-}
-
-model PlacePhoto {
-  id        Int    @id @default(autoincrement())
-  placeId   Int
-  place     Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  url       String
-  sortOrder Int
-}
-
-model User {
-  id              Int           @id @default(autoincrement())
-  accountType     AccountType?
-  name            String
-  email           String        @unique
-  birthDate       DateTime?
-  phone           String?
-  profession      String?
-  biography       String?
-  profilePhotoUrl String?
-  passwordHash    String?
-  createdAt           DateTime             @default(now())
-  experiences         Experiences[]
-  places              Place[]
-  experienceComments  ExperienceComment[]
-  experienceReactions ExperienceReaction[]
-}
-
-model Experiences {
-  id        Int                @id @default(autoincrement())
-  userName  String
-  rating    Int
-  title     String?
-  text      String
-  visitDate DateTime
-  createdAt DateTime           @default(now())
-  placeId   Int
-  place     Place              @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  userId    Int?
-  user      User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
-  photos    ExperiencePhoto[]
-  comments  ExperienceComment[]
-  reactions ExperienceReaction[]
-}
-
-model ExperienceComment {
-  id           Int         @id @default(autoincrement())
-  text         String
-  experienceId Int
-  experience   Experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
-  userId       Int
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime    @default(now())
-}
-
-model ExperienceReaction {
-  id           Int          @id @default(autoincrement())
-  experienceId Int
-  experience   Experiences  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
-  userId       Int
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type         ReactionType
-  createdAt    DateTime     @default(now())
-
-  @@unique([experienceId, userId])
-}
-
-model ExperiencePhoto {
-  id           Int         @id @default(autoincrement())
-  experienceId Int
-  experience   Experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
-  url          String
-  sortOrder    Int
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountType {
+  TURISTA
+  MORADOR
+  ADMIN
+}
+
+enum PlaceCategory {
+  CACHOEIRA
+  RESTAURANTE
+  POUSADA
+}
+
+enum ReactionType {
+  HEART
+  LIKE
+}
+
+enum ContentStatus {
+  ACTIVE
+  REPORTED
+  HIDDEN
+}
+
+enum ReportReason {
+  ODIO
+  FALSO
+  SENSIVEL
+  OUTRO
+}
+
+model Place {
+  id          Int           @id @default(autoincrement())
+  name        String
+  category    PlaceCategory
+  description String
+  address     String
+  mapsLink    String?
+  phone       String?
+  openingDate DateTime?
+  moradorId   Int
+  morador     User          @relation(fields: [moradorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  experiences Experiences[]
+  photos      PlacePhoto[]
+}
+
+model PlacePhoto {
+  id        Int    @id @default(autoincrement())
+  placeId   Int
+  place     Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int
+}
+
+model User {
+  id                    Int                       @id @default(autoincrement())
+  accountType           AccountType?
+  name                  String
+  email                 String                    @unique
+  birthDate             DateTime?
+  phone                 String?
+  profession            String?
+  biography             String?
+  profilePhotoUrl       String?
+  passwordHash          String?
+  createdAt             DateTime                  @default(now())
+  experiences           Experiences[]
+  places                Place[]
+  experienceComments    ExperienceComment[]
+  experienceReactions   ExperienceReaction[]
+  experienceReports     ExperienceReport[]        @relation("ExperienceReports")
+  commentReports        ExperienceCommentReport[] @relation("CommentReports")
+}
+
+model Experiences {
+  id        Int                  @id @default(autoincrement())
+  userName  String
+  rating    Int
+  title     String?
+  text      String
+  visitDate DateTime
+  status    ContentStatus        @default(ACTIVE)
+  createdAt DateTime             @default(now())
+  placeId   Int
+  place     Place                @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  userId    Int?
+  user      User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  photos    ExperiencePhoto[]
+  comments  ExperienceComment[]
+  reactions ExperienceReaction[]
+  reports   ExperienceReport[]
+}
+
+model ExperienceComment {
+  id           Int                       @id @default(autoincrement())
+  text         String
+  status       ContentStatus             @default(ACTIVE)
+  experienceId Int
+  experience   Experiences               @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime                  @default(now())
+  reports      ExperienceCommentReport[]
+}
+
+model ExperienceReaction {
+  id           Int          @id @default(autoincrement())
+  experienceId Int
+  experience   Experiences  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         ReactionType
+  createdAt    DateTime     @default(now())
+
+  @@unique([experienceId, userId])
+}
+
+model ExperiencePhoto {
+  id           Int         @id @default(autoincrement())
+  experienceId Int
+  experience   Experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  url          String
+  sortOrder    Int
+}
+
+model ExperienceReport {
+  id           Int          @id @default(autoincrement())
+  experienceId Int
+  experience   Experiences  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  reporterId   Int
+  reporter     User         @relation("ExperienceReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason       ReportReason
+  description  String?
+  createdAt    DateTime     @default(now())
+
+  @@unique([experienceId, reporterId])
+}
+
+model ExperienceCommentReport {
+  id          Int               @id @default(autoincrement())
+  commentId   Int
+  comment     ExperienceComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporterId  Int
+  reporter    User              @relation("CommentReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason      ReportReason
+  description String?
+  createdAt   DateTime          @default(now())
+
+  @@unique([commentId, reporterId])
+}
+
