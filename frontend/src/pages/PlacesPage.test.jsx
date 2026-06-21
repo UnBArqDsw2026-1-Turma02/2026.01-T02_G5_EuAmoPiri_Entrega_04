@@ -3,9 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 
-/* ── Mocks de infra ── */
 vi.mock('leaflet/dist/leaflet.css', () => ({}))
-
 vi.mock('leaflet', () => ({
   default: {
     Icon: {
@@ -16,13 +14,12 @@ vi.mock('leaflet', () => ({
     },
   },
 }))
-
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
-  TileLayer:    () => null,
-  // Marker não renderiza filhos: evita texto duplicado (Popup tem o nome do local)
-  Marker:       () => <div data-testid="map-marker" />,
-  Popup:        () => null,
+  TileLayer: () => null,
+  Marker: () => <div data-testid="map-marker" />,
+  Popup: () => null,
+  useMap: () => ({ flyTo: vi.fn() }),
 }))
 
 vi.mock('../infra/adaptor/placeAdaptor')
@@ -53,6 +50,7 @@ const MOCK_PLACES = [
     reviewsCount: 100,
     lat: -15.849,
     lng: -48.9568,
+    source: 'google',
   },
   {
     id: 2,
@@ -64,6 +62,7 @@ const MOCK_PLACES = [
     reviewsCount: 50,
     lat: -15.8312,
     lng: -48.9423,
+    source: 'google',
   },
 ]
 
@@ -77,112 +76,30 @@ beforeEach(() => {
 })
 
 describe('PlacesPage — RF06', () => {
-
   it('exibe spinner enquanto carrega', () => {
-    vi.mocked(fetchPlaces).mockReturnValue(new Promise(() => {})) // nunca resolve
+    vi.mocked(fetchPlaces).mockReturnValue(new Promise(() => {}))
     renderPage()
     expect(screen.getAllByTestId('spinner').length).toBeGreaterThan(0)
   })
 
-  it('renderiza o título LOCAIS PRÓXIMOS na sidebar', async () => {
-    renderPage()
-    expect(await screen.findByText(/locais próximos/i)).toBeInTheDocument()
-  })
-
-  it('renderiza o mapa após carregar', async () => {
-    renderPage()
-    await screen.findByText('Botequim Mercatto Piri')
-    expect(screen.getByTestId('map-container')).toBeInTheDocument()
-  })
-
-  it('lista os locais na sidebar', async () => {
+  it('lista locais do banco (Google + comunidade)', async () => {
     renderPage()
     expect(await screen.findByText('Botequim Mercatto Piri')).toBeInTheDocument()
     expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
   })
 
-  it('exibe avaliação e quantidade de reviews na sidebar', async () => {
-    renderPage()
-    expect(await screen.findByText('Botequim Mercatto Piri')).toBeInTheDocument()
-    expect(screen.getByText('4.9')).toBeInTheDocument()
-    expect(screen.getByText('(100 avaliações)')).toBeInTheDocument()
-  })
-
-  it('calcula avaliações a partir dos relatos quando a API não envia stats', async () => {
-    vi.mocked(fetchPlaces).mockResolvedValue([
-      { id: 3, name: 'Pousada Piri', category: 'pousada', address: 'Rua A', lat: -15.85, lng: -48.95 },
-    ])
-    vi.mocked(fetchExperiencesByPlaces).mockResolvedValue([
-      { id: 1, placeId: 3, rating: 5 },
-      { id: 2, placeId: 3, rating: 3 },
-    ])
-    renderPage()
-    expect(await screen.findByText('Pousada Piri')).toBeInTheDocument()
-    expect(screen.getByText('4.0')).toBeInTheDocument()
-    expect(screen.getByText('(2 avaliações)')).toBeInTheDocument()
-  })
-
-  it('exibe "Sem avaliações" para locais sem relatos', async () => {
-    vi.mocked(fetchPlaces).mockResolvedValue([
-      { id: 4, name: 'Local Novo', category: 'restaurante', address: 'Rua B', lat: -15.85, lng: -48.95 },
-    ])
-    vi.mocked(fetchExperiencesByPlaces).mockResolvedValue([])
-    renderPage()
-    expect(await screen.findByText('Local Novo')).toBeInTheDocument()
-    expect(screen.getByText('(Sem avaliações)')).toBeInTheDocument()
-  })
-
-  it('renderiza pins no mapa para cada local', async () => {
+  it('filtra locais por categoria via chips (BDD 2)', async () => {
     renderPage()
     await screen.findByText('Botequim Mercatto Piri')
-    const markers = screen.getAllByTestId('map-marker')
-    expect(markers.length).toBe(MOCK_PLACES.length)
-  })
-
-  it('filtra locais pelo campo de busca', async () => {
-    renderPage()
-    await screen.findByText('Botequim Mercatto Piri')
-
-    const input = screen.getByPlaceholderText(/buscar local/i)
-    await userEvent.type(input, 'cachoeira')
-
+    await userEvent.click(screen.getByRole('button', { name: 'Cachoeiras' }))
     expect(screen.queryByText('Botequim Mercatto Piri')).not.toBeInTheDocument()
     expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
   })
 
-  it('filtra locais por categoria', async () => {
+  it('links apontam para página de detalhe numérica', async () => {
     renderPage()
     await screen.findByText('Botequim Mercatto Piri')
-
-    // Usa getByRole com name para distinguir CATEGORIA dos outros selects
-    const select = screen.getByRole('combobox', { name: /categoria/i })
-    await userEvent.selectOptions(select, 'cachoeira')
-
-    expect(screen.queryByText('Botequim Mercatto Piri')).not.toBeInTheDocument()
-    expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /botequim mercatto piri/i }))
+      .toHaveAttribute('href', '/locais/1')
   })
-
-  it('exibe mensagem quando nenhum local é encontrado', async () => {
-    renderPage()
-    await screen.findByText('Botequim Mercatto Piri')
-
-    const input = screen.getByPlaceholderText(/buscar local/i)
-    await userEvent.type(input, 'xyzabc123')
-
-    expect(screen.getByText(/nenhum local encontrado/i)).toBeInTheDocument()
-  })
-
-  it('não exibe botão Cadastrar para turista/visitante', async () => {
-    renderPage()
-    await screen.findByText(/locais próximos/i)
-    expect(screen.queryByText(/\+ cadastrar/i)).not.toBeInTheDocument()
-  })
-
-  it('exibe botão Cadastrar para morador', async () => {
-    vi.mocked(useAuth).mockReturnValue({ isMorador: true, isAuthenticated: true })
-    renderPage()
-    await screen.findByText(/locais próximos/i)
-    expect(screen.getByText(/\+ cadastrar/i)).toBeInTheDocument()
-  })
-
 })

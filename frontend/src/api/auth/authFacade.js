@@ -25,6 +25,21 @@ function extractErrorMessage(error) {
   return error.response?.data?.error ?? error.message ?? 'Erro inesperado';
 }
 
+async function hydrateUserAvatar(user) {
+  if (!user?.profilePhotoUrl) return user;
+
+  try {
+    const blob = await loadProfilePhotoBlob(user.profilePhotoUrl);
+    if (blob) {
+      return { ...user, avatarUrl: URL.createObjectURL(blob) };
+    }
+  } catch {
+    // Mantém iniciais quando a foto não puder ser carregada
+  }
+
+  return user;
+}
+
 function buildProfileFormData(profileData, photoFile) {
   const formData = new FormData();
   const apiFields = mapProfileToApi(profileData);
@@ -45,7 +60,8 @@ function buildProfileFormData(profileData, photoFile) {
 export async function login({ email, password }) {
   try {
     const data = await authApi.postLogin(email, password);
-    const user = mapApiUserToFrontend(data.user);
+    let user = mapApiUserToFrontend(data.user);
+    user = await hydrateUserAvatar(user);
     persistSession({ user, token: data.token });
     return { user, token: data.token };
   } catch (error) {
@@ -56,7 +72,8 @@ export async function login({ email, password }) {
 export async function register(input) {
   try {
     const data = await authApi.postRegister(mapRegisterToApi(input));
-    const user = mapApiUserToFrontend(data.user);
+    let user = mapApiUserToFrontend(data.user);
+    user = await hydrateUserAvatar(user);
     persistSession({ user, token: data.token });
     return { user, token: data.token };
   } catch (error) {
@@ -71,7 +88,8 @@ export async function logout() {
 export async function fetchMe() {
   try {
     const data = await authApi.getMe();
-    const user = mapApiUserToFrontend(data.user);
+    let user = mapApiUserToFrontend(data.user);
+    user = await hydrateUserAvatar(user);
     saveUser(user);
     return user;
   } catch (error) {
@@ -91,7 +109,8 @@ export async function loadProfilePhotoBlob(profilePhotoUrl) {
 export async function updateProfile(profileData, photoFile) {
   try {
     const data = await authApi.patchProfile(buildProfileFormData(profileData, photoFile));
-    const user = mapApiUserToFrontend(data.user);
+    let user = mapApiUserToFrontend(data.user);
+    user = await hydrateUserAvatar(user);
     saveUser(user);
     return { user, message: data.message };
   } catch (error) {

@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import Button from '../atoms/Button';
 import styles from './PhotoUploadField.module.css';
 
 export default function PhotoUploadField({
@@ -55,11 +54,6 @@ export default function PhotoUploadField({
 
       <p className={styles.count}>{photos.length}/{max} foto(s) — mínimo {min}</p>
       {error && <span className={styles.error} role="alert">{error}</span>}
-      {photos.length < max && (
-        <Button type="button" variant="primary" size="sm" onClick={() => inputRef.current?.click()}>
-          Enviar Fotos
-        </Button>
-      )}
     </div>
   );
 }

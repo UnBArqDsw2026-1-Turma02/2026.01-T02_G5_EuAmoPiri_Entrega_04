@@ -145,6 +145,13 @@ async function assertPlaceOwner(placeId: number, moradorId: number) {
     if (!place) {
         throw new PlaceError("Local não encontrado", 404);
     }
+    if (place.source === "GOOGLE") {
+        throw new PlaceError(
+            "Locais importados do Google não podem ser editados",
+            403,
+            "GOOGLE_PLACE_READONLY"
+        );
+    }
     if (place.moradorId !== moradorId) {
         throw new PlaceError("Acesso negado: você não é o dono deste local", 403, "FORBIDDEN_OWNER");
     }

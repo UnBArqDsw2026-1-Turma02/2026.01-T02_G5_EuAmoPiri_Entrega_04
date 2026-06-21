@@ -17,6 +17,7 @@ vi.mock('../infra/adaptor/placeAdaptor', () => ({
 }))
 vi.mock('../infra/adaptor/experienceAdaptor', () => ({
   fetchMyExperiences: vi.fn(),
+  fetchExperiencesByPlaces: vi.fn(),
   deleteExperience: vi.fn(),
 }))
 
@@ -42,6 +43,7 @@ import * as authFacade from '../api/auth/authFacade'
 /* ── setup global de mocks de adaptor ── */
 beforeEach(() => {
   vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([])
+  vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue([])
   vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
   vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue([])
   vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
@@ -51,8 +53,8 @@ beforeEach(() => {
 
 /* ── fixtures ── */
 const mockPlaces = [
-  { id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia', price: '$$', rating: 4, reviewsCount: 5, moradorId: 1 },
-  { id: 2, name: 'Cachoeira da Rosário', category: 'natureza', price: '$', rating: 5, reviewsCount: 3, moradorId: 1 },
+  { id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia', rating: 4, reviewsCount: 5, moradorId: 1 },
+  { id: 2, name: 'Cachoeira da Rosário', category: 'natureza', rating: 5, reviewsCount: 3, moradorId: 1 },
 ]
 
 const mockMorador = {
@@ -87,6 +89,7 @@ function asMorador(extra = {}) {
     logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: true,
+    isTurista: false,
     ...extra,
   })
 }
@@ -98,9 +101,9 @@ function asTurista(extra = {}) {
     logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: false,
+    isTurista: true,
     ...extra,
   })
-
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -346,9 +349,29 @@ describe('ProfilePage — seção de senha', () => {
    Seção Morador — Últimos Relatos e Locais Cadastrados
    ══════════════════════════════════════════════════════════════ */
 describe('ProfilePage — seções do Morador', () => {
+  const mockMoradorRelatos = [
+    {
+      id: 9,
+      placeId: 1,
+      userName: 'Josefina Souza',
+      text: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país.',
+      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      reactions: { like: 3, heart: 0 },
+    },
+    {
+      id: 10,
+      placeId: 2,
+      userName: 'Marcos Oliveira',
+      text: 'Ambiente muito bonito e a comida estava saborosa.',
+      createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+      reactions: { like: 2, heart: 1 },
+    },
+  ]
+
   beforeEach(() => {
     asMorador()
     vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue(mockPlaces)
+    vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue(mockMoradorRelatos)
   })
 
   it('exibe título "ÚLTIMOS RELATOS"', () => {
@@ -356,17 +379,20 @@ describe('ProfilePage — seções do Morador', () => {
     expect(screen.getByText('ÚLTIMOS RELATOS')).toBeInTheDocument()
   })
 
-  it('exibe relatos com local, autor e contagem de likes', () => {
+  it('exibe relatos com local, autor e contagem de likes', async () => {
     renderPage()
-    expect(screen.getAllByText('Restaurante LovePiri').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Josefina Souza').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/👍/)[0]).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getAllByText('Botequim Mercatto Piri').length).toBeGreaterThan(0)
+      expect(screen.getByText('Josefina Souza')).toBeInTheDocument()
+      expect(screen.getByText('Marcos Oliveira')).toBeInTheDocument()
+    })
+    expect(screen.getAllByText(/👍 3/).length).toBeGreaterThan(0)
   })
 
   it('NÃO exibe botões de editar/excluir nos relatos recebidos', () => {
     renderPage()
-    expect(screen.queryByRole('button', { name: /editar avaliação/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /excluir avaliação/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /editar relato/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /excluir relato/i })).not.toBeInTheDocument()
   })
 
   it('exibe título "LOCAIS CADASTRADOS"', () => {
@@ -387,32 +413,32 @@ describe('ProfilePage — seções do Morador', () => {
   it('exibe nomes dos locais cadastrados', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Botequim Mercatto Piri')).toBeInTheDocument()
-      expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
+      expect(screen.getAllByText('Botequim Mercatto Piri').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Cachoeira da Rosário').length).toBeGreaterThan(0)
     })
   })
 })
 
 /* ══════════════════════════════════════════════════════════════
-   Seção Turista — Avaliações Cadastradas
+   Seção Turista — Relatos Cadastrados
    ══════════════════════════════════════════════════════════════ */
 describe('ProfilePage — seções do Turista', () => {
   beforeEach(() => {
     asTurista()
     vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
-      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
-      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 3 },
     ])
   })
 
-  it('exibe título "AVALIAÇÕES CADASTRADAS"', async () => {
+  it('exibe título "RELATOS CADASTRADOS"', async () => {
     renderPage()
     await waitFor(() =>
-      expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
+      expect(screen.getByText('RELATOS CADASTRADOS')).toBeInTheDocument()
     )
   })
 
-  it('exibe avaliações com local e título', async () => {
+  it('exibe relatos com local e título', async () => {
     renderPage()
     await waitFor(() => {
       expect(screen.getByText('Melhor botequim de Pirenópolis')).toBeInTheDocument()
@@ -420,11 +446,11 @@ describe('ProfilePage — seções do Turista', () => {
     })
   })
 
-  it('exibe botões "Editar Avaliação" e "Excluir Avaliação" para turista', async () => {
+  it('exibe botões "Editar relato" e "Excluir relato" para turista', async () => {
     renderPage()
     await waitFor(() => {
-      const editButtons = screen.getAllByRole('link', { name: /editar avaliação/i })
-      const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+      const editButtons = screen.getAllByRole('link', { name: /editar relato/i })
+      const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
       expect(editButtons.length).toBeGreaterThan(0)
       expect(deleteButtons.length).toBeGreaterThan(0)
     })
@@ -570,27 +596,27 @@ describe('ProfilePage — exclusão de local (Morador)', () => {
 })
 
 /* ══════════════════════════════════════════════════════════════
-   Exclusão de avaliação (Turista)
+   Exclusão de relato (Turista)
    ══════════════════════════════════════════════════════════════ */
-describe('ProfilePage — exclusão de avaliação (Turista)', () => {
+describe('ProfilePage — exclusão de relato (Turista)', () => {
   beforeEach(() => {
     asTurista()
     vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
-      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
-      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, dias: 3 },
     ])
     vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
   })
 
-  it('abre diálogo de confirmação ao clicar em "Excluir Avaliação"', async () => {
+  it('abre diálogo de confirmação ao clicar em "Excluir relato"', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: /excluir relato/i }).length).toBeGreaterThan(0)
     )
 
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
     await user.click(deleteButtons[0])
 
     await waitFor(() =>
@@ -598,15 +624,15 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     )
   })
 
-  it('após confirmar: exibe "Avaliação excluída com sucesso!"', async () => {
+  it('após confirmar: exibe "Relato excluído com sucesso!"', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: /excluir relato/i }).length).toBeGreaterThan(0)
     )
 
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
     await user.click(deleteButtons[0])
 
     await waitFor(() =>
@@ -616,20 +642,20 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     await user.click(screen.getByRole('button', { name: /^excluir$/i }))
 
     await waitFor(() =>
-      expect(screen.getByText('Avaliação excluída com sucesso!')).toBeInTheDocument()
+      expect(screen.getByText('Relato excluído com sucesso!')).toBeInTheDocument()
     )
   })
 
-  it('quando deleteExperience lança exceção: exibe "Erro ao excluir avaliação"', async () => {
+  it('quando deleteExperience lança exceção: exibe "Erro ao excluir relato"', async () => {
     vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('Erro'))
     const user = userEvent.setup()
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+      expect(screen.getAllByRole('button', { name: /excluir relato/i }).length).toBeGreaterThan(0)
     )
 
-    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir relato/i })
     await user.click(deleteButtons[0])
 
     await waitFor(() =>
@@ -639,7 +665,7 @@ describe('ProfilePage — exclusão de avaliação (Turista)', () => {
     await user.click(screen.getByRole('button', { name: /^excluir$/i }))
 
     await waitFor(() =>
-      expect(screen.getByText('Erro ao excluir avaliação')).toBeInTheDocument()
+      expect(screen.getByText('Erro ao excluir relato')).toBeInTheDocument()
     )
   })
 })

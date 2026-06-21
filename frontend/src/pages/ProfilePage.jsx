@@ -9,8 +9,14 @@ import Button from '../presentation/atoms/Button';
 import Badge from '../presentation/atoms/Badge';
 import StarRating from '../presentation/atoms/StarRating';
 import FormField from '../presentation/molecules/FormField';
+import Input from '../presentation/atoms/Input';
 import { deletePlace, fetchMyPlaces } from '../infra/adaptor/placeAdaptor';
-import { deleteExperience, fetchMyExperiences } from '../infra/adaptor/experienceAdaptor';
+import {
+  deleteExperience,
+  fetchExperiencesByPlaces,
+  fetchMyExperiences,
+} from '../infra/adaptor/experienceAdaptor';
+import { categoryLabel } from '../utils/placeCategories';
 import styles from './ProfilePage.module.css';
 
 /* ─── helpers ─── */
@@ -27,19 +33,85 @@ function formatDate(iso) {
   return `${d}/${m}/${y}`;
 }
 
-/* ─── mock de dados (substituir por API quando disponível) ─── */
-const MOCK_RELATOS_MORADOR = [
-  { id: 1, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país e tenho propriedade para dizer que já cansara de restaurantes melhores em Pirenópolis.', likes: 3 },
-  { id: 2, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
-  { id: 3, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
-];
+function useHorizontalDragScroll(draggingClass) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let scrollStart = 0;
+
+    function onPointerDown(e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      isDragging = true;
+      startX = e.clientX;
+      scrollStart = el.scrollLeft;
+      el.setPointerCapture?.(e.pointerId);
+      el.classList.add(draggingClass);
+    }
+
+    function endDrag(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove(draggingClass);
+      if (el.hasPointerCapture?.(e.pointerId)) {
+        el.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      el.scrollLeft = scrollStart - (e.clientX - startX);
+    }
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown);
+      el.removeEventListener('pointermove', onPointerMove);
+      el.removeEventListener('pointerup', endDrag);
+      el.removeEventListener('pointercancel', endDrag);
+    };
+  }, [draggingClass]);
+
+  return ref;
+}
+
+/* ─── helpers de relatos (morador) ─── */
+function diffDaysFrom(iso) {
+  if (!iso) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}
+
+function countReactionTotal(reactions) {
+  if (!reactions) return 0;
+  return (reactions.like ?? 0) + (reactions.heart ?? 0);
+}
+
+function mapMoradorRelato(exp, placeNamesById) {
+  return {
+    id: `${exp.placeId}-${exp.id}`,
+    placeId: exp.placeId,
+    local: exp.placeName ?? placeNamesById[exp.placeId] ?? 'Local',
+    autor: exp.userName ?? 'Anônimo',
+    dias: exp.dias ?? diffDaysFrom(exp.createdAt),
+    texto: exp.text ?? '',
+    likes: countReactionTotal(exp.reactions),
+  };
+}
 
 const MOCK_LOCAIS_MORADOR = [
-  { id: 1, nome: 'Botequim Mercatto Piri',          categoria: 'gastronomia', icon: '🏛️', price: '$$',  rating: 4.9, avaliacoes: 100 },
-  { id: 2, nome: 'Cachoeira da Rosário',             categoria: 'natureza',    icon: '🏞️', price: '$',   rating: 4.8, avaliacoes: 50  },
-  { id: 3, nome: 'Galeria de Arte Local',            categoria: 'experiencia', icon: '🎨', price: '$$',  rating: 4.7, avaliacoes: 10  },
-  { id: 4, nome: 'Trilha do Poço Azul',              categoria: 'natureza',    icon: '🌿', price: '$$$', rating: 4.6, avaliacoes: 300 },
-  { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', price: '$',   rating: 4.9, avaliacoes: 1000 },
+  { id: 1, nome: 'Botequim Mercatto Piri',          categoria: 'gastronomia', icon: '🏛️', rating: 4.9, avaliacoes: 100 },
+  { id: 2, nome: 'Cachoeira da Rosário',             categoria: 'natureza',    icon: '🏞️', rating: 4.8, avaliacoes: 50  },
+  { id: 3, nome: 'Galeria de Arte Local',            categoria: 'experiencia', icon: '🎨', rating: 4.7, avaliacoes: 10  },
+  { id: 4, nome: 'Trilha do Poço Azul',              categoria: 'natureza',    icon: '🌿', rating: 4.6, avaliacoes: 300 },
+  { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', rating: 4.9, avaliacoes: 1000 },
 ];
 
 
@@ -65,24 +137,64 @@ function mapPlace(p) {
     nome:      p.name      ?? p.nome      ?? '—',
     categoria: p.category  ?? p.categoria ?? '—',
     icon:      p.icon ?? CATEGORY_ICONS[p.category ?? p.categoria] ?? '📍',
-    price:     p.price     ?? '—',
+    coverImage: p.coverImage ?? p.photos?.[0]?.url ?? null,
     rating:    p.rating    ?? 0,
     avaliacoes: p.reviewsCount ?? p.avaliacoes ?? 0,
   };
 }
 
 /* ─── seção Morador ─── */
-function MoradorSections() {
+function MoradorSections({ onPlacesCountChange }) {
   const [locais, setLocais]             = useState([]);
+  const [relatos, setRelatos]           = useState([]);
+  const [loadingRelatos, setLoadingRelatos] = useState(true);
   const [confirmId, setConfirmId]       = useState(null); // id do local a excluir
   const [deleting, setDeleting]         = useState(false);
   const [deleteErr, setDeleteErr]       = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const relatosScrollRef = useHorizontalDragScroll(styles.dragging);
 
   useEffect(() => {
-    fetchMyPlaces()
-      .then((data) => setLocais((data ?? []).map(mapPlace)))
-      .catch(() => setLocais(MOCK_LOCAIS_MORADOR));
+    let cancelled = false;
+
+    async function loadMoradorData() {
+      setLoadingRelatos(true);
+      try {
+        const placesData = await fetchMyPlaces();
+        const mappedPlaces = (placesData ?? []).map(mapPlace);
+        if (cancelled) return;
+        setLocais(mappedPlaces);
+        onPlacesCountChange?.(mappedPlaces.length);
+
+        const placeNamesById = Object.fromEntries(
+          mappedPlaces.map((p) => [p.id, p.nome])
+        );
+        const ids = mappedPlaces.map((p) => p.id);
+
+        if (ids.length === 0) {
+          setRelatos([]);
+          onPlacesCountChange?.(0);
+          return;
+        }
+
+        const experiences = await fetchExperiencesByPlaces(ids);
+        const sorted = [...experiences].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        if (cancelled) return;
+        setRelatos(sorted.map((exp) => mapMoradorRelato(exp, placeNamesById)));
+      } catch {
+        if (!cancelled) {
+          setLocais(MOCK_LOCAIS_MORADOR);
+          setRelatos([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingRelatos(false);
+      }
+    }
+
+    loadMoradorData();
+    return () => { cancelled = true; };
   }, []);
 
   const toDelete = locais.find((l) => l.id === confirmId);
@@ -98,7 +210,12 @@ function MoradorSections() {
     setDeleteErr(null);
     try {
       await deletePlace(confirmId);
-      setLocais((prev) => prev.filter((l) => l.id !== confirmId));
+      setLocais((prev) => {
+        const next = prev.filter((l) => l.id !== confirmId);
+        onPlacesCountChange?.(next.length);
+        return next;
+      });
+      setRelatos((prev) => prev.filter((r) => r.placeId !== confirmId));
       setDeleteSuccess(true);
     } catch {
       setDeleteErr('Erro ao excluir. Tente novamente.');
@@ -111,8 +228,14 @@ function MoradorSections() {
     <>
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>ÚLTIMOS RELATOS</h2>
-        <div className={styles.relatosGrid}>
-          {MOCK_RELATOS_MORADOR.map((r) => (
+        <div className={styles.relatosGrid} ref={relatosScrollRef}>
+          {loadingRelatos && (
+            <p className={styles.empty}>Carregando relatos...</p>
+          )}
+          {!loadingRelatos && relatos.length === 0 && (
+            <p className={styles.empty}>Nenhum relato nos seus locais ainda.</p>
+          )}
+          {!loadingRelatos && relatos.map((r) => (
             <div key={r.id} className={styles.relatoCard}>
               <div className={styles.avaliacaoMeta}>
                 <MdLocationOn size={16} className={styles.relatoPinIcon} />
@@ -136,14 +259,23 @@ function MoradorSections() {
           {locais.map((l) => (
             <div key={l.id} className={styles.localRow}>
               <div className={styles.localInfo}>
-                <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
+                {l.coverImage ? (
+                  <img
+                    src={l.coverImage}
+                    alt=""
+                    className={styles.localThumb}
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
+                )}
                 <div>
                   <span className={styles.localNome}>{l.nome}</span>
-                  <span className={styles.localCat}>{l.categoria}</span>
+                  <span className={styles.localCat}>{categoryLabel(l.categoria)}</span>
                   <div className={styles.localRating}>
                     <StarRating value={Math.round(l.rating)} readonly size="sm" />
                     <span className={styles.localMeta}>
-                      {l.rating.toFixed(1)} &nbsp;{l.price}&nbsp; {l.avaliacoes} Avaliações
+                      {l.rating.toFixed(1)} &nbsp;{l.avaliacoes} Avaliações
                     </span>
                   </div>
                 </div>
@@ -236,17 +368,21 @@ function MoradorSections() {
 }
 
 /* ─── seção Turista ─── */
-function TuristaSections() {
+function TuristaSections({ onCountChange }) {
   const [avaliacoes, setAvaliacoes]       = useState([]);
   const [confirmId, setConfirmId]         = useState(null); // id da avaliação a excluir
   const [deleting, setDeleting]           = useState(false);
   const [deleteErr, setDeleteErr]         = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const avaliacoesScrollRef = useHorizontalDragScroll(styles.dragging);
 
   /* Carrega do adaptor para sempre refletir edições recentes */
   useEffect(() => {
-    fetchMyExperiences().then(setAvaliacoes);
-  }, []);
+    fetchMyExperiences().then((data) => {
+      setAvaliacoes(data);
+      onCountChange?.(data.length);
+    });
+  }, [onCountChange]);
 
   const toDelete = avaliacoes.find((a) => a.id === confirmId);
 
@@ -261,7 +397,9 @@ function TuristaSections() {
     setDeleteErr(null);
     try {
       await deleteExperience(toDelete.placeId, confirmId);
-      setAvaliacoes((prev) => prev.filter((a) => a.id !== confirmId));
+      const next = avaliacoes.filter((a) => a.id !== confirmId);
+      setAvaliacoes(next);
+      onCountChange?.(next.length);
       setDeleteSuccess(true);
     } catch {
       setDeleteErr('Erro ao excluir. Tente novamente.');
@@ -273,10 +411,10 @@ function TuristaSections() {
   return (
     <>
       <div className={styles.sectionCard}>
-        <h2 className={styles.sectionTitle}>AVALIAÇÕES CADASTRADAS</h2>
-        <div className={styles.avaliacoesGrid}>
+        <h2 className={styles.sectionTitle}>RELATOS CADASTRADOS</h2>
+        <div className={styles.avaliacoesGrid} ref={avaliacoesScrollRef}>
           {avaliacoes.length === 0 && (
-            <p className={styles.empty}>Nenhuma avaliação cadastrada.</p>
+            <p className={styles.empty}>Nenhum relato cadastrado.</p>
           )}
           {avaliacoes.map((a) => (
             <div key={a.id} className={styles.avaliacaoCard}>
@@ -295,14 +433,14 @@ function TuristaSections() {
                   as={Link}
                   to={`/locais/${a.placeId}/relatos/${a.id}/editar`}
                 >
-                  Editar Avaliação
+                  Editar relato
                 </Button>
                 <Button
                   variant="rust"
                   size="sm"
                   onClick={() => { setDeleteErr(null); setConfirmId(a.id); }}
                 >
-                  Excluir Avaliação
+                  Excluir relato
                 </Button>
               </div>
             </div>
@@ -322,8 +460,8 @@ function TuristaSections() {
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
-                <h3 className={styles.confirmTitle}>Avaliação excluída com sucesso!</h3>
-                <p className={styles.confirmBody}>Sua avaliação foi removida.</p>
+                <h3 className={styles.confirmTitle}>Relato excluído com sucesso!</h3>
+                <p className={styles.confirmBody}>Seu relato foi removido.</p>
                 <div className={styles.confirmActionsCol}>
                   <Button variant="primary" fullWidth onClick={closeConfirm}>Fechar</Button>
                 </div>
@@ -333,7 +471,7 @@ function TuristaSections() {
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
-                <h3 className={styles.confirmTitle}>Erro ao excluir avaliação</h3>
+                <h3 className={styles.confirmTitle}>Erro ao excluir relato</h3>
                 <p className={styles.confirmBody}>{deleteErr}</p>
                 <div className={styles.confirmActionsCol}>
                   <Button variant="neutral" fullWidth onClick={() => setDeleteErr(null)}>Voltar</Button>
@@ -342,9 +480,9 @@ function TuristaSections() {
             ) : (
               /* Estado de confirmação */
               <>
-                <h3 className={styles.confirmTitle}>Excluir avaliação</h3>
+                <h3 className={styles.confirmTitle}>Excluir relato</h3>
                 <p className={styles.confirmBody}>
-                  Tem certeza que deseja excluir sua avaliação de{' '}
+                  Tem certeza que deseja excluir seu relato de{' '}
                   <strong>{toDelete?.placeName}</strong>?{' '}
                   Esta ação não pode ser desfeita.
                 </p>
@@ -390,12 +528,20 @@ export default function ProfilePage() {
   const [deleteAccountErr, setDeleteAccountErr] = useState(null);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    if (!user || !isMorador) return;
+
+    fetchMyPlaces()
+      .then((places) => setRelatosCount((places ?? []).length))
+      .catch(() => setRelatosCount(0));
+  }, [user, isMorador]);
+
   /* ── Estado da seção de senha ── */
   const [passwordData, setPasswordData] = useState({ current: '', next: '', confirm: '' });
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
     defaultValues: {
       name:       user?.name       ?? '',
       email:      user?.email      ?? '',
@@ -411,7 +557,6 @@ export default function ProfilePage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      // Comprime para max 200x200px antes de salvar (evita estourar localStorage)
       const img = new Image();
       img.onload = () => {
         const MAX = 200;
@@ -421,6 +566,10 @@ export default function ProfilePage() {
         canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         setAvatarPreview(canvas.toDataURL('image/jpeg', 0.8));
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          setSelectedPhotoFile(new File([blob], 'profile.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.8);
       };
       img.src = ev.target.result;
     };
@@ -444,18 +593,25 @@ export default function ProfilePage() {
     setEditing(false);
     setFeedback(null);
     setAvatarPreview(null);
+    setSelectedPhotoFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function onSubmit(data) {
     setSaving(true);
     setFeedback(null);
     try {
-      await updateProfile({ ...data, avatarUrl: avatarPreview ?? user?.avatarUrl });
+      await updateProfile({ ...data, role: user.role }, selectedPhotoFile ?? undefined);
       setFeedback({ type: 'success', msg: 'Perfil atualizado com sucesso!' });
       setAvatarPreview(null);
+      setSelectedPhotoFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       setEditing(false);
-    } catch {
-      setFeedback({ type: 'error', msg: 'Erro ao salvar. Tente novamente.' });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        msg: err?.message ?? 'Erro ao salvar. Tente novamente.',
+      });
     } finally {
       setSaving(false);
     }
@@ -565,9 +721,9 @@ export default function ProfilePage() {
 
           <div className={styles.profileRight}>
             <span className={styles.statLabel}>
-              {isMorador ? 'Quantidade de relatos sobre os seus locais' : 'Relatos Cadastrados'}
+              {isMorador ? 'Quantidade de locais cadastrados no Eu Amo Piri' : 'Relatos Cadastrados'}
             </span>
-            <span className={styles.statNumber}>5</span>
+            <span className={styles.statNumber}>{relatosCount}</span>
           </div>
         </div>
 
@@ -649,6 +805,7 @@ export default function ProfilePage() {
               multiline
               rows={3}
               maxLength={300}
+              watch={watch}
               placeholder="Conte um pouco sobre você..."
               registration={register('bio')}
             />
@@ -670,39 +827,34 @@ export default function ProfilePage() {
             <h2 className={styles.sectionTitle}>CADASTRAR NOVA SENHA</h2>
             <form className={styles.passwordForm} onSubmit={handlePasswordUpdate} noValidate>
               <div className={styles.formGrid}>
-                <label className={styles.pwLabel}>
-                  Senha atual
-                  <input
-                    type="password"
-                    className={styles.pwInput}
-                    aria-label="Senha atual"
-                    value={passwordData.current}
-                    onChange={(e) => setPasswordData((p) => ({ ...p, current: e.target.value }))}
-                    autoComplete="current-password"
-                  />
-                </label>
-                <label className={styles.pwLabel}>
-                  Nova senha
-                  <input
-                    type="password"
-                    className={styles.pwInput}
-                    aria-label="Nova senha"
-                    value={passwordData.next}
-                    onChange={(e) => setPasswordData((p) => ({ ...p, next: e.target.value }))}
-                    autoComplete="new-password"
-                  />
-                </label>
-                <label className={styles.pwLabel}>
-                  Confirmar nova senha
-                  <input
-                    type="password"
-                    className={styles.pwInput}
-                    aria-label="Confirmar nova senha"
-                    value={passwordData.confirm}
-                    onChange={(e) => setPasswordData((p) => ({ ...p, confirm: e.target.value }))}
-                    autoComplete="new-password"
-                  />
-                </label>
+                <Input
+                  id="currentPassword"
+                  label="Senha atual"
+                  type="password"
+                  aria-label="Senha atual"
+                  value={passwordData.current}
+                  onChange={(e) => setPasswordData((p) => ({ ...p, current: e.target.value }))}
+                  autoComplete="current-password"
+                />
+                <Input
+                  id="newPassword"
+                  label="Nova senha"
+                  type="password"
+                  aria-label="Nova senha"
+                  value={passwordData.next}
+                  onChange={(e) => setPasswordData((p) => ({ ...p, next: e.target.value }))}
+                  autoComplete="new-password"
+                />
+                <Input
+                  id="confirmPassword"
+                  label="Confirmar nova senha"
+                  type="password"
+                  aria-label="Confirmar nova senha"
+                  value={passwordData.confirm}
+                  onChange={(e) => setPasswordData((p) => ({ ...p, confirm: e.target.value }))}
+                  autoComplete="new-password"
+                  className={styles.passwordConfirmField}
+                />
               </div>
               {passwordFeedback && (
                 <div
@@ -742,6 +894,11 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+        )}
+
+        {!editing && isMorador && <MoradorSections onPlacesCountChange={setRelatosCount} />}
+        {!editing && isTurista && (
+          <TuristaSections onCountChange={setRelatosCount} />
         )}
 
       </div>

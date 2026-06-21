@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import * as placeService from "../services/placeService.ts";
 import { PlaceError } from "../services/placeService.ts";
+import { GooglePlacesError } from "../services/googlePlacesService.ts";
+import { syncGooglePlacesToDatabase } from "../services/googlePlacesSyncService.ts";
 import { formatPlace, formatPlaceList } from "../views/placeView.ts";
 
 export async function createPlace(req: Request, res: Response) {
@@ -19,6 +21,19 @@ export async function createPlace(req: Request, res: Response) {
             return;
         }
         res.status(500).json({ error: "Erro ao cadastrar o local" });
+    }
+}
+
+export async function syncGooglePlaces(_req: Request, res: Response) {
+    try {
+        const result = await syncGooglePlacesToDatabase();
+        res.status(200).json(result);
+    } catch (err) {
+        if (err instanceof GooglePlacesError) {
+            res.status(err.statusCode).json({ error: err.message, code: err.code });
+            return;
+        }
+        res.status(500).json({ error: "Erro ao sincronizar locais do Google" });
     }
 }
 

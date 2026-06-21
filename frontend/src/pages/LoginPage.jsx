@@ -10,7 +10,7 @@ export default function LoginPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { login } = useAuth();
-  const from      = location.state?.from ?? '/';
+  const from      = location.state?.from ?? '/locais';
 
   const [serverError, setServerError] = useState(null);
 
@@ -71,24 +71,14 @@ export default function LoginPage() {
           )}
 
           {/* Adicione a className para forçar o verde oliva do layout */}
-          <Button 
-          variant="teal" 
-          type="submit" 
-          fullWidth 
-          loading={isSubmitting}
-          className={styles.primaryButton} >
-          Entrar
+          <Button
+            variant="primary"
+            type="submit"
+            fullWidth
+            loading={isSubmitting}
+          >
+            Entrar
           </Button>
-
-          {/* Botão Social Google */}
-          <button type="button" className={styles.googleBtn}>
-            <img 
-              src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png" 
-              alt="Google logo" 
-              className={styles.googleIcon}
-            />
-            Continuar com o Google
-          </button>
         </form>
 
         {/* Links inferiores alinhados nas extremidades */}

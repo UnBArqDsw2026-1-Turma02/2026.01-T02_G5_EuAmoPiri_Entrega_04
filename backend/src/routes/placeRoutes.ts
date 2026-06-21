@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as placeController from "../controllers/placeController.ts";
 import { authMiddleware } from "../middleware/authMiddleware.ts";
-import { requireMorador } from "../middleware/requireAccountTypeMiddleware.ts";
+import { requireAdmin, requireMorador } from "../middleware/requireAccountTypeMiddleware.ts";
 import { uploadPlacePhotos, handlePhotoUploadError } from "../middleware/uploadPhotosMiddleware.ts";
 
 const router = Router();
@@ -67,6 +67,61 @@ router.post(
  *         description: Lista de locais
  */
 router.get("/", placeController.listPlaces);
+
+/**
+ * @openapi
+ * /places/gmaps/sync:
+ *   post:
+ *     tags: [Places]
+ *     summary: Sincronizar locais Google no banco (admin)
+ *     description: |
+ *       Consulta a Google Places API e persiste/atualiza até `GOOGLE_SYNC_PER_CATEGORY`
+ *       locais por categoria (cachoeira, restaurante, pousada) no PostgreSQL.
+ *       Requer usuário autenticado com `accountType` **ADMIN**.
+ *
+ *       **Swagger:** faça login em `POST /auth/login` com um admin, clique em **Authorize**
+ *       e cole o token JWT (`Bearer …`). Em seguida execute este endpoint.
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sincronização concluída
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GoogleSyncResult'
+ *             example:
+ *               synced: 87
+ *               perCategory:
+ *                 cachoeira: 29
+ *                 restaurante: 40
+ *                 pousada: 18
+ *       401:
+ *         description: Não autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Usuário autenticado não é admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               error: Acesso negado para este tipo de conta
+ *               code: FORBIDDEN_ACCOUNT_TYPE
+ *       503:
+ *         description: GOOGLE_MAPS_API_KEY ausente ou indisponível
+ *       500:
+ *         description: Erro ao sincronizar locais do Google
+ */
+router.post(
+    "/gmaps/sync",
+    authMiddleware,
+    requireAdmin,
+    placeController.syncGooglePlaces
+);
 
 /**
  * @openapi

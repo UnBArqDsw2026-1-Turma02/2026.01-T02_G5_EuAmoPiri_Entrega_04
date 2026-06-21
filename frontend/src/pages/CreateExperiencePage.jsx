@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom'; clear
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { fetchPlaceById } from '../infra/adaptor/placeAdaptor';
+import { createExperience } from '../infra/adaptor/experienceAdaptor';
 import { useAuth } from '../context/AuthContext';
 import ExperienceForm from '../presentation/organisms/ExperienceForm';
 import RoleNotice from '../presentation/molecules/RoleNotice';
@@ -55,7 +56,7 @@ export default function CreateExperiencePage() {
           <Button variant="neutral" size="sm" as={Link} to={`/locais/${placeId}`}>← Voltar</Button>
         </div>
 
-        <h1 className={styles.pageTitle}>Cadastrar Review</h1>
+        <h1 className={styles.pageTitle}>Cadastrar relato</h1>
 
         <div className={styles.layout}>
           <div className={styles.miniArea}>
@@ -87,10 +88,10 @@ export default function CreateExperiencePage() {
             <div className={styles.formWrap}>
               <ExperienceForm
                 onSubmit={handleSubmit}
-                onCancel={() => navigate(`/locais/${placeId}`)}
+                onCancel={() => navigate(`/locais/${placeId}`, { replace: true })}
                 loading={loading}
-                successPrimary={{ label: 'Voltar ao local', to: `/locais/${placeId}` }}
-                successSecondary={{ label: 'Avaliar outros lugares', to: '/locais' }}
+                successPrimary={{ label: 'Voltar ao local', to: `/locais/${placeId}`, replace: true }}
+                successSecondary={{ label: 'Ver outros locais', to: '/locais' }}
               />
             </div>
           </div>

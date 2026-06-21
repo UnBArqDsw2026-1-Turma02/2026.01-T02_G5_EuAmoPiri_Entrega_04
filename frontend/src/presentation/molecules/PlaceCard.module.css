@@ -28,13 +28,6 @@
   gap: var(--space-2);
 }
 
-.price {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-olive-dark);
-  letter-spacing: 0.05em;
-}
-
 .name {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);

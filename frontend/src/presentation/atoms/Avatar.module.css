@@ -6,7 +6,7 @@
   position: relative;
   border-radius: var(--radius-full);
   overflow: hidden;
-  background-color: var(--color-green-primary);
+  background-color: var(--color-primary);
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;

@@ -2,10 +2,21 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { fetchPlaceById, deletePlace } from '../infra/adaptor/placeAdaptor';
-import { fetchExperiencesByPlace, reactToExperience } from '../infra/adaptor/experienceAdaptor';
+import {
+  fetchExperiencesByPlace,
+  fetchCommentsByExperience,
+  createComment,
+  reactToExperience,
+  reportExperience,
+  reportComment,
+} from '../infra/adaptor/experienceAdaptor';
+import { containsBlacklistedWord } from '../utils/blacklist';
 import Button from '../presentation/atoms/Button';
 import StarRating from '../presentation/atoms/StarRating';
 import Spinner from '../presentation/atoms/Spinner';
+import ContentOptionsMenu from '../presentation/molecules/ContentOptionsMenu';
+import ReportModal from '../presentation/molecules/ReportModal';
+import FormResultModal from '../presentation/molecules/FormResultModal';
 import styles from './PlaceDetailPage.module.css';
 
 /* ─── helpers ─── */
@@ -13,44 +24,256 @@ function timeAgo(iso) {
   const days = Math.floor((Date.now() - new Date(iso)) / 86400000);
   if (days === 0) return 'hoje';
   if (days === 1) return 'há 1 dia';
-  if (days < 7)  return `há ${days} dias`;
+  if (days < 7) return `há ${days} dias`;
   const w = Math.floor(days / 7);
   if (w < 5) return w === 1 ? 'há 1 semana' : `há ${w} semanas`;
   const m = Math.floor(days / 30);
   return m === 1 ? 'há 1 mês' : `há ${m} meses`;
 }
 
-const CATEGORY_LABELS = {
-  gastronomia: 'Gastronomia', natureza: 'Natureza', hospedagem: 'Hospedagem',
-  cultura: 'Cultura', compras: 'Compras', aventura: 'Aventura',
-};
-
-const COST_OPTIONS = ['$', '$$', '$$$', '$$$$', '$$$$$'];
+import { categoryLabel } from '../utils/placeCategories';
 
 const REACTION_EMOJIS = [
-  { key: 'heart',   emoji: '❤️' },
-  { key: 'like',    emoji: '👍' },
-  { key: 'dislike', emoji: '👎' },
+  { key: 'heart', emoji: '❤️' },
+  { key: 'like', emoji: '👍' },
 ];
 
-const REACTION_LABELS = { heart: 'Amei', like: 'Gostei', dislike: 'Não gostei' };
+const REACTION_LABELS = { heart: 'Amei', like: 'Gostei' };
 
-/* ─── Sub: card de comentário ─── */
-function CommentCard({ exp, onReact, showReactions = false, userReactions = new Map() }) {
+function canReportContent(canReport, currentUserId, authorUserId) {
+  if (!canReport) return false;
+  if (authorUserId == null || currentUserId == null) return true;
+  return Number(authorUserId) !== Number(currentUserId);
+}
+
+const COMMENT_MIN = 3;
+const COMMENT_MAX = 500;
+const TEXT_PREVIEW_LIMIT = 150;
+
+function ExpandableText({ text, className, readMoreClassName }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return null;
+
+  const isLong = text.length > TEXT_PREVIEW_LIMIT;
+  const preview = isLong ? `${text.slice(0, TEXT_PREVIEW_LIMIT).trimEnd()}…` : text;
+
+  return (
+    <p className={className}>
+      {expanded || !isLong ? text : preview}
+      {isLong && !expanded && (
+        <>
+          {' '}
+          <button
+            type="button"
+            className={readMoreClassName}
+            onClick={() => setExpanded(true)}
+          >
+            ler mais
+          </button>
+        </>
+      )}
+    </p>
+  );
+}
+
+/* ─── Sub: comentários de um relato ─── */
+function ExperienceComments({
+  placeId,
+  experienceId,
+  commentsCount,
+  isTurista,
+  canReport,
+  currentUserId,
+  onReportComment,
+  onCommentAdded,
+}) {
+  const [open, setOpen] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [draft, setDraft] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const displayCount = Math.max(commentsCount ?? 0, comments.length);
+  const showSection = isTurista || displayCount > 0 || open;
+
+  async function loadComments() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchCommentsByExperience(placeId, experienceId);
+      setComments(Array.isArray(data) ? data : []);
+    } catch {
+      setError('Não foi possível carregar os comentários.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function toggleComments() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
+    if (comments.length === 0) {
+      await loadComments();
+    }
+    setOpen(true);
+  }
+
+  async function handleSubmitComment(e) {
+    e.preventDefault();
+    if (!isTurista) return;
+
+    setFormError('');
+    const trimmed = draft.trim();
+    if (trimmed.length < COMMENT_MIN) {
+      setFormError(`Mínimo de ${COMMENT_MIN} caracteres.`);
+      return;
+    }
+    if (trimmed.length > COMMENT_MAX) {
+      setFormError(`Máximo de ${COMMENT_MAX} caracteres.`);
+      return;
+    }
+    if (containsBlacklistedWord(trimmed)) {
+      setFormError('Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const created = await createComment(placeId, experienceId, trimmed);
+      setComments((prev) => [...prev, created]);
+      setDraft('');
+      onCommentAdded?.(experienceId);
+      if (!open) setOpen(true);
+    } catch (err) {
+      setFormError(err?.response?.data?.error ?? 'Erro ao enviar comentário.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!showSection) return null;
+
+  const actionLabel = loading
+    ? 'Carregando...'
+    : open
+      ? 'Ocultar'
+      : isTurista
+        ? 'Comentar'
+        : 'Ver comentários';
+
+  return (
+    <div className={styles.relatoCommentsWrap}>
+      <div className={styles.relatoCommentsBar}>
+        <button
+          type="button"
+          className={styles.relatoCommentsToggle}
+          onClick={toggleComments}
+          disabled={loading}
+          aria-label={`${actionLabel}, ${displayCount} comentários`}
+        >
+          {actionLabel}
+        </button>
+        <span className={styles.relatoCommentsCount}>
+          {displayCount} {displayCount === 1 ? 'comentário' : 'comentários'}
+        </span>
+      </div>
+      {error && <p className={styles.relatoCommentsError} role="alert">{error}</p>}
+      {open && comments.length === 0 && !loading && !isTurista && (
+        <p className={styles.relatoCommentsEmpty}>Nenhum comentário neste relato.</p>
+      )}
+      {open && comments.map((comment) => (
+        <div key={comment.id} className={styles.relatoCommentItem}>
+          <div className={styles.commentHeader}>
+            <span className={styles.commentAuthor}>{comment.userName}</span>
+            <div className={styles.commentHeaderRight}>
+              <span className={styles.commentTime}>{timeAgo(comment.createdAt)}</span>
+              {canReportContent(canReport, currentUserId, comment.userId) && (
+                <ContentOptionsMenu
+                  label="Opções do comentário"
+                  onReport={() => onReportComment(experienceId, comment)}
+                />
+              )}
+            </div>
+          </div>
+          <ExpandableText
+            text={comment.text}
+            className={styles.commentText}
+            readMoreClassName={styles.readMoreBtn}
+          />
+        </div>
+      ))}
+      {open && isTurista && (
+        <form className={styles.commentForm} onSubmit={handleSubmitComment}>
+          <label className={styles.commentFormLabel} htmlFor={`comment-${experienceId}`}>
+            Escreva um comentário
+          </label>
+          <textarea
+            id={`comment-${experienceId}`}
+            className={styles.commentFormInput}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            maxLength={COMMENT_MAX}
+            rows={3}
+            placeholder="Compartilhe sua opinião sobre este relato..."
+            disabled={submitting}
+          />
+          <div className={styles.commentFormFooter}>
+            <span className={styles.commentFormCount}>{draft.length}/{COMMENT_MAX}</span>
+            {formError && <p className={styles.relatoCommentsError} role="alert">{formError}</p>}
+            <Button type="submit" variant="primary" size="sm" loading={submitting}>
+              Publicar comentário
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/* ─── Sub: card de relato ─── */
+function CommentCard({
+  exp,
+  placeId,
+  onReact,
+  showReactions = false,
+  userReactions = new Map(),
+  canReport = false,
+  currentUserId,
+  onReportExperience,
+  onReportComment,
+  onCommentAdded,
+  isTurista = false,
+}) {
   const myReaction = userReactions.get(exp.id); // emoji key ativo, ou undefined
 
   return (
     <article className={styles.commentCard}>
       <div className={styles.commentHeader}>
         <span className={styles.commentAuthor}>{exp.userName}</span>
-        <span className={styles.commentTime}>{timeAgo(exp.createdAt)}</span>
+        <div className={styles.commentHeaderRight}>
+          <span className={styles.commentTime}>{timeAgo(exp.createdAt)}</span>
+          {canReportContent(canReport, currentUserId, exp.userId) && (
+            <ContentOptionsMenu
+              label="Opções do relato"
+              onReport={() => onReportExperience?.(exp)}
+            />
+          )}
+        </div>
       </div>
       <div className={styles.commentMeta}>
         <StarRating value={exp.rating} readonly size="sm" />
-        {exp.cost && <span className={styles.commentCost}>{exp.cost}</span>}
       </div>
       {exp.title && <p className={styles.commentTitle}>{exp.title}</p>}
-      <p className={styles.commentText}>{exp.text}</p>
+      <ExpandableText
+        text={exp.text}
+        className={styles.commentText}
+        readMoreClassName={styles.readMoreBtn}
+      />
       {showReactions && (
         <div className={styles.reactions}>
           {REACTION_EMOJIS.map(({ key, emoji }) => {
@@ -82,19 +305,54 @@ function CommentCard({ exp, onReact, showReactions = false, userReactions = new 
           })}
         </div>
       )}
+      <ExperienceComments
+        placeId={placeId}
+        experienceId={exp.id}
+        commentsCount={exp.commentsCount}
+        isTurista={isTurista}
+        canReport={canReport}
+        currentUserId={currentUserId}
+        onReportComment={onReportComment}
+        onCommentAdded={onCommentAdded}
+      />
     </article>
   );
 }
 
 /* ─── Sub: modal de todos os comentários ─── */
-function CommentsModal({ experiences, onReact, onClose, userReactions }) {
+function CommentsModal({
+  experiences,
+  placeId,
+  onReact,
+  onClose,
+  userReactions,
+  canReport,
+  currentUserId,
+  onReportExperience,
+  onReportComment,
+  onCommentAdded,
+  isTurista = false,
+}) {
   return (
     <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={styles.modalContent}>
-        <h2 className={styles.modalTitle}>Comentários ({experiences.length})</h2>
+        <h2 className={styles.modalTitle}>Relatos ({experiences.length})</h2>
         <div className={styles.modalList}>
           {experiences.map((exp) => (
-            <CommentCard key={exp.id} exp={exp} onReact={onReact} showReactions userReactions={userReactions} />
+            <CommentCard
+              key={exp.id}
+              exp={exp}
+              placeId={placeId}
+              onReact={onReact}
+              showReactions
+              userReactions={userReactions}
+              canReport={canReport}
+              currentUserId={currentUserId}
+              onReportExperience={onReportExperience}
+              onReportComment={onReportComment}
+              onCommentAdded={onCommentAdded}
+              isTurista={isTurista}
+            />
           ))}
         </div>
         <div className={styles.modalFooter}>
@@ -109,25 +367,27 @@ function CommentsModal({ experiences, onReact, onClose, userReactions }) {
 export default function PlaceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isTurista, isMorador } = useAuth();
+  const { isAuthenticated, isTurista, isMorador, user, canReport } = useAuth();
 
-  const [place,           setPlace]           = useState(null);
-  const [experiences,     setExperiences]     = useState([]);
-  const [loadingPlace,    setLoadingPlace]    = useState(true);
-  const [error,           setError]           = useState(null);
-  const [showModal,       setShowModal]       = useState(false);
-  const [confirmDelete,   setConfirmDelete]   = useState(false);
-  const [deleting,        setDeleting]        = useState(false);
-  const [deleteSuccess,   setDeleteSuccess]   = useState(false);
-  const [deleteErr,       setDeleteErr]       = useState(null);
-  const [photoIndex,      setPhotoIndex]      = useState(0);
+  const [place, setPlace] = useState(null);
+  const [experiences, setExperiences] = useState([]);
+  const [loadingPlace, setLoadingPlace] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deleteErr, setDeleteErr] = useState(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
   // Map<expId, emojiKey> — 1 reação por comentário, anulável
   const [userReactions, setUserReactions] = useState(new Map());
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportFeedback, setReportFeedback] = useState(null);
 
   useEffect(() => {
     fetchPlaceById(id)
       .then((data) => { setPlace(data); setLoadingPlace(false); })
-      .catch((err)  => { setError(err.message); setLoadingPlace(false); });
+      .catch((err) => { setError(err.message); setLoadingPlace(false); });
     fetchExperiencesByPlace(id)
       .then((data) => setExperiences(Array.isArray(data) ? data : []));
   }, [id]);
@@ -186,6 +446,42 @@ export default function PlaceDetailPage() {
     }
   }
 
+  function openExperienceReport(exp) {
+    setReportTarget({ type: 'experience', experienceId: exp.id });
+  }
+
+  function openCommentReport(experienceId, comment) {
+    setReportTarget({ type: 'comment', experienceId, commentId: comment.id });
+  }
+
+  function handleCommentAdded(experienceId) {
+    setExperiences((prev) =>
+      prev.map((exp) =>
+        exp.id === experienceId
+          ? { ...exp, commentsCount: (exp.commentsCount ?? 0) + 1 }
+          : exp
+      )
+    );
+  }
+
+  async function handleReportSubmit(payload) {
+    if (!reportTarget) return;
+
+    let result;
+    if (reportTarget.type === 'experience') {
+      result = await reportExperience(id, reportTarget.experienceId, payload);
+    } else {
+      result = await reportComment(id, reportTarget.experienceId, reportTarget.commentId, payload);
+    }
+
+    setReportTarget(null);
+    setReportFeedback({
+      type: 'success',
+      title: 'Denúncia recebida!',
+      text: result?.message ?? 'O conteúdo foi sinalizado para revisão.',
+    });
+  }
+
   if (loadingPlace) return <div className={styles.centered}><Spinner size="lg" /></div>;
   if (error || !place) {
     return (
@@ -197,49 +493,67 @@ export default function PlaceDetailPage() {
   }
 
   /* computed — fotos */
-  const allPhotos = Array.isArray(place.photos) && place.photos.length > 0
-    ? place.photos
-    : place.coverImage ? [place.coverImage] : [];
+  const allPhotos = (Array.isArray(place.photos) && place.photos.length > 0
+    ? place.photos.map((p) => (typeof p === 'string' ? p : p?.url)).filter(Boolean)
+    : place.coverImage ? [place.coverImage] : []);
   function prevPhoto() { setPhotoIndex((i) => (i - 1 + allPhotos.length) % allPhotos.length); }
   function nextPhoto() { setPhotoIndex((i) => (i + 1) % allPhotos.length); }
 
   /* computed */
-  const ratingDist = [5,4,3,2,1].map((star) => ({
+  const ratingDist = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: experiences.filter((e) => Math.round(e.rating) === star).length,
   }));
   const maxCount = Math.max(...ratingDist.map((d) => d.count), 1);
-  const costDist = COST_OPTIONS.map((opt) => ({
-    opt,
-    count: experiences.filter((e) => e.cost === opt).length,
-  }));
   const PREVIEW = 3;
+
+  const communityRelatosCount = experiences.length;
+  const totalCommentsCount = experiences.reduce(
+    (sum, exp) => sum + (exp.commentsCount ?? 0),
+    0
+  );
+  const hasCommunityRatings = communityRelatosCount > 0;
+  const avaliacoesCount = hasCommunityRatings
+    ? communityRelatosCount
+    : (place.reviewsCount ?? 0);
+  const avaliacoesSourceLabel = hasCommunityRatings ? 'DA COMUNIDADE' : 'GOOGLE MAPS';
+  const displayRating = hasCommunityRatings
+    ? Math.round(
+        (experiences.reduce((sum, exp) => sum + (Number(exp.rating) || 0), 0) / communityRelatosCount) * 10
+      ) / 10
+    : place.rating;
+
+  const canManagePlace =
+    isMorador &&
+    place.source !== 'google' &&
+    place.moradorId != null &&
+    Number(place.moradorId) === Number(user?.id);
 
   return (
     <div className={styles.page}>
       <div className={styles.pageWrapper}>
-      <div className={styles.card}>
+        <div className={styles.card}>
 
-        {/* ── Cabeçalho do card ── */}
-        <div className={styles.cardHeader}>
-          <Button variant="neutral" size="sm" onClick={() => navigate(-1)}>← Voltar</Button>
-          {isMorador && (
-            <div className={styles.ownerActions}>
-              <button
-                className={styles.btnEdit}
-                onClick={() => navigate(`/morador/locais/${id}/editar`, { state: { returnTo: `/locais/${id}` } })}
-              >
-                Editar Local
-              </button>
-              <button
-                className={styles.btnDelete}
-                onClick={() => setConfirmDelete(true)}
-              >
-                Excluir Local
-              </button>
-            </div>
-          )}
-        </div>
+          {/* ── Cabeçalho do card ── */}
+          <div className={styles.cardHeader}>
+            <Button variant="neutral" size="sm" as={Link} to="/locais">← Voltar</Button>
+            {canManagePlace && (
+              <div className={styles.ownerActions}>
+                <button
+                  className={styles.btnEdit}
+                  onClick={() => navigate(`/morador/locais/${id}/editar`, { state: { returnTo: `/locais/${id}` } })}
+                >
+                  Editar Local
+                </button>
+                <button
+                  className={styles.btnDelete}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Excluir Local
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* ── Info area ── */}
           <div className={styles.infoArea}>
@@ -288,8 +602,15 @@ export default function PlaceDetailPage() {
                 {place.address && <p className={styles.placeAddr}>{place.address}</p>}
                 <div className={styles.placeMeta}>
                   <span>Categoria: <strong className={styles.metaTeal}>
-                    {CATEGORY_LABELS[place.category] ?? place.category}
+                    {categoryLabel(place.category)}
                   </strong></span>
+                  {place.source === 'google' && place.mapsLink && (
+                    <span>
+                      <a href={place.mapsLink} target="_blank" rel="noopener noreferrer">
+                        Ver no Google Maps
+                      </a>
+                    </span>
+                  )}
                   {place.hours && (
                     <span>Horário: <strong className={styles.metaTeal}>{place.hours}</strong></span>
                   )}
@@ -301,130 +622,150 @@ export default function PlaceDetailPage() {
 
         </div>
 
-      {/* ── Reviews card (grid-area: reviews) ── */}
-      <div className={styles.reviewsCard}>
+        {/* ── Reviews card (grid-area: reviews) ── */}
+        <div className={styles.reviewsCard}>
 
-            {/* Avaliações da Comunidade */}
-            <section>
-              <h2 className={styles.sectionTitle}>Avaliações da Comunidade</h2>
-              <div className={styles.sectionDivider} />
-              <div className={styles.ratingCard}>
+          {/* Avaliações da Comunidade */}
+          <section>
+            <h2 className={styles.sectionTitle}>Avaliações da Comunidade</h2>
+            <div className={styles.sectionDivider} />
+            <div className={styles.ratingCard}>
               <div className={styles.ratingOverview}>
                 <div className={styles.ratingBig}>
-                  <span className={styles.ratingNum}>{place.rating?.toFixed(1) ?? '—'}</span>
-                  <StarRating value={Math.round(place.rating ?? 0)} readonly size="lg" />
-                  <span className={styles.ratingBase}>BASEADO EM {place.reviewsCount ?? experiences.length} AVALIAÇÕES</span>
+                  <span className={styles.ratingNum}>{displayRating?.toFixed(1) ?? '—'}</span>
+                  <StarRating value={Math.round(displayRating ?? 0)} readonly size="lg" />
+                  <span className={styles.ratingBase}>
+                    BASEADO EM {avaliacoesCount} AVALIAÇÕES ({avaliacoesSourceLabel})
+                  </span>
                 </div>
-                <div className={styles.ratingBars}>
-                  {ratingDist.map(({ star, count }) => (
-                    <div key={star} className={styles.ratingBarRow}>
-                      <span className={styles.barStar}>{star} ★</span>
-                      <div className={styles.barTrack}>
-                        <div className={styles.barFill} style={{ width: count === 0 ? '0%' : `${Math.max(6, (count / maxCount) * 100)}%` }} />
+                <div className={styles.ratingBarsWrap}>
+                  <div className={styles.ratingBars}>
+                    {ratingDist.map(({ star, count }) => (
+                      <div key={star} className={styles.ratingBarRow}>
+                        <span className={styles.barStar}>{star} ★</span>
+                        <div className={styles.barTrack}>
+                          <div className={styles.barFill} style={{ width: count === 0 ? '0%' : `${Math.max(6, (count / maxCount) * 100)}%` }} />
+                        </div>
+                        <span className={styles.barCount}>{count}</span>
                       </div>
-                      <span className={styles.barCount}>{count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              </div>
-            </section>
-
-            {/* Classificação de custo */}
-            <section>
-              <h2 className={`${styles.sectionTitle} ${styles.sectionTitleSm}`}>CLASSIFICAÇÃO DE CUSTO</h2>
-              <div className={styles.sectionDivider} />
-              <div className={styles.costRow}>
-                {costDist.map(({ opt, count }) => (
-                  <div key={opt} className={styles.costItem}>
-                    <span className={styles.costLabel}>{opt}</span>
-                    <span className={styles.costCount}>{count}</span>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Comentários */}
-            <section>
-              <div className={styles.commentsSectionHeader}>
-                <h2 className={styles.sectionTitle}>Comentários ({experiences.length})</h2>
-                {isTurista && (
-                  <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarSm}>
-                    + Avaliar
-                  </Link>
-                )}
-                {!isAuthenticated && (
-                  <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarOutline}>
-                    Avaliar Local
-                  </Link>
-                )}
-              </div>
-              <div className={styles.sectionDivider} />
-
-              {experiences.length === 0 && (
-                <p className={styles.emptyMsg}>
-                  Nenhum relato ainda. {isTurista ? 'Seja o primeiro!' : ''}
-                </p>
-              )}
-
-              {experiences.slice(0, PREVIEW).map((exp) => (
-                <CommentCard
-                  key={exp.id}
-                  exp={exp}
-                  showReactions
-                  onReact={isTurista ? handleReact : undefined}
-                  userReactions={userReactions}
-                />
-              ))}
-
-              {experiences.length > 0 && (
-                <div className={styles.loadMoreWrap}>
-                  <Button variant="outline" onClick={() => setShowModal(true)}>
-                    Carregar Mais Comentários
-                  </Button>
+                  <p className={styles.ratingBarsCaption}>
+                    Avaliações coletadas no Eu Amo Piri
+                  </p>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Relatos da comunidade */}
+          <section>
+            <div className={styles.commentsSectionHeader}>
+              <h2 className={styles.sectionTitle}>Relatos ({communityRelatosCount})</h2>
+              {isTurista && (
+                <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarSm}>
+                  + Relato
+                </Link>
               )}
-            </section>
+              {!isAuthenticated && (
+                <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarOutline}>
+                  Cadastrar relato
+                </Link>
+              )}
+            </div>
+            <div className={styles.sectionDivider} />
 
-      </div>
+            {experiences.length === 0 && (
+              <p className={styles.emptyMsg}>
+                Nenhum relato ainda. {isTurista ? 'Seja o primeiro!' : ''}
+              </p>
+            )}
 
-      {/* ── Sidebar (fora do card) ── */}
-      <aside className={styles.sidebar}>
-        <div className={styles.statsCard}>
-          <h3 className={styles.statsTitle}>ESTATÍSTICAS</h3>
-          <div className={styles.statRow}>
-            <span className={styles.statLabel}>Avaliações</span>
-            <span className={styles.statValue}>{place.reviewsCount ?? experiences.length}</span>
-          </div>
-          <div className={styles.statRow}>
-            <span className={styles.statLabel}>Comentários</span>
-            <span className={styles.statValue}>{place.commentsCount ?? experiences.length}</span>
-          </div>
-          <div className={styles.statRow}>
-            <span className={styles.statLabel}>Visitas</span>
-            <span className={styles.statValue}>{place.visitsCount ?? '—'}</span>
-          </div>
+            {experiences.slice(0, PREVIEW).map((exp) => (
+              <CommentCard
+                key={exp.id}
+                exp={exp}
+                placeId={id}
+                showReactions
+                onReact={isTurista ? handleReact : undefined}
+                userReactions={userReactions}
+                canReport={canReport}
+                currentUserId={user?.id}
+                onReportExperience={openExperienceReport}
+                onReportComment={openCommentReport}
+                onCommentAdded={handleCommentAdded}
+                isTurista={isTurista}
+              />
+            ))}
+
+            {experiences.length > 0 && (
+              <div className={styles.loadMoreWrap}>
+                <Button variant="outline" onClick={() => setShowModal(true)}>
+                  Carregar Mais Relatos
+                </Button>
+              </div>
+            )}
+          </section>
+
         </div>
-        {(isTurista || isMorador) && (
-          <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
-            Avaliar Local
-          </Link>
-        )}
-        {!isAuthenticated && (
-          <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
-            Avaliar Local
-          </Link>
-        )}
-      </aside>
+
+        {/* ── Sidebar (fora do card) ── */}
+        <aside className={styles.sidebar}>
+          <div className={styles.statsCard}>
+            <h3 className={styles.statsTitle}>ESTATÍSTICAS</h3>
+            <div className={styles.statRow}>
+              <span className={styles.statLabel}>Avaliações</span>
+              <span className={styles.statValue}>{avaliacoesCount}</span>
+            </div>
+            <div className={styles.statRow}>
+              <span className={styles.statLabel}>Comentários</span>
+              <span className={styles.statValue}>{totalCommentsCount}</span>
+            </div>
+          </div>
+          {isTurista && (
+            <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
+              Cadastrar relato
+            </Link>
+          )}
+          {!isAuthenticated && (
+            <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
+              Cadastrar relato
+            </Link>
+          )}
+        </aside>
 
       </div>
 
       {showModal && (
         <CommentsModal
           experiences={experiences}
+          placeId={id}
           onReact={isTurista ? handleReact : undefined}
           onClose={() => setShowModal(false)}
           userReactions={userReactions}
+          canReport={canReport}
+          currentUserId={user?.id}
+          onReportExperience={openExperienceReport}
+          onReportComment={openCommentReport}
+          onCommentAdded={handleCommentAdded}
+          isTurista={isTurista}
+        />
+      )}
+
+      {reportTarget && (
+        <ReportModal
+          title={reportTarget.type === 'experience' ? 'Denunciar relato' : 'Denunciar comentário'}
+          onSubmit={handleReportSubmit}
+          onClose={() => setReportTarget(null)}
+        />
+      )}
+
+      {reportFeedback && (
+        <FormResultModal
+          variant="success"
+          title={reportFeedback.title}
+          text={reportFeedback.text}
+          onClose={() => setReportFeedback(null)}
         />
       )}
 

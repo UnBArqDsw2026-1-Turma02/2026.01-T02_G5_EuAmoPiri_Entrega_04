@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { fetchPlaceById, updatePlace } from '../infra/adaptor/placeAdaptor';
 import Button from '../presentation/atoms/Button';
@@ -12,11 +12,11 @@ import createStyles from './CreatePlacePage.module.css';
 
 const CATEGORY_OPTIONS = [
   { value: 'gastronomia', label: 'Gastronomia' },
-  { value: 'natureza',    label: 'Natureza' },
-  { value: 'hospedagem',  label: 'Hospedagem' },
-  { value: 'cultura',     label: 'Cultura' },
-  { value: 'compras',     label: 'Compras' },
-  { value: 'aventura',    label: 'Aventura' },
+  { value: 'natureza', label: 'Natureza' },
+  { value: 'hospedagem', label: 'Hospedagem' },
+  { value: 'cultura', label: 'Cultura' },
+  { value: 'compras', label: 'Compras' },
+  { value: 'aventura', label: 'Aventura' },
 ];
 
 const CATEGORIES = CREATE_PLACE_CATEGORY_OPTIONS;
@@ -34,6 +34,8 @@ function formatDateInput(value) {
 
 export default function EditPlacePage() {
   const { id } = useParams();
+  const location = useLocation();
+  const returnTo = location.state?.returnTo ?? '/perfil';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -269,18 +271,7 @@ export default function EditPlacePage() {
               })}
               error={errors.address?.message}
             />
-            <div className={styles.selectGroup}>
-              <label className={styles.selectLabel} htmlFor="price">Faixa de preço</label>
-              <select
-                id="price"
-                className={styles.select}
-                {...register('price')}
-              >
-                {PRICE_OPTIONS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
+
             <FormField
               id="phone"
               label="Telefone"
@@ -310,6 +301,7 @@ export default function EditPlacePage() {
             multiline
             rows={4}
             maxLength={2000}
+            watch={watch}
             placeholder="Descreva o local para os turistas..."
             registration={register('description', {
               required: 'Descrição é obrigatória',

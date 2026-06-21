@@ -8,6 +8,7 @@ import placeRoutes from "./routes/placeRoutes.ts";
 import experienceRoutes from "./routes/experienceRoutes.ts";
 import authRoutes from "./routes/authRoutes.ts";
 import adminRoutes from "./routes/adminRoutes.ts";
+import { syncGooglePlacesToDatabase } from "./services/googlePlacesSyncService.ts";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -75,6 +76,10 @@ server.on("listening", () => {
     } else {
         console.log(`Swagger: http://localhost:${PORT}/api-docs`);
     }
+
+    syncGooglePlacesToDatabase().catch((err: Error) => {
+        console.error("Falha ao sincronizar Google Places:", err.message ?? err);
+    });
 });
 
 server.on("error", (err: NodeJS.ErrnoException) => {

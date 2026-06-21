@@ -57,6 +57,12 @@
   border-color: var(--color-primary-hover);
 }
 
+a.button.primary,
+a.button.primary:hover:not([aria-disabled="true"]) {
+  color: var(--color-white);
+  text-decoration: none;
+}
+
 /* Secondary: marrom escuro — editar avaliação */
 .secondary {
   background-color: var(--color-brown);

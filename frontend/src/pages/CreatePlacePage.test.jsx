@@ -16,6 +16,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 /* ── Mock do adaptor ── */
 vi.mock('../infra/adaptor/placeAdaptor', () => ({
   createPlace: vi.fn(),
+  apiErrorMessage: (_err, fallback) => fallback,
 }))
 
 /* ── Mock das Web APIs de blob (não disponíveis no jsdom) ── */
@@ -34,9 +35,8 @@ import * as placeAdaptor from '../infra/adaptor/placeAdaptor'
 const mockPlace = {
   id: Date.now(),
   name: 'Novo Local Teste',
-  category: 'natureza',
+  category: 'CACHOEIRA',
   address: 'Rua Teste, 123',
-  price: '$',
   description: 'Descrição do local de teste.',
   photos: ['blob:fake-url'],
   coverImage: 'blob:fake-url',
@@ -66,10 +66,9 @@ describe('CreatePlacePage', () => {
     expect(screen.getByLabelText(/descrição do local/i)).toBeInTheDocument()
   })
 
-  it('exibe o select de Categoria e o select de Faixa de preço', () => {
+  it('exibe o select de Categoria', () => {
     renderPage()
     expect(screen.getByLabelText(/categoria/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/faixa de preço/i)).toBeInTheDocument()
   })
 
   it('exibe a zona de upload com aria-label correto', () => {
@@ -127,7 +126,7 @@ describe('CreatePlacePage', () => {
 
     // Seleciona categoria válida
     const categorySelect = screen.getByLabelText(/categoria/i)
-    await user.selectOptions(categorySelect, 'gastronomia')
+    await user.selectOptions(categorySelect, 'RESTAURANTE')
 
     // Submete sem foto
     await user.click(screen.getByRole('button', { name: /cadastrar novo local/i }))
@@ -147,7 +146,7 @@ describe('CreatePlacePage', () => {
     await user.type(screen.getByLabelText(/descrição do local/i), 'Descrição de teste.')
 
     const categorySelect = screen.getByLabelText(/categoria/i)
-    await user.selectOptions(categorySelect, 'natureza')
+    await user.selectOptions(categorySelect, 'CACHOEIRA')
 
     // Upload de foto
     const fileInput = document.querySelector('input[type="file"]')
@@ -170,7 +169,7 @@ describe('CreatePlacePage', () => {
     await user.type(screen.getByLabelText(/descrição do local/i), 'Descrição de teste.')
 
     const categorySelect = screen.getByLabelText(/categoria/i)
-    await user.selectOptions(categorySelect, 'natureza')
+    await user.selectOptions(categorySelect, 'CACHOEIRA')
 
     const fileInput = document.querySelector('input[type="file"]')
     await user.upload(fileInput, fakeImage())
@@ -193,7 +192,7 @@ describe('CreatePlacePage', () => {
     await user.type(screen.getByLabelText(/descrição do local/i), 'Descrição de teste.')
 
     const categorySelect = screen.getByLabelText(/categoria/i)
-    await user.selectOptions(categorySelect, 'natureza')
+    await user.selectOptions(categorySelect, 'CACHOEIRA')
 
     const fileInput = document.querySelector('input[type="file"]')
     await user.upload(fileInput, fakeImage())
@@ -215,7 +214,7 @@ describe('CreatePlacePage', () => {
     await user.type(screen.getByLabelText(/descrição do local/i), 'Descrição de teste.')
 
     const categorySelect = screen.getByLabelText(/categoria/i)
-    await user.selectOptions(categorySelect, 'natureza')
+    await user.selectOptions(categorySelect, 'CACHOEIRA')
 
     const fileInput = document.querySelector('input[type="file"]')
     await user.upload(fileInput, fakeImage())

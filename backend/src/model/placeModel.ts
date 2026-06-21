@@ -92,3 +92,51 @@ export function parsePlaceCategory(value: string): PlaceCategory | null {
     if (upper === "POUSADA") return "POUSADA";
     return null;
 }
+
+export interface GoogleSyncedPlaceInput {
+    googlePlaceId: string;
+    name: string;
+    category: PlaceCategory;
+    description: string;
+    address: string;
+    mapsLink: string;
+    latitude: number;
+    longitude: number;
+    externalPhotoUrl: string | null;
+    googleRating: number | null;
+    googleReviewCount: number;
+}
+
+export async function upsertGoogleSyncedPlace(input: GoogleSyncedPlaceInput) {
+    return prisma.place.upsert({
+        where: { googlePlaceId: input.googlePlaceId },
+        create: {
+            name: input.name,
+            category: input.category,
+            description: input.description,
+            address: input.address,
+            mapsLink: input.mapsLink,
+            latitude: input.latitude,
+            longitude: input.longitude,
+            externalPhotoUrl: input.externalPhotoUrl,
+            googleRating: input.googleRating,
+            googleReviewCount: input.googleReviewCount,
+            googlePlaceId: input.googlePlaceId,
+            source: "GOOGLE",
+            moradorId: null,
+        },
+        update: {
+            name: input.name,
+            category: input.category,
+            description: input.description,
+            address: input.address,
+            mapsLink: input.mapsLink,
+            latitude: input.latitude,
+            longitude: input.longitude,
+            externalPhotoUrl: input.externalPhotoUrl,
+            googleRating: input.googleRating,
+            googleReviewCount: input.googleReviewCount,
+        },
+        include: placeInclude,
+    });
+}

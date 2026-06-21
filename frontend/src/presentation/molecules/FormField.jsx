@@ -28,12 +28,17 @@ export default function FormField({
   placeholder,
   error,
   registration = {},
+  watch,
   icon,
   rows,
   maxLength,
   className = '',
 }) {
-  const currentLength = registration?.value?.length ?? 0;
+  let currentLength = 0;
+  if (multiline && maxLength && watch && registration?.name) {
+    const value = watch(registration.name);
+    currentLength = typeof value === 'string' ? value.length : 0;
+  }
 
   return (
     <div className={[styles.field, className].join(' ').trim()}>

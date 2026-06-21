@@ -52,6 +52,30 @@ a {
   transition: color var(--transition-fast);
 }
 a:hover  { color: var(--color-primary-hover); text-decoration: underline; }
+
+/* Links renderizados como botão — não herdam estilo de hyperlink */
+a.button {
+  text-decoration: none;
+}
+a.button:hover {
+  text-decoration: none;
+}
+a.button.primary,
+a.button.secondary,
+a.button.teal,
+a.button.danger,
+a.button.rust,
+a.button.olive {
+  color: var(--color-white);
+}
+a.button.primary:hover,
+a.button.secondary:hover,
+a.button.teal:hover,
+a.button.danger:hover,
+a.button.rust:hover,
+a.button.olive:hover {
+  color: var(--color-white);
+}
 a:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;

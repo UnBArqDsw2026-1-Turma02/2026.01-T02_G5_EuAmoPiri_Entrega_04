@@ -1,4 +1,4 @@
-import type { Place, PlacePhoto } from "../../generated/prisma/client.ts";
+import type { Place, PlacePhoto, PlaceSource } from "../../generated/prisma/client.ts";
 
 const CATEGORY_LABELS: Record<string, string> = {
     CACHOEIRA: "cachoeira",
@@ -6,9 +6,14 @@ const CATEGORY_LABELS: Record<string, string> = {
     POUSADA: "pousada",
 };
 
+const SOURCE_LABELS: Record<PlaceSource, string> = {
+    COMMUNITY: "community",
+    GOOGLE: "google",
+};
+
 type PlaceWithPhotos = Place & {
     photos?: PlacePhoto[];
-    morador?: { id: number; name: string };
+    morador?: { id: number; name: string } | null;
     experiences?: { rating: number }[];
 };
 
@@ -24,6 +29,20 @@ function computeRatingStats(experiences: { rating: number }[] = []) {
     };
 }
 
+function resolvePublicStats(place: PlaceWithPhotos) {
+    const fromExperiences = computeRatingStats(place.experiences);
+    if (fromExperiences.reviewsCount > 0) {
+        return fromExperiences;
+    }
+    if ((place.googleReviewCount ?? 0) > 0 || place.googleRating != null) {
+        return {
+            rating: place.googleRating,
+            reviewsCount: place.googleReviewCount ?? 0,
+        };
+    }
+    return fromExperiences;
+}
+
 function formatPhoto(photo: PlacePhoto, placeId: number) {
     return {
         id: photo.id,
@@ -34,7 +53,11 @@ function formatPhoto(photo: PlacePhoto, placeId: number) {
 
 export function formatPlace(place: PlaceWithPhotos) {
     const category = CATEGORY_LABELS[place.category] ?? place.category.toLowerCase();
-    const { rating, reviewsCount } = computeRatingStats(place.experiences);
+    const { rating, reviewsCount } = resolvePublicStats(place);
+    const coverFromPhoto = place.photos?.[0]
+        ? `/places/${place.id}/photos/${place.photos[0].id}`
+        : null;
+
     return {
         id: place.id,
         name: place.name,
@@ -45,12 +68,14 @@ export function formatPlace(place: PlaceWithPhotos) {
         phone: place.phone,
         openingDate: place.openingDate,
         moradorId: place.moradorId,
-        moradorName: place.morador?.name,
+        moradorName: place.morador?.name ?? null,
+        source: SOURCE_LABELS[place.source] ?? "community",
+        googlePlaceId: place.googlePlaceId,
+        lat: place.latitude,
+        lng: place.longitude,
         rating,
         reviewsCount,
-        coverImage: place.photos?.[0]
-            ? `/places/${place.id}/photos/${place.photos[0].id}`
-            : null,
+        coverImage: coverFromPhoto ?? place.externalPhotoUrl ?? null,
         photos: (place.photos ?? []).map((p) => formatPhoto(p, place.id)),
         createdAt: place.createdAt,
     };
