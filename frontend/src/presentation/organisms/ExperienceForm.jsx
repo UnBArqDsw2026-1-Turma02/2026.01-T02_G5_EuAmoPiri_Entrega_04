@@ -24,7 +24,7 @@ export default function ExperienceForm({
   successPrimary = { label: 'Ver outros locais', to: '/locais' },
   successSecondary = { label: 'Voltar para a página inicial', to: '/' },
   errorTitle = 'Falha ao enviar relato',
-  errorText = 'Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.',
+  errorText = 'Não foi possível enviar o relato. Tente novamente.',
 }) {
   const {
     register,
@@ -52,7 +52,7 @@ export default function ExperienceForm({
     setBlacklistError('');
     if (data.rating === 0) return;
     if (!data.text?.trim()) return;
-    if (containsBlacklistedWord(data.text)) {
+    if (containsBlacklistedWord(data.title, data.text)) {
       setBlacklistError('Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.');
       setSubmitStatus('error');
       return;
@@ -60,7 +60,9 @@ export default function ExperienceForm({
     try {
       await onSubmit({ ...data, photos });
       setSubmitStatus('success');
-    } catch {
+    } catch (err) {
+      const apiMsg = err?.response?.data?.error ?? err?.message;
+      if (apiMsg) setBlacklistError(apiMsg);
       setSubmitStatus('error');
     }
   }

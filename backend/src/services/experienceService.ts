@@ -61,8 +61,8 @@ export async function validateExperienceInput(
         throw new ExperienceError(`O comentÃ¡rio deve ter no mÃ¡ximo ${MAX_TEXT_LENGTH} caracteres`, 400, "RNF03");
     }
 
-    if (containsBlacklistedWord(text)) {
-        throw new ExperienceError("Revise o conteÃºdo e tente novamente, mantendo uma linguagem respeitosa.", 400, "BLACKLISTED_CONTENT");
+    if (containsBlacklistedWord(text, input.title)) {
+        throw new ExperienceError("Revise o conteúdo e tente novamente, mantendo uma linguagem respeitosa.", 400, "BLACKLISTED_CONTENT");
     }
 
     if (!visitDateStr) {
