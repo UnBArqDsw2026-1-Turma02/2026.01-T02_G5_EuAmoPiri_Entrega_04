@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { MdEdit, MdOutlineDelete, MdLocationOn } from 'react-icons/md';
@@ -8,17 +8,12 @@ import Avatar from '../presentation/atoms/Avatar';
 import Button from '../presentation/atoms/Button';
 import Badge from '../presentation/atoms/Badge';
 import StarRating from '../presentation/atoms/StarRating';
-import Spinner from '../presentation/atoms/Spinner';
 import FormField from '../presentation/molecules/FormField';
 import { deletePlace, fetchMyPlaces } from '../infra/adaptor/placeAdaptor';
-import { deleteExperience, fetchMyExperiences, fetchExperiencesByPlaces } from '../infra/adaptor/experienceAdaptor';
-import { enrichPlacesWithExperienceStats, timeAgo, categoryIcon } from '../utils/placeStats';
-import { categoryLabel } from '../utils/placeCategories';
+import { deleteExperience, fetchMyExperiences } from '../infra/adaptor/experienceAdaptor';
 import styles from './ProfilePage.module.css';
 
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
-
+/* ─── helpers ─── */
 function roleLabel(role) {
   if (role === 'morador') return 'Morador';
   if (role === 'turista') return 'Turista';
@@ -26,86 +21,71 @@ function roleLabel(role) {
   return role ?? 'Usuário';
 }
 
-function hasLocalChanges(form, user, selectedPhotoFile) {
-  if (selectedPhotoFile) return true;
-
-  const fields = ['name', 'email', 'profession', 'contact', 'birthDate', 'bio'];
-  return fields.some((field) => (form[field] ?? '') !== (user?.[field] ?? ''));
+function formatDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
 }
 
-function validatePhotoFile(file) {
-  if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-    return 'Use uma imagem JPG ou PNG.';
-  }
-  if (file.size > MAX_PHOTO_SIZE) {
-    return 'A imagem deve ter no máximo 5 MB.';
-  }
-  return null;
+/* ─── mock de dados (substituir por API quando disponível) ─── */
+const MOCK_RELATOS_MORADOR = [
+  { id: 1, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas em vários restaurantes pelo país e tenho propriedade para dizer que já cansara de restaurantes melhores em Pirenópolis.', likes: 3 },
+  { id: 2, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
+  { id: 3, local: 'Restaurante LovePiri', autor: 'Josefina Souza', dias: 5, texto: 'Já tive experiências melhores. Olha, meus 65 anos de vida eu já tive experiências muito diversas.', likes: 3 },
+];
+
+const MOCK_LOCAIS_MORADOR = [
+  { id: 1, nome: 'Botequim Mercatto Piri',          categoria: 'gastronomia', icon: '🏛️', price: '$$',  rating: 4.9, avaliacoes: 100 },
+  { id: 2, nome: 'Cachoeira da Rosário',             categoria: 'natureza',    icon: '🏞️', price: '$',   rating: 4.8, avaliacoes: 50  },
+  { id: 3, nome: 'Galeria de Arte Local',            categoria: 'experiencia', icon: '🎨', price: '$$',  rating: 4.7, avaliacoes: 10  },
+  { id: 4, nome: 'Trilha do Poço Azul',              categoria: 'natureza',    icon: '🌿', price: '$$$', rating: 4.6, avaliacoes: 300 },
+  { id: 5, nome: 'Igreja Matriz de Pirenópolis',     categoria: 'histórico',   icon: '⛪', price: '$',   rating: 4.9, avaliacoes: 1000 },
+];
+
+
+/* ─── sub-componente: linha de info em modo leitura ─── */
+function InfoRow({ label, value }) {
+  return (
+    <div className={styles.infoRow}>
+      <span className={styles.infoLabel}>{label}</span>
+      <span className={styles.infoValue}>{value || '—'}</span>
+    </div>
+  );
 }
 
-function totalLikes(reactions = {}) {
-  return Object.values(reactions).reduce((s, v) => s + (v || 0), 0);
+/* ─── helper: mapeia dado da API para o formato do template ─── */
+function mapPlace(p) {
+  const CATEGORY_ICONS = {
+    gastronomia: '🍽️', natureza: '🏞️', hospedagem: '🏨',
+    cultura: '🎨', compras: '🛍️', aventura: '🌿', histórico: '⛪',
+    experiencia: '🎨',
+  };
+  return {
+    id:        p.id,
+    nome:      p.name      ?? p.nome      ?? '—',
+    categoria: p.category  ?? p.categoria ?? '—',
+    icon:      p.icon ?? CATEGORY_ICONS[p.category ?? p.categoria] ?? '📍',
+    price:     p.price     ?? '—',
+    rating:    p.rating    ?? 0,
+    avaliacoes: p.reviewsCount ?? p.avaliacoes ?? 0,
+  };
 }
 
-/* ─── seção Morador (locais e relatos recebidos — exibidos em /perfil) ─── */
-function MoradorSections({ user, onRelatosCount }) {
-  const [places, setPlaces] = useState([]);
-  const [experiences, setExperiences] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
-  const [confirmId, setConfirmId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteErr, setDeleteErr] = useState(null);
+/* ─── seção Morador ─── */
+function MoradorSections() {
+  const [locais, setLocais]             = useState([]);
+  const [confirmId, setConfirmId]       = useState(null); // id do local a excluir
+  const [deleting, setDeleting]         = useState(false);
+  const [deleteErr, setDeleteErr]       = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
+    fetchMyPlaces()
+      .then((data) => setLocais((data ?? []).map(mapPlace)))
+      .catch(() => setLocais(MOCK_LOCAIS_MORADOR));
+  }, []);
 
-    (async () => {
-      try {
-        const myPlaces = await fetchMyPlaces(user.id);
-        if (cancelled) return;
-        setPlaces(myPlaces);
-
-        if (myPlaces.length > 0) {
-          const exps = await fetchExperiencesByPlaces(myPlaces.map((p) => p.id));
-          if (!cancelled) setExperiences(exps);
-        } else {
-          setExperiences([]);
-        }
-      } catch {
-        if (!cancelled) setLoadError('Erro ao carregar dados do perfil.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [user?.id]);
-
-  useEffect(() => {
-    onRelatosCount?.(experiences.length);
-  }, [experiences, onRelatosCount]);
-
-  const placesWithStats = useMemo(
-    () => enrichPlacesWithExperienceStats(places, experiences),
-    [places, experiences],
-  );
-
-  const placeMap = useMemo(
-    () => Object.fromEntries(placesWithStats.map((p) => [p.id, p])),
-    [placesWithStats],
-  );
-
-  const latestRelatos = useMemo(
-    () => [...experiences].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [experiences],
-  );
-
-  const toDelete = placesWithStats.find((l) => l.id === confirmId);
+  const toDelete = locais.find((l) => l.id === confirmId);
 
   function closeConfirm() {
     setConfirmId(null);
@@ -118,8 +98,7 @@ function MoradorSections({ user, onRelatosCount }) {
     setDeleteErr(null);
     try {
       await deletePlace(confirmId);
-      setPlaces((prev) => prev.filter((l) => l.id !== confirmId));
-      setExperiences((prev) => prev.filter((e) => e.placeId !== confirmId));
+      setLocais((prev) => prev.filter((l) => l.id !== confirmId));
       setDeleteSuccess(true);
     } catch {
       setDeleteErr('Erro ao excluir. Tente novamente.');
@@ -128,111 +107,70 @@ function MoradorSections({ user, onRelatosCount }) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className={styles.sectionLoading}>
-        <Spinner size="md" />
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return <p className={styles.empty}>{loadError}</p>;
-  }
-
   return (
     <>
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>ÚLTIMOS RELATOS</h2>
         <div className={styles.relatosGrid}>
-          {latestRelatos.length === 0 && (
-            <p className={styles.emptyInline}>Ainda não há relatos nos seus locais.</p>
-          )}
-          {latestRelatos.map((exp) => {
-            const placeName = placeMap[exp.placeId]?.name ?? 'Local';
-            const likes = totalLikes(exp.reactions);
-            return (
-              <article key={exp.id} className={styles.relatoCard}>
-                <div className={styles.avaliacaoMeta}>
-                  <MdLocationOn size={16} className={styles.relatoPinIcon} />
-                  <Link to={`/locais/${exp.placeId}`} className={styles.relatoLocal}>
-                    {placeName}
-                  </Link>
-                  <span className={styles.avaliacaoDias}>{timeAgo(exp.createdAt)}</span>
-                </div>
-                <span className={styles.relatoAutor}>{exp.userName}</span>
-                <StarRating value={exp.rating ?? 0} readonly size="sm" />
-                {exp.title && <p className={styles.relatoTitulo}>{exp.title}</p>}
-                <p className={styles.relatoTexto}>{exp.text}</p>
-                {likes > 0 && (
-                  <span className={styles.relatoLikes}>👍 {likes}</span>
-                )}
-              </article>
-            );
-          })}
+          {MOCK_RELATOS_MORADOR.map((r) => (
+            <div key={r.id} className={styles.relatoCard}>
+              <div className={styles.avaliacaoMeta}>
+                <MdLocationOn size={16} className={styles.relatoPinIcon} />
+                <span className={styles.relatoLocal}>{r.local}</span>
+                <span className={styles.avaliacaoDias}>há {r.dias} dias</span>
+              </div>
+              <span className={styles.relatoAutor}>{r.autor}</span>
+              <p className={styles.relatoTexto}>{r.texto}</p>
+              <span className={styles.relatoLikes}>👍 {r.likes}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className={styles.sectionCard}>
-        <h2 className={styles.sectionTitle}>MEUS LOCAIS</h2>
-        <div className={styles.locaisGrid}>
-          {placesWithStats.length === 0 && (
-            <p className={styles.emptyInline}>Nenhum local cadastrado.</p>
+        <h2 className={styles.sectionTitle}>LOCAIS CADASTRADOS</h2>
+        <div className={styles.locaisLista}>
+          {locais.length === 0 && (
+            <p className={styles.empty}>Nenhum local cadastrado.</p>
           )}
-          {placesWithStats.map((place) => {
-            const reviewsCount = place.reviewsCount ?? 0;
-            const ratingLabel = place.rating != null ? Number(place.rating).toFixed(1) : '—';
-            return (
-              <div key={place.id} className={styles.localCard}>
-                <div className={styles.localInfo}>
-                  {place.coverImage ? (
-                    <img
-                      src={place.coverImage}
-                      alt=""
-                      className={styles.localThumb}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className={styles.localIcon} aria-hidden="true">
-                      {categoryIcon(place.category)}
+          {locais.map((l) => (
+            <div key={l.id} className={styles.localRow}>
+              <div className={styles.localInfo}>
+                <span className={styles.localIcon} aria-hidden="true">{l.icon}</span>
+                <div>
+                  <span className={styles.localNome}>{l.nome}</span>
+                  <span className={styles.localCat}>{l.categoria}</span>
+                  <div className={styles.localRating}>
+                    <StarRating value={Math.round(l.rating)} readonly size="sm" />
+                    <span className={styles.localMeta}>
+                      {l.rating.toFixed(1)} &nbsp;{l.price}&nbsp; {l.avaliacoes} Avaliações
                     </span>
-                  )}
-                  <div>
-                    <Link to={`/locais/${place.id}`} className={styles.localNome}>
-                      {place.name}
-                    </Link>
-                    <span className={styles.localCat}>{categoryLabel(place.category)}</span>
-                    <div className={styles.localRating}>
-                      <StarRating value={Math.round(place.rating ?? 0)} readonly size="sm" />
-                      <span className={styles.localMeta}>
-                        {ratingLabel} — {reviewsCount} {reviewsCount === 1 ? 'Avaliação' : 'Avaliações'}
-                      </span>
-                    </div>
                   </div>
                 </div>
-                <div className={styles.localActions}>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    as={Link}
-                    to={`/morador/locais/${place.id}/editar`}
-                  >
-                    Editar Local
-                  </Button>
-                  <Button
-                    variant="rust"
-                    size="sm"
-                    onClick={() => { setDeleteErr(null); setConfirmId(place.id); }}
-                  >
-                    Excluir Local
-                  </Button>
-                </div>
               </div>
-            );
-          })}
+              <div className={styles.localActions}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  as={Link}
+                  to={`/morador/locais/${l.id}/editar`}
+                >
+                  Editar Local
+                </Button>
+                <Button
+                  variant="rust"
+                  size="sm"
+                  onClick={() => { setDeleteErr(null); setConfirmId(l.id); }}
+                >
+                  Excluir Local
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* ── Modal de confirmação / sucesso / erro de exclusão ── */}
       {confirmId && (
         <div
           className={styles.confirmOverlay}
@@ -240,6 +178,7 @@ function MoradorSections({ user, onRelatosCount }) {
         >
           <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
             {deleteSuccess ? (
+              /* Estado de sucesso */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
@@ -250,6 +189,7 @@ function MoradorSections({ user, onRelatosCount }) {
                 </div>
               </>
             ) : deleteErr ? (
+              /* Estado de erro */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
@@ -260,18 +200,29 @@ function MoradorSections({ user, onRelatosCount }) {
                 </div>
               </>
             ) : (
+              /* Estado de confirmação */
               <>
                 <h3 className={styles.confirmTitle}>Excluir local</h3>
                 <p className={styles.confirmBody}>
                   Tem certeza que deseja excluir{' '}
-                  <strong>{toDelete?.name}</strong>?{' '}
+                  <strong>{toDelete?.nome}</strong>?{' '}
                   Esta ação não pode ser desfeita.
                 </p>
                 <div className={styles.confirmActions}>
-                  <Button variant="neutral" size="sm" onClick={closeConfirm} disabled={deleting}>
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    onClick={closeConfirm}
+                    disabled={deleting}
+                  >
                     Cancelar
                   </Button>
-                  <Button variant="rust" size="sm" loading={deleting} onClick={handleDeleteLocal}>
+                  <Button
+                    variant="rust"
+                    size="sm"
+                    loading={deleting}
+                    onClick={handleDeleteLocal}
+                  >
                     Excluir
                   </Button>
                 </div>
@@ -284,43 +235,18 @@ function MoradorSections({ user, onRelatosCount }) {
   );
 }
 
-function TuristaSections({ user, onRelatosCount }) {
-  const [avaliacoes, setAvaliacoes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
-  const [confirmId, setConfirmId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteErr, setDeleteErr] = useState(null);
+/* ─── seção Turista ─── */
+function TuristaSections() {
+  const [avaliacoes, setAvaliacoes]       = useState([]);
+  const [confirmId, setConfirmId]         = useState(null); // id da avaliação a excluir
+  const [deleting, setDeleting]           = useState(false);
+  const [deleteErr, setDeleteErr]         = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
+  /* Carrega do adaptor para sempre refletir edições recentes */
   useEffect(() => {
-    if (!user?.id) {
-      setAvaliacoes([]);
-      setLoading(false);
-      return undefined;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
-
-    fetchMyExperiences(user.id)
-      .then((data) => {
-        if (!cancelled) setAvaliacoes(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError('Erro ao carregar suas avaliações.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [user?.id]);
-
-  useEffect(() => {
-    onRelatosCount?.(avaliacoes.length);
-  }, [avaliacoes, onRelatosCount]);
+    fetchMyExperiences().then(setAvaliacoes);
+  }, []);
 
   const toDelete = avaliacoes.find((a) => a.id === confirmId);
 
@@ -344,40 +270,24 @@ function TuristaSections({ user, onRelatosCount }) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className={styles.sectionLoading}>
-        <Spinner size="md" />
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return <p className={styles.empty}>{loadError}</p>;
-  }
-
   return (
     <>
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>AVALIAÇÕES CADASTRADAS</h2>
         <div className={styles.avaliacoesGrid}>
           {avaliacoes.length === 0 && (
-            <p className={styles.emptyInline}>Nenhuma avaliação cadastrada.</p>
+            <p className={styles.empty}>Nenhuma avaliação cadastrada.</p>
           )}
           {avaliacoes.map((a) => (
             <div key={a.id} className={styles.avaliacaoCard}>
               <div className={styles.avaliacaoMeta}>
                 <MdLocationOn size={16} className={styles.pinIcon} />
-                <Link to={`/locais/${a.placeId}`} className={styles.avaliacaoLocal}>
-                  {a.placeName ?? 'Local'}
-                </Link>
-                <span className={styles.avaliacaoDias}>
-                  {a.createdAt ? timeAgo(a.createdAt) : '—'}
-                </span>
+                <span className={styles.avaliacaoLocal}>{a.placeName}</span>
+                <span className={styles.avaliacaoDias}>há {a.dias} dias</span>
               </div>
-              <StarRating value={a.rating ?? 0} readonly size="sm" />
+              <StarRating value={a.rating} readonly size="sm" />
               {a.title && <p className={styles.avaliacaoTitulo}>{a.title}</p>}
-              <p className={styles.avaliacaoTexto}>{a.text}</p>
+              <p className={styles.avaliacaoTexto}>"{a.text}"</p>
               <div className={styles.relatoActions}>
                 <Button
                   variant="secondary"
@@ -400,6 +310,7 @@ function TuristaSections({ user, onRelatosCount }) {
         </div>
       </div>
 
+      {/* ── Modal de confirmação / sucesso / erro de exclusão ── */}
       {confirmId && (
         <div
           className={styles.confirmOverlay}
@@ -407,6 +318,7 @@ function TuristaSections({ user, onRelatosCount }) {
         >
           <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
             {deleteSuccess ? (
+              /* Estado de sucesso */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
@@ -417,6 +329,7 @@ function TuristaSections({ user, onRelatosCount }) {
                 </div>
               </>
             ) : deleteErr ? (
+              /* Estado de erro */
               <>
                 <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
                 <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
@@ -427,6 +340,7 @@ function TuristaSections({ user, onRelatosCount }) {
                 </div>
               </>
             ) : (
+              /* Estado de confirmação */
               <>
                 <h3 className={styles.confirmTitle}>Excluir avaliação</h3>
                 <p className={styles.confirmBody}>
@@ -435,10 +349,20 @@ function TuristaSections({ user, onRelatosCount }) {
                   Esta ação não pode ser desfeita.
                 </p>
                 <div className={styles.confirmActions}>
-                  <Button variant="neutral" size="sm" onClick={closeConfirm} disabled={deleting}>
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    onClick={closeConfirm}
+                    disabled={deleting}
+                  >
                     Cancelar
                   </Button>
-                  <Button variant="rust" size="sm" loading={deleting} onClick={handleDeleteAvaliacao}>
+                  <Button
+                    variant="rust"
+                    size="sm"
+                    loading={deleting}
+                    onClick={handleDeleteAvaliacao}
+                  >
                     Excluir
                   </Button>
                 </div>
@@ -466,57 +390,51 @@ export default function ProfilePage() {
   const [deleteAccountErr, setDeleteAccountErr] = useState(null);
   const fileInputRef = useRef(null);
 
+  /* ── Estado da seção de senha ── */
   const [passwordData, setPasswordData] = useState({ current: '', next: '', confirm: '' });
   const [savingPassword, setSavingPassword] = useState(false);
   const [passwordFeedback, setPasswordFeedback] = useState(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
-      name: user?.name ?? '',
-      email: user?.email ?? '',
+      name:       user?.name       ?? '',
+      email:      user?.email      ?? '',
       profession: user?.profession ?? '',
-      contact: user?.contact ?? '',
-      birthDate: user?.birthDate ?? '',
-      bio: user?.bio ?? '',
+      contact:    user?.contact    ?? '',
+      birthDate:  user?.birthDate  ?? '',
+      bio:        user?.bio        ?? '',
     },
   });
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-    };
-  }, [avatarPreview]);
 
   function handleAvatarChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const photoError = validatePhotoFile(file);
-    if (photoError) {
-      setFeedback({ type: 'error', msg: photoError });
-      e.target.value = '';
-      return;
-    }
-
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-
-    setSelectedPhotoFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-    setFeedback(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      // Comprime para max 200x200px antes de salvar (evita estourar localStorage)
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 200;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        setAvatarPreview(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   function startEditing() {
     reset({
-      name: user?.name ?? '',
-      email: user?.email ?? '',
+      name:       user?.name       ?? '',
+      email:      user?.email      ?? '',
       profession: user?.profession ?? '',
-      contact: user?.contact ?? '',
-      birthDate: user?.birthDate ?? '',
-      bio: user?.bio ?? '',
+      contact:    user?.contact    ?? '',
+      birthDate:  user?.birthDate  ?? '',
+      bio:        user?.bio        ?? '',
     });
     setFeedback(null);
     setEditing(true);
@@ -525,36 +443,19 @@ export default function ProfilePage() {
   function cancelEditing() {
     setEditing(false);
     setFeedback(null);
-    setSelectedPhotoFile(null);
-    if (avatarPreview?.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarPreview);
-    }
     setAvatarPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function onSubmit(data) {
     setSaving(true);
     setFeedback(null);
-
-    if (!hasLocalChanges(data, user, selectedPhotoFile)) {
-      setFeedback({ type: 'error', msg: 'Nenhuma alteração detectada' });
-      setSaving(false);
-      return;
-    }
-
     try {
-      await updateProfile(data, selectedPhotoFile ?? undefined);
+      await updateProfile({ ...data, avatarUrl: avatarPreview ?? user?.avatarUrl });
       setFeedback({ type: 'success', msg: 'Perfil atualizado com sucesso!' });
-      setSelectedPhotoFile(null);
-      if (avatarPreview?.startsWith('blob:')) {
-        URL.revokeObjectURL(avatarPreview);
-      }
       setAvatarPreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
       setEditing(false);
-    } catch (err) {
-      setFeedback({ type: 'error', msg: err.message ?? 'Erro ao salvar. Tente novamente.' });
+    } catch {
+      setFeedback({ type: 'error', msg: 'Erro ao salvar. Tente novamente.' });
     } finally {
       setSaving(false);
     }
@@ -575,7 +476,8 @@ export default function ProfilePage() {
     }
     setSavingPassword(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
+      // TODO: chamar API real — await updatePassword({ current, next });
+      await new Promise((r) => setTimeout(r, 600)); // mock de latência
       setPasswordData({ current: '', next: '', confirm: '' });
       setPasswordFeedback({ type: 'success', msg: 'Senha atualizada com sucesso!' });
     } catch {
@@ -613,32 +515,24 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className={styles.page}>
-        <p className={styles.empty}>
-          Você precisa estar logado para ver seu perfil.{' '}
-          <Link to="/login">Fazer login</Link>
-        </p>
+        <p className={styles.empty}>Você precisa estar logado para ver seu perfil.</p>
       </div>
     );
   }
-
-  const avatarSrc = avatarPreview ?? user.avatarUrl;
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
 
-        {!editing && !isMorador && (
-          <h2 className={styles.pageRoleTitle}>SUAS AVALIAÇÕES</h2>
-        )}
-
+        {/* ── Cabeçalho do perfil ── */}
         <div className={styles.profileHeader}>
           <div className={styles.profileLeft}>
             <div className={styles.avatarWrap}>
-              <Avatar src={avatarSrc} name={user.name} size="xl" />
+              <Avatar src={avatarPreview ?? user.avatarUrl} name={user.name} size="xl" />
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/jpg,image/png"
+                accept="image/*"
                 className={styles.avatarFileInput}
                 onChange={handleAvatarChange}
                 aria-label="Alterar foto de perfil"
@@ -649,24 +543,20 @@ export default function ProfilePage() {
                   className={styles.avatarUploadBtn}
                   onClick={() => fileInputRef.current?.click()}
                   title="Alterar foto"
+                  aria-label="Alterar foto de perfil"
                 >
                   <MdEdit size={14} />
                 </button>
               )}
             </div>
-            {editing && selectedPhotoFile && (
-              <p className={styles.photoHint}>Nova foto selecionada. Clique em &quot;Atualizar Perfil&quot; para salvar.</p>
-            )}
 
             <div className={styles.headerInfo}>
-              <h1 className={styles.userName}>
-                {user.name}
-                {user.profession && (
-                  <span className={styles.userNameSuffix}> | {user.profession}</span>
-                )}
-              </h1>
+              <h1 className={styles.userName}>{user.name}</h1>
               <div className={styles.userMeta}>
                 <Badge variant="teal" size="sm">{roleLabel(user.role)}</Badge>
+                {user.profession && (
+                  <span className={styles.profession}>{user.profession}</span>
+                )}
               </div>
               <span className={styles.userEmail}>{user.email}</span>
               {user.bio && <p className={styles.bio}>{user.bio}</p>}
@@ -677,10 +567,11 @@ export default function ProfilePage() {
             <span className={styles.statLabel}>
               {isMorador ? 'Quantidade de relatos sobre os seus locais' : 'Relatos Cadastrados'}
             </span>
-            <span className={styles.statNumber}>{relatosCount}</span>
+            <span className={styles.statNumber}>5</span>
           </div>
         </div>
 
+        {/* ── Botões de ação ── */}
         {!editing && (
           <div className={styles.actionBtns}>
             <Button variant="danger" size="sm" onClick={openDeleteAccountConfirm}>
@@ -701,12 +592,14 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* ── Feedback ── */}
         {feedback && (
           <div className={`${styles.feedback} ${styles[feedback.type]}`} role="alert">
             {feedback.msg}
           </div>
         )}
 
+        {/* ── Modo edição ── */}
         {editing && (
           <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
             <h2 className={styles.sectionTitle}>EDITAR PERFIL</h2>
@@ -716,7 +609,7 @@ export default function ProfilePage() {
                 id="name"
                 label="Nome completo"
                 placeholder="Seu nome completo"
-                registration={register('name')}
+                registration={register('name', { required: 'Nome é obrigatório' })}
                 error={errors.name?.message}
               />
               <FormField
@@ -725,10 +618,8 @@ export default function ProfilePage() {
                 type="email"
                 placeholder="seu@email.com"
                 registration={register('email', {
-                  validate: (value) => {
-                    if (!value?.trim()) return true;
-                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || 'E-mail inválido';
-                  },
+                  required: 'E-mail é obrigatório',
+                  pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'E-mail inválido' },
                 })}
                 error={errors.email?.message}
               />
@@ -759,72 +650,73 @@ export default function ProfilePage() {
               rows={3}
               maxLength={300}
               placeholder="Conte um pouco sobre você..."
-              registration={register('bio', { maxLength: { value: 300, message: 'Máximo 300 caracteres' } })}
-              error={errors.bio?.message}
+              registration={register('bio')}
             />
 
             <div className={styles.formActions}>
-              <Button variant="neutral" type="button" onClick={cancelEditing} disabled={saving}>
+              <Button type="button" variant="neutral" onClick={cancelEditing} disabled={saving}>
                 Cancelar
               </Button>
-              <Button variant="primary" type="submit" loading={saving}>
+              <Button type="submit" variant="primary" loading={saving}>
                 Atualizar Perfil
               </Button>
             </div>
           </form>
         )}
 
-        {editing && <form className={styles.passwordForm} onSubmit={handlePasswordUpdate} noValidate>
-          <h2 className={styles.sectionTitle}>CADASTRAR NOVA SENHA</h2>
-
-          <div className={styles.passwordFields}>
-            <input
-              type="password"
-              className={styles.passwordInput}
-              placeholder="Senha Atual"
-              value={passwordData.current}
-              onChange={(e) => setPasswordData((p) => ({ ...p, current: e.target.value }))}
-              autoComplete="current-password"
-              aria-label="Senha atual"
-            />
-            <input
-              type="password"
-              className={styles.passwordInput}
-              placeholder="Nova Senha"
-              value={passwordData.next}
-              onChange={(e) => setPasswordData((p) => ({ ...p, next: e.target.value }))}
-              autoComplete="new-password"
-              aria-label="Nova senha"
-            />
-            <input
-              type="password"
-              className={styles.passwordInput}
-              placeholder="Confirmar Nova Senha"
-              value={passwordData.confirm}
-              onChange={(e) => setPasswordData((p) => ({ ...p, confirm: e.target.value }))}
-              autoComplete="new-password"
-              aria-label="Confirmar nova senha"
-            />
+        {/* ── Seção de senha (só no modo edição) ── */}
+        {editing && (
+          <div className={styles.sectionCard}>
+            <h2 className={styles.sectionTitle}>CADASTRAR NOVA SENHA</h2>
+            <form className={styles.passwordForm} onSubmit={handlePasswordUpdate} noValidate>
+              <div className={styles.formGrid}>
+                <label className={styles.pwLabel}>
+                  Senha atual
+                  <input
+                    type="password"
+                    className={styles.pwInput}
+                    aria-label="Senha atual"
+                    value={passwordData.current}
+                    onChange={(e) => setPasswordData((p) => ({ ...p, current: e.target.value }))}
+                    autoComplete="current-password"
+                  />
+                </label>
+                <label className={styles.pwLabel}>
+                  Nova senha
+                  <input
+                    type="password"
+                    className={styles.pwInput}
+                    aria-label="Nova senha"
+                    value={passwordData.next}
+                    onChange={(e) => setPasswordData((p) => ({ ...p, next: e.target.value }))}
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label className={styles.pwLabel}>
+                  Confirmar nova senha
+                  <input
+                    type="password"
+                    className={styles.pwInput}
+                    aria-label="Confirmar nova senha"
+                    value={passwordData.confirm}
+                    onChange={(e) => setPasswordData((p) => ({ ...p, confirm: e.target.value }))}
+                    autoComplete="new-password"
+                  />
+                </label>
+              </div>
+              {passwordFeedback && (
+                <div
+                  className={`${styles.feedback} ${styles[passwordFeedback.type]}`}
+                  role="alert"
+                >
+                  {passwordFeedback.msg}
+                </div>
+              )}
+              <Button type="submit" variant="primary" loading={savingPassword}>
+                Atualizar Senha
+              </Button>
+            </form>
           </div>
-
-          {passwordFeedback && (
-            <div className={`${styles.feedback} ${styles[passwordFeedback.type]}`} role="alert">
-              {passwordFeedback.msg}
-            </div>
-          )}
-
-          <div className={styles.passwordActions}>
-            <Button variant="secondary" type="submit" loading={savingPassword}>
-              Atualizar Senha
-            </Button>
-          </div>
-        </form>}
-
-        {!editing && isMorador && (
-          <MoradorSections user={user} onRelatosCount={setRelatosCount} />
-        )}
-        {!editing && isTurista && (
-          <TuristaSections user={user} onRelatosCount={setRelatosCount} />
         )}
 
         {showDeleteAccount && (

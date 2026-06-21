@@ -96,9 +96,47 @@ const options = {
                     properties: {
                         id: { type: "integer" },
                         name: { type: "string" },
-                        category: { type: "string" },
+                        category: { type: "string", enum: ["cachoeira", "restaurante", "pousada"] },
                         description: { type: "string" },
+                        address: { type: "string" },
+                        mapsLink: { type: "string", nullable: true },
+                        phone: { type: "string", nullable: true },
+                        openingDate: { type: "string", format: "date-time", nullable: true },
+                        moradorId: { type: "integer" },
+                        moradorName: { type: "string", nullable: true },
+                        rating: { type: "number", nullable: true },
+                        reviewsCount: { type: "integer" },
+                        coverImage: { type: "string", nullable: true },
+                        photos: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    id: { type: "integer" },
+                                    sortOrder: { type: "integer" },
+                                    url: { type: "string" },
+                                },
+                            },
+                        },
                         createdAt: { type: "string", format: "date-time" },
+                    },
+                },
+                UpdatePlaceRequest: {
+                    type: "object",
+                    required: ["name", "address", "category", "description"],
+                    properties: {
+                        name: { type: "string", example: "Botequim Mercatto Piri" },
+                        address: { type: "string", example: "R. Direita, 68 - Centro Histórico" },
+                        category: { type: "string", enum: ["CACHOEIRA", "RESTAURANTE", "POUSADA"] },
+                        description: { type: "string", example: "Descrição do estabelecimento." },
+                        mapsLink: { type: "string", example: "https://maps.google.com/..." },
+                        phone: { type: "string", example: "(62) 3331-1234" },
+                        openingDate: { type: "string", format: "date", example: "2020-01-15" },
+                        photos: {
+                            type: "array",
+                            description: "Opcional. Se enviadas (1–3), substituem todas as fotos atuais.",
+                            items: { type: "string", format: "binary" },
+                        },
                     },
                 },
                 Experience: {
@@ -107,9 +145,51 @@ const options = {
                         id: { type: "integer" },
                         userName: { type: "string" },
                         userId: { type: "integer", nullable: true },
-                        rating: { type: "integer", minimum: 0, maximum: 5 },
+                        rating: { type: "integer", minimum: 1, maximum: 5 },
+                        title: { type: "string", nullable: true },
+                        text: { type: "string" },
+                        visitDate: { type: "string", format: "date-time" },
                         placeId: { type: "integer" },
+                        placeName: { type: "string", nullable: true },
+                        photos: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    id: { type: "integer" },
+                                    sortOrder: { type: "integer" },
+                                    url: { type: "string" },
+                                },
+                            },
+                        },
+                        reactions: {
+                            type: "object",
+                            properties: {
+                                heart: { type: "integer" },
+                                like: { type: "integer" },
+                            },
+                        },
                         createdAt: { type: "string", format: "date-time" },
+                    },
+                },
+                UpdateExperienceRequest: {
+                    type: "object",
+                    required: ["rating", "text", "visitDate"],
+                    properties: {
+                        rating: { type: "integer", minimum: 1, maximum: 5, example: 5 },
+                        text: {
+                            type: "string",
+                            minLength: 100,
+                            maxLength: 2000,
+                            example: "Texto do relato com no mínimo 100 caracteres descrevendo a experiência no local visitado em Pirenópolis.",
+                        },
+                        visitDate: { type: "string", format: "date", example: "2026-06-01" },
+                        title: { type: "string", example: "Experiência incrível!" },
+                        photos: {
+                            type: "array",
+                            description: "Opcional. Se enviadas (até 3), substituem todas as fotos atuais.",
+                            items: { type: "string", format: "binary" },
+                        },
                     },
                 },
                 CreateExperienceRequest: {

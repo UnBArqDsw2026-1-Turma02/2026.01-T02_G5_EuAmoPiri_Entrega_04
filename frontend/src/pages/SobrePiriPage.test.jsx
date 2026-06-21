@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 
-// Mocks de imagens (assets retornam string em testes)
 vi.mock('../assets/piriimagem1.png', () => ({ default: 'piriimagem1.png' }))
 vi.mock('../assets/piriimagem2.png', () => ({ default: 'piriimagem2.png' }))
 vi.mock('../assets/piriimagem3.png', () => ({ default: 'piriimagem3.png' }))

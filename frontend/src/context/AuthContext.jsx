@@ -1,9 +1,3 @@
-/**
- * CAMADA CONTEXTO — AuthContext
- *
- * Gerencia o estado global de autenticação da aplicação.
- * Consome apenas authFacade (padrão Facade em api/auth); não acessa client nem localStorage.
- */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import {
   getCurrentUser,
@@ -13,54 +7,34 @@ import {
   register,
   updateProfile,
   fetchMe,
-  loadProfilePhotoBlob,
 } from '../api/auth/authFacade';
 
 const AuthContext = createContext(null);
 
-async function attachAvatarBlob(user) {
-  if (!user?.profilePhotoUrl) {
-    return { ...user, avatarUrl: null };
-  }
-
-  try {
-    const blob = await loadProfilePhotoBlob(user.profilePhotoUrl);
-    if (!blob) return { ...user, avatarUrl: null };
-    return { ...user, avatarUrl: URL.createObjectURL(blob) };
-  } catch {
-    return { ...user, avatarUrl: null };
-  }
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getCurrentUser());
+  const [user, setUser]       = useState(() => getCurrentUser());
   const [loading, setLoading] = useState(Boolean(getToken()));
-  const [error, setError] = useState(null);
+  const [error, setError]     = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    let avatarUrlToRevoke = null;
 
     async function bootstrap() {
       const token = getToken();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+      if (!token) { setLoading(false); return; }
 
       try {
         const me = await fetchMe();
-        const withAvatar = await attachAvatarBlob(me);
-        if (cancelled) {
-          if (withAvatar.avatarUrl) URL.revokeObjectURL(withAvatar.avatarUrl);
-          return;
-        }
-        avatarUrlToRevoke = withAvatar.avatarUrl;
-        setUser(withAvatar);
-      } catch {
+        if (!cancelled) setUser(me);
+      } catch (err) {
         if (!cancelled) {
-          await logout();
-          setUser(null);
+          // 401 = token inválido/expirado → desloga
+          // Outros erros (rede, backend fora) → mantém sessão local em cache
+          const status = err?.response?.status ?? err?.status;
+          if (status === 401) {
+            await logout();
+            setUser(null);
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -68,11 +42,7 @@ export function AuthProvider({ children }) {
     }
 
     bootstrap();
-
-    return () => {
-      cancelled = true;
-      if (avatarUrlToRevoke) URL.revokeObjectURL(avatarUrlToRevoke);
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const handleLogin = useCallback(async (credentials) => {
@@ -80,9 +50,8 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { user: loggedUser } = await login(credentials);
-      const withAvatar = await attachAvatarBlob(loggedUser);
-      setUser(withAvatar);
-      return withAvatar;
+      setUser(loggedUser);
+      return loggedUser;
     } catch (err) {
       setError(err.message);
       throw err;
@@ -107,50 +76,33 @@ export function AuthProvider({ children }) {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    if (user?.avatarUrl?.startsWith('blob:')) {
-      URL.revokeObjectURL(user.avatarUrl);
-    }
     await logout();
     setUser(null);
-  }, [user]);
+  }, []);
 
   const handleUpdateProfile = useCallback(async (profileData, photoFile) => {
     if (!user) return;
-
-    const previousAvatarUrl = user.avatarUrl;
-
     try {
       const { user: updated } = await updateProfile(profileData, photoFile);
-      if (previousAvatarUrl?.startsWith('blob:')) {
-        URL.revokeObjectURL(previousAvatarUrl);
-      }
-      const withAvatar = await attachAvatarBlob(updated);
-      setUser(withAvatar);
-      return withAvatar;
+      setUser(updated);
+      return updated;
     } catch (err) {
-      setUser((current) => (
-        current ? { ...current, avatarUrl: previousAvatarUrl } : current
-      ));
       throw err;
     }
   }, [user]);
-
-  const isAuthenticated = Boolean(user);
-  const isMorador = user?.role === 'morador';
-  const isTurista = user?.role === 'turista';
 
   return (
     <AuthContext.Provider value={{
       user,
       loading,
       error,
-      isAuthenticated,
-      isMorador,
-      isTurista,
-      login: handleLogin,
-      register: handleRegister,
-      logout: handleLogout,
-      updateProfile: handleUpdateProfile,
+      isAuthenticated: Boolean(user),
+      isMorador:       user?.role === 'morador',
+      isTurista:       user?.role === 'turista',
+      login:           handleLogin,
+      register:        handleRegister,
+      logout:          handleLogout,
+      updateProfile:   handleUpdateProfile,
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,9 +1,3 @@
-/**
- * TESTES — PlaceDetailPage
- *   RF06: Detalhe de um local turístico
- *   RF13: Interações por emoji
- *   RF12: Comentários / relatos
- */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'

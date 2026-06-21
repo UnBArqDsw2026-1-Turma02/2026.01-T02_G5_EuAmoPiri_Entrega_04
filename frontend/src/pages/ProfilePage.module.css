@@ -548,8 +548,13 @@
 
 .formActions {
   display: flex;
-  justify-content: center;
   gap: var(--space-3);
+  width: 100%;
+}
+
+.formActions > * {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .empty {

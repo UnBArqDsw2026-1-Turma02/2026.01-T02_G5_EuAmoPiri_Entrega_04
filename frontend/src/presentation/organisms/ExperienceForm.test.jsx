@@ -13,9 +13,11 @@ describe('ExperienceForm', () => {
     const user = userEvent.setup();
     render(<ExperienceForm onSubmit={vi.fn()} />);
 
+    const blacklistText = `${'a'.repeat(90)} idiota ${'b'.repeat(10)}`;
+
     await user.click(screen.getByRole('button', { name: '5 estrelas' }));
     await user.type(screen.getByLabelText(/data da visita/i), '2026-06-01');
-    await user.type(screen.getByPlaceholderText(/compartilhe sua experiência/i), 'Lugar idiota');
+    await user.type(screen.getByPlaceholderText(/compartilhe sua experiência/i), blacklistText);
     await user.click(screen.getByRole('button', { name: /enviar avaliação/i }));
 
     expect(await screen.findByText(/falha ao enviar avaliação/i)).toBeInTheDocument();

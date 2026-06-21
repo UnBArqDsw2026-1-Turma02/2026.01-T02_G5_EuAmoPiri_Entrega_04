@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -11,17 +11,12 @@ vi.mock('../presentation/atoms/StarRating', () => ({
   default: ({ value }) => <span data-testid="star-rating">{value} estrelas</span>,
 }))
 
-vi.mock('../presentation/atoms/Spinner', () => ({
-  default: () => <div data-testid="spinner">Carregando...</div>,
-}))
-
 vi.mock('../infra/adaptor/placeAdaptor', () => ({
   deletePlace: vi.fn(),
   fetchMyPlaces: vi.fn(),
 }))
 vi.mock('../infra/adaptor/experienceAdaptor', () => ({
   fetchMyExperiences: vi.fn(),
-  fetchExperiencesByPlaces: vi.fn(),
   deleteExperience: vi.fn(),
 }))
 
@@ -47,15 +42,19 @@ import * as authFacade from '../api/auth/authFacade'
 /* ── setup global de mocks de adaptor ── */
 beforeEach(() => {
   vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([])
-  vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue([])
-  vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue([])
   vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
+  vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue([])
   vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
   vi.mocked(authFacade.deleteMyAccount).mockResolvedValue(undefined)
   mockNavigate.mockReset()
 })
 
 /* ── fixtures ── */
+const mockPlaces = [
+  { id: 1, name: 'Botequim Mercatto Piri', category: 'gastronomia', price: '$$', rating: 4, reviewsCount: 5, moradorId: 1 },
+  { id: 2, name: 'Cachoeira da Rosário', category: 'natureza', price: '$', rating: 5, reviewsCount: 3, moradorId: 1 },
+]
+
 const mockMorador = {
   id: 1,
   name: 'Anna Brandão',
@@ -88,7 +87,6 @@ function asMorador(extra = {}) {
     logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: true,
-    isTurista: false,
     ...extra,
   })
 }
@@ -100,7 +98,6 @@ function asTurista(extra = {}) {
     logout: vi.fn().mockResolvedValue(undefined),
     isAuthenticated: true,
     isMorador: false,
-    isTurista: true,
     ...extra,
   })
 
@@ -124,7 +121,7 @@ describe('ProfilePage — modo leitura', () => {
 
   it('exibe profissão do usuário', () => {
     renderPage()
-    expect(screen.getByText(/Desenvolvedora/)).toBeInTheDocument()
+    expect(screen.getByText('Desenvolvedora')).toBeInTheDocument()
   })
 
   it('exibe badge com role do usuário', () => {
@@ -231,19 +228,12 @@ describe('ProfilePage — edição de perfil', () => {
     expect(screen.getByRole('button', { name: /editar perfil/i })).toBeInTheDocument()
   })
 
-  it('chama updateProfile ao submeter com alteração', async () => {
+  it('chama updateProfile ao submeter', async () => {
     const updateProfile = vi.fn().mockResolvedValue(mockMorador)
-    vi.mocked(AuthContext.useAuth).mockReturnValue({
-      user: mockMorador,
-      updateProfile,
-      isAuthenticated: true,
-      isMorador: true,
-    })
+    asMorador({ updateProfile })
     const user = userEvent.setup()
     renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-    await user.clear(screen.getByLabelText(/biografia/i))
-    await user.type(screen.getByLabelText(/biografia/i), 'Nova bio')
     await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
     await waitFor(() => expect(updateProfile).toHaveBeenCalled())
   })
@@ -252,232 +242,386 @@ describe('ProfilePage — edição de perfil', () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-    await user.clear(screen.getByLabelText(/biografia/i))
-    await user.type(screen.getByLabelText(/biografia/i), 'Bio atualizada')
     await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
     await waitFor(() =>
       expect(screen.getByText(/perfil atualizado com sucesso/i)).toBeInTheDocument()
     )
   })
 
-  it('exibe aviso quando nenhuma alteração é detectada', async () => {
-    const updateProfile = vi.fn()
-    vi.mocked(AuthContext.useAuth).mockReturnValue({
-      user: mockMorador,
-      updateProfile,
-      isAuthenticated: true,
-      isMorador: true,
-    })
+  it('valida campo nome obrigatório', async () => {
     const user = userEvent.setup()
     renderPage()
     await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    await user.clear(screen.getByLabelText(/nome completo/i))
     await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
     await waitFor(() =>
-      expect(screen.getByText(/nenhuma alteração detectada/i)).toBeInTheDocument()
+      expect(screen.getByText(/nome é obrigatório/i)).toBeInTheDocument()
     )
-    expect(updateProfile).not.toHaveBeenCalled()
-  })
-
-  it('rejeita arquivo com tipo inválido', async () => {
-    const user = userEvent.setup()
-    renderPage()
-    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-
-    const file = new File(['gif'], 'photo.gif', { type: 'image/gif' })
-    const input = screen.getByLabelText(/alterar foto de perfil/i)
-    fireEvent.change(input, { target: { files: [file] } })
-
-    expect(screen.getByText(/jpg ou png/i)).toBeInTheDocument()
-  })
-
-  it('rejeita arquivo maior que 5 MB', async () => {
-    const user = userEvent.setup()
-    renderPage()
-    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-
-    const bigContent = new Uint8Array(5 * 1024 * 1024 + 1)
-    const file = new File([bigContent], 'big.jpg', { type: 'image/jpeg' })
-    const input = screen.getByLabelText(/alterar foto de perfil/i)
-    fireEvent.change(input, { target: { files: [file] } })
-
-    expect(screen.getByText(/máximo 5 mb/i)).toBeInTheDocument()
-  })
-
-  it('envia nova foto ao atualizar perfil', async () => {
-    const updateProfile = vi.fn().mockResolvedValue({
-      ...mockMorador,
-      profilePhotoUrl: 'profile_photo/1-new.jpg',
-      avatarUrl: 'blob:mock',
-    })
-    vi.mocked(AuthContext.useAuth).mockReturnValue({
-      user: mockMorador,
-      updateProfile,
-      isAuthenticated: true,
-      isMorador: true,
-    })
-
-    vi.stubGlobal('URL', {
-      ...URL,
-      createObjectURL: vi.fn(() => 'blob:preview'),
-      revokeObjectURL: vi.fn(),
-    })
-
-    const user = userEvent.setup()
-    renderPage()
-    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
-
-    const file = new File(['photo'], 'profile.jpg', { type: 'image/jpeg' })
-    fireEvent.change(screen.getByLabelText(/alterar foto de perfil/i), { target: { files: [file] } })
-    await user.click(screen.getByRole('button', { name: /atualizar perfil/i }))
-
-    await waitFor(() => expect(updateProfile).toHaveBeenCalledTimes(1))
-    expect(updateProfile.mock.calls[0][1]).toBeInstanceOf(File)
   })
 })
 
 /* ══════════════════════════════════════════════════════════════
-   Painel do morador (consolidado em /perfil)
+   Seção "Cadastrar Nova Senha" — só aparece no modo edição
    ══════════════════════════════════════════════════════════════ */
-describe('ProfilePage — painel do morador', () => {
-  const MOCK_PLACES = [
-    {
-      id: 1,
-      name: 'Botequim Mercatto Piri',
-      category: 'restaurante',
-      reviewsCount: 0,
-      rating: null,
-      moradorId: 1,
-    },
-  ]
+describe('ProfilePage — seção de senha', () => {
+  beforeEach(() => asMorador())
 
-  const MOCK_EXPERIENCES = [
-    {
-      id: 1,
-      placeId: 1,
-      userName: 'Maria Silva',
-      title: 'Experiência incrível!',
-      text: 'Adorei a comida caseira.',
-      rating: 5,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      placeId: 1,
-      userName: 'João',
-      title: 'Bom lugar',
-      text: 'Gostei.',
-      rating: 3,
-      createdAt: new Date().toISOString(),
-    },
-  ]
+  it('NÃO exibe campos de senha em modo leitura', () => {
+    renderPage()
+    expect(screen.queryByLabelText(/senha atual/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /atualizar senha/i })).not.toBeInTheDocument()
+  })
 
+  it('exibe seção "CADASTRAR NOVA SENHA" ao entrar em edição', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    expect(screen.getByText(/cadastrar nova senha/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/senha atual/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Nova senha')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirmar nova senha')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /atualizar senha/i })).toBeInTheDocument()
+  })
+
+  it('também exibe seção de senha para turista em modo edição', async () => {
+    asTurista()
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    expect(screen.getByText(/cadastrar nova senha/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /atualizar senha/i })).toBeInTheDocument()
+  })
+
+  it('exibe erro quando campos de senha estão vazios', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    await user.click(screen.getByRole('button', { name: /atualizar senha/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/preencha todos os campos de senha/i)).toBeInTheDocument()
+    )
+  })
+
+  it('exibe erro quando nova senha e confirmação não coincidem', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    await user.type(screen.getByLabelText(/senha atual/i), 'senhaAtual1')
+    await user.type(screen.getByLabelText('Nova senha'), 'novaSenha123')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'diferente456')
+    await user.click(screen.getByRole('button', { name: /atualizar senha/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/nova senha e confirmação não coincidem/i)).toBeInTheDocument()
+    )
+  })
+
+  it('exibe erro quando nova senha tem menos de 6 caracteres', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    await user.type(screen.getByLabelText(/senha atual/i), 'senhaAtual1')
+    await user.type(screen.getByLabelText('Nova senha'), '123')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), '123')
+    await user.click(screen.getByRole('button', { name: /atualizar senha/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/pelo menos 6 caracteres/i)).toBeInTheDocument()
+    )
+  })
+
+  it('exibe sucesso ao atualizar senha com dados válidos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByRole('button', { name: /editar perfil/i }))
+    await user.type(screen.getByLabelText(/senha atual/i), 'senhaAtual1')
+    await user.type(screen.getByLabelText('Nova senha'), 'novaSenha123')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'novaSenha123')
+    await user.click(screen.getByRole('button', { name: /atualizar senha/i }))
+    await waitFor(() =>
+      expect(screen.getByText(/senha atualizada com sucesso/i)).toBeInTheDocument()
+    )
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Seção Morador — Últimos Relatos e Locais Cadastrados
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — seções do Morador', () => {
   beforeEach(() => {
     asMorador()
-    vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue(MOCK_PLACES)
-    vi.mocked(experienceAdaptor.fetchExperiencesByPlaces).mockResolvedValue(MOCK_EXPERIENCES)
+    vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue(mockPlaces)
   })
 
-  it('exibe seções ÚLTIMOS RELATOS e MEUS LOCAIS', async () => {
+  it('exibe título "ÚLTIMOS RELATOS"', () => {
+    renderPage()
+    expect(screen.getByText('ÚLTIMOS RELATOS')).toBeInTheDocument()
+  })
+
+  it('exibe relatos com local, autor e contagem de likes', () => {
+    renderPage()
+    expect(screen.getAllByText('Restaurante LovePiri').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Josefina Souza').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/👍/)[0]).toBeInTheDocument()
+  })
+
+  it('NÃO exibe botões de editar/excluir nos relatos recebidos', () => {
+    renderPage()
+    expect(screen.queryByRole('button', { name: /editar avaliação/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /excluir avaliação/i })).not.toBeInTheDocument()
+  })
+
+  it('exibe título "LOCAIS CADASTRADOS"', () => {
+    renderPage()
+    expect(screen.getByText('LOCAIS CADASTRADOS')).toBeInTheDocument()
+  })
+
+  it('exibe botões "Editar Local" e "Excluir Local" nos locais cadastrados', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('ÚLTIMOS RELATOS')).toBeInTheDocument()
-      expect(screen.getByText('MEUS LOCAIS')).toBeInTheDocument()
+      const editButtons = screen.getAllByRole('link', { name: /editar local/i })
+      const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+      expect(editButtons.length).toBeGreaterThan(0)
+      expect(deleteButtons.length).toBeGreaterThan(0)
     })
   })
 
-  it('exibe relatos reais da API', async () => {
+  it('exibe nomes dos locais cadastrados', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByText('Experiência incrível!')).toBeInTheDocument()
-      expect(screen.getByText('Maria Silva')).toBeInTheDocument()
+      expect(screen.getByText('Botequim Mercatto Piri')).toBeInTheDocument()
+      expect(screen.getByText('Cachoeira da Rosário')).toBeInTheDocument()
     })
   })
+})
 
-  it('exibe contagem de relatos no cabeçalho', async () => {
-    renderPage()
-    await waitFor(() => {
-      expect(screen.getByText('2')).toBeInTheDocument()
-    })
+/* ══════════════════════════════════════════════════════════════
+   Seção Turista — Avaliações Cadastradas
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — seções do Turista', () => {
+  beforeEach(() => {
+    asTurista()
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+    ])
   })
 
-  it('calcula avaliações na sidebar quando a API não envia reviewsCount', async () => {
-    renderPage()
-    await waitFor(() => {
-      expect(screen.getByText(/2 Avaliações/)).toBeInTheDocument()
-      expect(screen.getByText(/4\.0/)).toBeInTheDocument()
-    })
-  })
-
-  it('chama fetchMyPlaces com o id do usuário logado', async () => {
+  it('exibe título "AVALIAÇÕES CADASTRADAS"', async () => {
     renderPage()
     await waitFor(() =>
-      expect(placeAdaptor.fetchMyPlaces).toHaveBeenCalledWith(1),
+      expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
+    )
+  })
+
+  it('exibe avaliações com local e título', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByText('Melhor botequim de Pirenópolis')).toBeInTheDocument()
+      expect(screen.getByText('Água cristalina!')).toBeInTheDocument()
+    })
+  })
+
+  it('exibe botões "Editar Avaliação" e "Excluir Avaliação" para turista', async () => {
+    renderPage()
+    await waitFor(() => {
+      const editButtons = screen.getAllByRole('link', { name: /editar avaliação/i })
+      const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+      expect(editButtons.length).toBeGreaterThan(0)
+      expect(deleteButtons.length).toBeGreaterThan(0)
+    })
+  })
+
+  it('NÃO exibe seção "LOCAIS CADASTRADOS" para turista', () => {
+    renderPage()
+    expect(screen.queryByText('LOCAIS CADASTRADOS')).not.toBeInTheDocument()
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════
+   Exclusão de local (Morador)
+   ══════════════════════════════════════════════════════════════ */
+describe('ProfilePage — exclusão de local (Morador)', () => {
+  beforeEach(() => {
+    asMorador()
+    vi.mocked(placeAdaptor.fetchMyPlaces).mockResolvedValue(mockPlaces)
+    vi.mocked(placeAdaptor.deletePlace).mockResolvedValue(undefined)
+  })
+
+  it('abre diálogo de confirmação ao clicar em "Excluir Local"', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir local/i }).length).toBeGreaterThan(0)
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+  })
+
+  it('"Cancelar" fecha o diálogo de confirmação', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir local/i }).length).toBeGreaterThan(0)
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /cancelar/i }))
+
+    await waitFor(() =>
+      expect(screen.queryByText(/tem certeza que deseja excluir/i)).not.toBeInTheDocument()
+    )
+  })
+
+  it('após confirmar: exibe "❤ EuAmoPiri" e "Local excluído com sucesso!"', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir local/i }).length).toBeGreaterThan(0)
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument()
+      expect(screen.getByText('Local excluído com sucesso!')).toBeInTheDocument()
+    })
+  })
+
+  it('clicar em "Fechar" no estado de sucesso fecha o modal', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir local/i }).length).toBeGreaterThan(0)
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+    await waitFor(() =>
+      expect(screen.getByText('Local excluído com sucesso!')).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /fechar/i }))
+
+    await waitFor(() =>
+      expect(screen.queryByText('Local excluído com sucesso!')).not.toBeInTheDocument()
+    )
+  })
+
+  it('quando deletePlace lança exceção: exibe "❤ EuAmoPiri" e "Erro ao excluir local"', async () => {
+    vi.mocked(placeAdaptor.deletePlace).mockRejectedValue(new Error('Servidor indisponível'))
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir local/i }).length).toBeGreaterThan(0)
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('❤ EuAmoPiri')).toBeInTheDocument()
+      expect(screen.getByText('Erro ao excluir local')).toBeInTheDocument()
+    })
+  })
+
+  it('clicar em "Voltar" no estado de erro volta para a confirmação', async () => {
+    vi.mocked(placeAdaptor.deletePlace).mockRejectedValue(new Error('Erro'))
+    const user = userEvent.setup()
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir local/i }).length).toBeGreaterThan(0)
+    )
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir local/i })
+    await user.click(deleteButtons[0])
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+    await waitFor(() =>
+      expect(screen.getByText('Erro ao excluir local')).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /voltar/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
     )
   })
 })
 
 /* ══════════════════════════════════════════════════════════════
-   Painel do turista (consolidado em /perfil)
+   Exclusão de avaliação (Turista)
    ══════════════════════════════════════════════════════════════ */
-describe('ProfilePage — painel do turista', () => {
-  const MOCK_AVALIACOES = [
-    {
-      id: 1,
-      placeId: 2,
-      placeName: 'Restaurante LovePiri',
-      title: 'Experiência incrível!',
-      text: 'Adorei a comida caseira.',
-      rating: 5,
-      createdAt: new Date().toISOString(),
-    },
-  ]
-
+describe('ProfilePage — exclusão de avaliação (Turista)', () => {
   beforeEach(() => {
     asTurista()
-    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue(MOCK_AVALIACOES)
+    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([
+      { id: 2, placeId: 1, placeName: 'Botequim Mercatto Piri', title: 'Melhor botequim de Pirenópolis', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$$$', dias: 5 },
+      { id: 7, placeId: 2, placeName: 'Cachoeira da Rosário', title: 'Água cristalina!', text: 'Texto de avaliação suficientemente longo para o teste.', rating: 5, cost: '$', dias: 3 },
+    ])
+    vi.mocked(experienceAdaptor.deleteExperience).mockResolvedValue(undefined)
   })
 
-  it('exibe título SUAS AVALIAÇÕES e seção de avaliações', async () => {
+  it('abre diálogo de confirmação ao clicar em "Excluir Avaliação"', async () => {
+    const user = userEvent.setup()
     renderPage()
-    await waitFor(() => {
-      expect(screen.getByText('SUAS AVALIAÇÕES')).toBeInTheDocument()
-      expect(screen.getByText('AVALIAÇÕES CADASTRADAS')).toBeInTheDocument()
-    })
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+    )
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
   })
 
-  it('exibe avaliações reais da API', async () => {
+  it('após confirmar: exibe "Avaliação excluída com sucesso!"', async () => {
+    const user = userEvent.setup()
     renderPage()
-    await waitFor(() => {
-      expect(screen.getByText('Experiência incrível!')).toBeInTheDocument()
-      expect(screen.getByText('Restaurante LovePiri')).toBeInTheDocument()
-    })
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /excluir avaliação/i }).length).toBeGreaterThan(0)
+    )
+
+    const deleteButtons = screen.getAllByRole('button', { name: /excluir avaliação/i })
+    await user.click(deleteButtons[0])
+
+    await waitFor(() =>
+      expect(screen.getByText(/tem certeza que deseja excluir/i)).toBeInTheDocument()
+    )
+
+    await user.click(screen.getByRole('button', { name: /^excluir$/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText('Avaliação excluída com sucesso!')).toBeInTheDocument()
+    )
   })
 
-  it('exibe contagem de relatos no cabeçalho', async () => {
-    renderPage()
-    await waitFor(() => {
-      expect(screen.getByText('1')).toBeInTheDocument()
-    })
-  })
-})
-
-/* ══════════════════════════════════════════════════════════════
-   Exclusão de avaliação (turista)
-   ══════════════════════════════════════════════════════════════ */
-describe('ProfilePage — exclusão de avaliação', () => {
-  it('exibe erro quando falha ao excluir avaliação', async () => {
-    const mockAvaliacao = {
-      id: 2,
-      placeId: 1,
-      placeName: 'Botequim Mercatto Piri',
-      title: 'Melhor botequim',
-      text: 'Recomendo demais!',
-      rating: 5,
-      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    }
-    vi.mocked(experienceAdaptor.fetchMyExperiences).mockResolvedValue([mockAvaliacao])
-    vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('fail'))
-    asTurista()
+  it('quando deleteExperience lança exceção: exibe "Erro ao excluir avaliação"', async () => {
+    vi.mocked(experienceAdaptor.deleteExperience).mockRejectedValue(new Error('Erro'))
     const user = userEvent.setup()
     renderPage()
 

@@ -80,3 +80,52 @@ export async function getPlacePhoto(req: Request, res: Response) {
         res.status(500).json({ error: "Erro ao carregar foto" });
     }
 }
+
+export async function updatePlace(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+        res.status(400).json({ error: "ID inválido" });
+        return;
+    }
+
+    try {
+        const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+        const updated = await placeService.updatePlace(id, req.user.id, req.body, files);
+        res.status(200).json(formatPlace(updated));
+    } catch (err) {
+        if (err instanceof PlaceError) {
+            res.status(err.statusCode).json({ error: err.message, code: err.code });
+            return;
+        }
+        res.status(500).json({ error: "Erro ao atualizar o local" });
+    }
+}
+
+export async function deletePlace(req: Request, res: Response) {
+    if (!req.user) {
+        res.status(401).json({ error: "Não autenticado" });
+        return;
+    }
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+        res.status(400).json({ error: "ID inválido" });
+        return;
+    }
+
+    try {
+        await placeService.deletePlace(id, req.user.id);
+        res.status(204).send();
+    } catch (err) {
+        if (err instanceof PlaceError) {
+            res.status(err.statusCode).json({ error: err.message, code: err.code });
+            return;
+        }
+        res.status(500).json({ error: "Erro ao excluir o local" });
+    }
+}

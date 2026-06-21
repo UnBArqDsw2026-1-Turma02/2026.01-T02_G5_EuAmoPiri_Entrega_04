@@ -42,17 +42,41 @@ export async function findPlacesByMoradorId(moradorId: number) {
     });
 }
 
-export async function findDuplicatePlace(name: string, address: string) {
+export async function findDuplicatePlace(name: string, address: string, excludeId?: number) {
     const normalizedName = name.trim().toLowerCase();
     const normalizedAddress = address.trim().toLowerCase();
     const places = await prisma.place.findMany({
         select: { id: true, name: true, address: true },
     });
-    return places.find(
-        (p) =>
-            p.name.trim().toLowerCase() === normalizedName &&
-            p.address.trim().toLowerCase() === normalizedAddress
-    ) ?? null;
+    return (
+        places.find(
+            (p) =>
+                p.id !== excludeId &&
+                p.name.trim().toLowerCase() === normalizedName &&
+                p.address.trim().toLowerCase() === normalizedAddress
+        ) ?? null
+    );
+}
+
+export async function updatePlaceById(id: number, data: Prisma.PlaceUpdateInput) {
+    return prisma.place.update({
+        where: { id },
+        data,
+        include: placeInclude,
+    });
+}
+
+export async function deletePlaceById(id: number) {
+    return prisma.place.delete({ where: { id } });
+}
+
+export async function replacePlacePhotos(placeId: number, photos: { url: string; sortOrder: number }[]) {
+    await prisma.placePhoto.deleteMany({ where: { placeId } });
+    if (photos.length > 0) {
+        await prisma.placePhoto.createMany({
+            data: photos.map((p) => ({ ...p, placeId })),
+        });
+    }
 }
 
 export async function findPlacePhotoById(placeId: number, photoId: number) {

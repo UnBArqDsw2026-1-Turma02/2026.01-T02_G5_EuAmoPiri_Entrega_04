@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { fetchPlaceById } from '../infra/adaptor/placeAdaptor';
+import { fetchPlaceById, deletePlace } from '../infra/adaptor/placeAdaptor';
 import { fetchExperiencesByPlace, reactToExperience } from '../infra/adaptor/experienceAdaptor';
 import Button from '../presentation/atoms/Button';
 import StarRating from '../presentation/atoms/StarRating';
 import Spinner from '../presentation/atoms/Spinner';
-import { CATEGORY_LABELS } from '../utils/placeCategories';
 import styles from './PlaceDetailPage.module.css';
 
 /* ─── helpers ─── */
@@ -20,6 +19,13 @@ function timeAgo(iso) {
   const m = Math.floor(days / 30);
   return m === 1 ? 'há 1 mês' : `há ${m} meses`;
 }
+
+const CATEGORY_LABELS = {
+  gastronomia: 'Gastronomia', natureza: 'Natureza', hospedagem: 'Hospedagem',
+  cultura: 'Cultura', compras: 'Compras', aventura: 'Aventura',
+};
+
+const COST_OPTIONS = ['$', '$$', '$$$', '$$$$', '$$$$$'];
 
 const REACTION_EMOJIS = [
   { key: 'heart',   emoji: '❤️' },
@@ -41,6 +47,7 @@ function CommentCard({ exp, onReact, showReactions = false, userReactions = new 
       </div>
       <div className={styles.commentMeta}>
         <StarRating value={exp.rating} readonly size="sm" />
+        {exp.cost && <span className={styles.commentCost}>{exp.cost}</span>}
       </div>
       {exp.title && <p className={styles.commentTitle}>{exp.title}</p>}
       <p className={styles.commentText}>{exp.text}</p>
@@ -104,11 +111,16 @@ export default function PlaceDetailPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isTurista, isMorador } = useAuth();
 
-  const [place,         setPlace]         = useState(null);
-  const [experiences,   setExperiences]   = useState([]);
-  const [loadingPlace,  setLoadingPlace]  = useState(true);
-  const [error,         setError]         = useState(null);
-  const [showModal,     setShowModal]     = useState(false);
+  const [place,           setPlace]           = useState(null);
+  const [experiences,     setExperiences]     = useState([]);
+  const [loadingPlace,    setLoadingPlace]    = useState(true);
+  const [error,           setError]           = useState(null);
+  const [showModal,       setShowModal]       = useState(false);
+  const [confirmDelete,   setConfirmDelete]   = useState(false);
+  const [deleting,        setDeleting]        = useState(false);
+  const [deleteSuccess,   setDeleteSuccess]   = useState(false);
+  const [deleteErr,       setDeleteErr]       = useState(null);
+  const [photoIndex,      setPhotoIndex]      = useState(0);
   // Map<expId, emojiKey> — 1 reação por comentário, anulável
   const [userReactions, setUserReactions] = useState(new Map());
 
@@ -119,6 +131,29 @@ export default function PlaceDetailPage() {
     fetchExperiencesByPlace(id)
       .then((data) => setExperiences(Array.isArray(data) ? data : []));
   }, [id]);
+
+  async function handleDeleteConfirm() {
+    setDeleting(true);
+    setDeleteErr(null);
+    try {
+      await deletePlace(id);
+      setDeleteSuccess(true);
+    } catch {
+      setDeleteErr('Erro ao excluir. Tente novamente.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function closeDeleteModal() {
+    if (deleteSuccess) {
+      navigate('/locais');
+    } else {
+      setConfirmDelete(false);
+      setDeleteErr(null);
+      setDeleteSuccess(false);
+    }
+  }
 
   function handleReact(expId, emoji) {
     const current = userReactions.get(expId);
@@ -161,12 +196,23 @@ export default function PlaceDetailPage() {
     );
   }
 
+  /* computed — fotos */
+  const allPhotos = Array.isArray(place.photos) && place.photos.length > 0
+    ? place.photos
+    : place.coverImage ? [place.coverImage] : [];
+  function prevPhoto() { setPhotoIndex((i) => (i - 1 + allPhotos.length) % allPhotos.length); }
+  function nextPhoto() { setPhotoIndex((i) => (i + 1) % allPhotos.length); }
+
   /* computed */
   const ratingDist = [5,4,3,2,1].map((star) => ({
     star,
     count: experiences.filter((e) => Math.round(e.rating) === star).length,
   }));
   const maxCount = Math.max(...ratingDist.map((d) => d.count), 1);
+  const costDist = COST_OPTIONS.map((opt) => ({
+    opt,
+    count: experiences.filter((e) => e.cost === opt).length,
+  }));
   const PREVIEW = 3;
 
   return (
@@ -177,6 +223,22 @@ export default function PlaceDetailPage() {
         {/* ── Cabeçalho do card ── */}
         <div className={styles.cardHeader}>
           <Button variant="neutral" size="sm" onClick={() => navigate(-1)}>← Voltar</Button>
+          {isMorador && (
+            <div className={styles.ownerActions}>
+              <button
+                className={styles.btnEdit}
+                onClick={() => navigate(`/morador/locais/${id}/editar`, { state: { returnTo: `/locais/${id}` } })}
+              >
+                Editar Local
+              </button>
+              <button
+                className={styles.btnDelete}
+                onClick={() => setConfirmDelete(true)}
+              >
+                Excluir Local
+              </button>
+            </div>
+          )}
         </div>
 
           {/* ── Info area ── */}
@@ -184,14 +246,43 @@ export default function PlaceDetailPage() {
 
             {/* Info do local */}
             <div className={styles.placeInfo}>
-              <div className={styles.placePhotoWrap}>
-                {place.coverImage
-                  ? <img src={place.coverImage} alt={place.name} className={styles.placePhoto}
-                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
-                  : null}
-                <div className={styles.placePhotoFallback}
-                  style={{ display: place.coverImage ? 'none' : 'block' }} />
+              {/* Carrossel de fotos */}
+              <div className={styles.carousel}>
+                {allPhotos.length > 0 ? (
+                  <img
+                    src={allPhotos[photoIndex]}
+                    alt={`${place.name} — foto ${photoIndex + 1}`}
+                    className={styles.placePhoto}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className={styles.placePhotoFallback} />
+                )}
+                {allPhotos.length > 1 && (
+                  <>
+                    <button
+                      className={`${styles.carouselBtn} ${styles.carouselBtnPrev}`}
+                      onClick={prevPhoto}
+                      aria-label="Foto anterior"
+                    >‹</button>
+                    <button
+                      className={`${styles.carouselBtn} ${styles.carouselBtnNext}`}
+                      onClick={nextPhoto}
+                      aria-label="Próxima foto"
+                    >›</button>
+                    <span className={styles.carouselDots}>
+                      {allPhotos.map((_, i) => (
+                        <span
+                          key={i}
+                          className={`${styles.dot} ${i === photoIndex ? styles.dotActive : ''}`}
+                          onClick={() => setPhotoIndex(i)}
+                        />
+                      ))}
+                    </span>
+                  </>
+                )}
               </div>
+
               <div className={styles.placeDetails}>
                 <h1 className={styles.placeName}>{place.name}</h1>
                 {place.address && <p className={styles.placeAddr}>{place.address}</p>}
@@ -239,19 +330,33 @@ export default function PlaceDetailPage() {
               </div>
             </section>
 
+            {/* Classificação de custo */}
+            <section>
+              <h2 className={`${styles.sectionTitle} ${styles.sectionTitleSm}`}>CLASSIFICAÇÃO DE CUSTO</h2>
+              <div className={styles.sectionDivider} />
+              <div className={styles.costRow}>
+                {costDist.map(({ opt, count }) => (
+                  <div key={opt} className={styles.costItem}>
+                    <span className={styles.costLabel}>{opt}</span>
+                    <span className={styles.costCount}>{count}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             {/* Comentários */}
             <section>
               <div className={styles.commentsSectionHeader}>
                 <h2 className={styles.sectionTitle}>Comentários ({experiences.length})</h2>
-                {(isTurista || isMorador) && (
-                  <Button size="sm" as={Link} to={`/locais/${id}/relatos/novo`}>
+                {isTurista && (
+                  <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarSm}>
                     + Avaliar
-                  </Button>
+                  </Link>
                 )}
                 {!isAuthenticated && (
-                  <Button variant="outline" size="sm" as={Link} to="/login">
+                  <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliarOutline}>
                     Avaliar Local
-                  </Button>
+                  </Link>
                 )}
               </div>
               <div className={styles.sectionDivider} />
@@ -301,14 +406,14 @@ export default function PlaceDetailPage() {
           </div>
         </div>
         {(isTurista || isMorador) && (
-          <Button variant="primary" fullWidth as={Link} to={`/locais/${id}/relatos/novo`}>
+          <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
             Avaliar Local
-          </Button>
+          </Link>
         )}
         {!isAuthenticated && (
-          <Button variant="primary" fullWidth as={Link} to="/login">
+          <Link to={`/locais/${id}/relatos/novo`} className={styles.btnAvaliar}>
             Avaliar Local
-          </Button>
+          </Link>
         )}
       </aside>
 
@@ -321,6 +426,52 @@ export default function PlaceDetailPage() {
           onClose={() => setShowModal(false)}
           userReactions={userReactions}
         />
+      )}
+
+      {confirmDelete && (
+        <div
+          className={styles.confirmOverlay}
+          onClick={(e) => e.target === e.currentTarget && !deleting && closeDeleteModal()}
+        >
+          <div className={`${styles.confirmDialog} ${deleteSuccess ? styles.confirmDialogSuccess : deleteErr ? styles.confirmDialogError : ''}`}>
+            {deleteSuccess ? (
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={styles.confirmSuccessIcon} aria-hidden="true">✓</p>
+                <h3 className={styles.confirmTitle}>Local excluído com sucesso!</h3>
+                <p className={styles.confirmBody}>O local foi removido da lista.</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="primary" fullWidth onClick={closeDeleteModal}>Fechar</Button>
+                </div>
+              </>
+            ) : deleteErr ? (
+              <>
+                <p className={styles.confirmLogo}>❤ EuAmoPiri</p>
+                <p className={`${styles.confirmSuccessIcon} ${styles.confirmErrIcon}`} aria-hidden="true">⚠️</p>
+                <h3 className={styles.confirmTitle}>Erro ao excluir local</h3>
+                <p className={styles.confirmBody}>{deleteErr}</p>
+                <div className={styles.confirmActionsCol}>
+                  <Button variant="neutral" fullWidth onClick={() => setDeleteErr(null)}>Voltar</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className={styles.confirmTitle}>Excluir local</h3>
+                <p className={styles.confirmBody}>
+                  Tem certeza que deseja excluir <strong>{place.name}</strong>? Esta ação não pode ser desfeita.
+                </p>
+                <div className={styles.confirmActions}>
+                  <Button variant="neutral" fullWidth onClick={closeDeleteModal} disabled={deleting}>
+                    Cancelar
+                  </Button>
+                  <button className={styles.btnDelete} onClick={handleDeleteConfirm} disabled={deleting}>
+                    {deleting ? 'Excluindo...' : 'Excluir'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

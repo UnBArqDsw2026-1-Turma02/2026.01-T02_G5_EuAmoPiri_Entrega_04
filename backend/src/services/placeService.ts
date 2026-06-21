@@ -139,3 +139,120 @@ export async function listPlaces(moradorId?: number) {
 export async function getPlaceById(id: number) {
     return placeModel.findPlaceById(id);
 }
+
+async function assertPlaceOwner(placeId: number, moradorId: number) {
+    const place = await placeModel.findPlaceById(placeId);
+    if (!place) {
+        throw new PlaceError("Local não encontrado", 404);
+    }
+    if (place.moradorId !== moradorId) {
+        throw new PlaceError("Acesso negado: você não é o dono deste local", 403, "FORBIDDEN_OWNER");
+    }
+    return place;
+}
+
+async function uploadPlacePhotoRecords(
+    placeId: number,
+    files: Express.Multer.File[]
+): Promise<{ url: string; sortOrder: number }[]> {
+    const photoRecords: { url: string; sortOrder: number }[] = [];
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file) continue;
+        const key = buildPlacePhotoKey(placeId, i, file.mimetype);
+        await storageService.uploadBuffer(key, file.buffer, file.mimetype);
+        photoRecords.push({ url: key, sortOrder: i });
+    }
+    return photoRecords;
+}
+
+async function deletePlacePhotoKeys(keys: string[]) {
+    await Promise.all(keys.map((key) => storageService.deleteObject(key).catch(() => {})));
+}
+
+export async function updatePlace(
+    placeId: number,
+    moradorId: number,
+    input: CreatePlaceInput,
+    files: Express.Multer.File[]
+) {
+    const existing = await assertPlaceOwner(placeId, moradorId);
+
+    const name = input.name?.trim();
+    const address = input.address?.trim();
+    const description = input.description?.trim();
+    const category = placeModel.parsePlaceCategory(input.category ?? "");
+
+    if (!name || !address || !description || !category) {
+        throw new PlaceError("Nome, endereço, categoria e descrição são obrigatórios", 400);
+    }
+
+    const duplicate = await placeModel.findDuplicatePlace(name, address, placeId);
+    if (duplicate) {
+        throw new PlaceError("Cadastro já existente", 409, "PLACE_DUPLICATE");
+    }
+
+    const mapsLink = normalizeOptional(input.mapsLink);
+    const phone = normalizeOptional(input.phone);
+    const openingDate = parseOpeningDate(normalizeOptional(input.openingDate));
+
+    const hasNewPhotos = files.length > 0;
+    if (hasNewPhotos) {
+        try {
+            validatePhotoFiles(files, { min: 1, max: 3 });
+        } catch (err) {
+            if (err instanceof PhotoValidationError) {
+                throw new PlaceError(err.message, err.statusCode);
+            }
+            throw err;
+        }
+    } else if ((existing.photos?.length ?? 0) < 1) {
+        throw new PlaceError("O local deve ter pelo menos 1 foto", 400);
+    }
+
+    const oldPhotoKeys = (existing.photos ?? []).map((p) => p.url);
+    let newPhotoRecords: { url: string; sortOrder: number }[] = [];
+
+    if (hasNewPhotos) {
+        try {
+            newPhotoRecords = await uploadPlacePhotoRecords(placeId, files);
+        } catch {
+            await deletePlacePhotoKeys(newPhotoRecords.map((p) => p.url));
+            throw new PlaceError("Erro ao salvar fotos do local", 500);
+        }
+    }
+
+    try {
+        await placeModel.updatePlaceById(placeId, {
+            name,
+            address,
+            category: category as PlaceCategory,
+            description,
+            mapsLink: mapsLink ?? null,
+            phone: phone ?? null,
+            openingDate: openingDate ?? null,
+        });
+
+        if (hasNewPhotos) {
+            await placeModel.replacePlacePhotos(placeId, newPhotoRecords);
+            await deletePlacePhotoKeys(oldPhotoKeys);
+        }
+    } catch {
+        if (hasNewPhotos) {
+            await deletePlacePhotoKeys(newPhotoRecords.map((p) => p.url));
+        }
+        throw new PlaceError("Erro ao atualizar o local", 500);
+    }
+
+    const full = await placeModel.findPlaceById(placeId);
+    if (!full) throw new PlaceError("Erro ao atualizar o local", 500);
+    return full;
+}
+
+export async function deletePlace(placeId: number, moradorId: number) {
+    const place = await assertPlaceOwner(placeId, moradorId);
+    const photoKeys = (place.photos ?? []).map((p) => p.url);
+
+    await placeModel.deletePlaceById(placeId);
+    await deletePlacePhotoKeys(photoKeys);
+}

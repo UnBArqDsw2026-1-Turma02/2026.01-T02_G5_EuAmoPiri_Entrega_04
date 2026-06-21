@@ -1,15 +1,3 @@
-/**
- * TESTES — PlacesPage  (RF06: Consulta de Locais)
- *
- * Mocks necessários:
- *   - react-leaflet  → stubs leves (jsdom não tem canvas/WebGL)
- *     IMPORTANTE: Marker e Popup NÃO renderizam filhos para evitar
- *     texto duplicado no DOM (o nome do local aparece no Popup E na sidebar)
- *   - leaflet        → evita erro no delete L.Icon.Default.prototype._getIconUrl
- *   - leaflet CSS    → ignorado no ambiente de teste
- *   - placeAdaptor   → dados controlados
- *   - AuthContext    → papel do usuário controlado
- */
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'

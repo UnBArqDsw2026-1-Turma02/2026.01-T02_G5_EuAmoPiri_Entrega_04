@@ -29,7 +29,7 @@ app.use("/auth", authRoutes);
 app.use("/places", placeRoutes);
 app.use("/places", experienceRoutes);
 
-const server = app.listen(PORT);
+const server = app.listen(Number(PORT), '0.0.0.0');
 
 server.on("listening", () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
@@ -40,7 +40,7 @@ server.on("error", (err: NodeJS.ErrnoException) => {
     if (err.code === "EADDRINUSE") {
         console.error(
             `Erro: a porta ${PORT} já está em uso. ` +
-                "Encerre o processo anterior (outro terminal com npm run dev) e tente novamente."
+            "Encerre o processo anterior (outro terminal com npm run dev) e tente novamente."
         );
         process.exit(1);
     }

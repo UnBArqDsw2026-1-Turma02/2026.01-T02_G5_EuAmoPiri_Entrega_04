@@ -43,6 +43,38 @@
   gap: var(--space-4);
 }
 
+.categoryRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.existingPhotos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.existingPhotosLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.existingPhotosGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.existingPhoto {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
 /* ── Select customizado ── */
 .selectGroup {
   display: flex;
@@ -177,9 +209,45 @@
 /* ── Botões ── */
 .formActions {
   display: flex;
-  justify-content: flex-end;
   gap: var(--space-3);
+  width: 100%;
 }
+
+.formActions > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* ── Fotos: badge de capa e botão de definir capa ── */
+.capaBadge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--color-primary, #2e7d32);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.setCoverBtn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 2px 5px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.setCoverBtn:hover { background: rgba(0, 0, 0, 0.7); }
 
 /* ── Mobile ── */
 @media (max-width: 600px) {

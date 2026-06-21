@@ -9,6 +9,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
     ...actual,
     useParams: () => ({ id: '1' }),
     useNavigate: () => vi.fn(),
+    useLocation: () => ({ state: null }),
   }
 })
 
@@ -23,7 +24,8 @@ import * as placeAdaptor from '../infra/adaptor/placeAdaptor'
 const mockPlace = {
   id: 1, name: 'Botequim Mercatto Piri', category: 'restaurante',
   description: 'Ótimo botequim no centro histórico.', address: 'R. Direita, 68',
-hours: '11h - 22h', phone: '(62) 3331-1234',
+  phone: '(62) 3331-1234', mapsLink: 'https://maps.google.com/test', openingDate: '2020-01-15',
+  photos: [{ id: 1, url: 'http://example.com/photo.jpg' }],
 }
 
 const renderPage = () => render(<MemoryRouter><EditPlacePage /></MemoryRouter>)
@@ -48,10 +50,10 @@ describe('EditPlacePage', () => {
     )
   })
 
-  it('exibe botão "← Voltar ao perfil"', async () => {
+  it('exibe botão "← Voltar"', async () => {
     renderPage()
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: /← Voltar ao perfil/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /← Voltar/i })).toBeInTheDocument()
     )
   })
 

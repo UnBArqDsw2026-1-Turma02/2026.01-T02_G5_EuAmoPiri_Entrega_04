@@ -1,10 +1,3 @@
-/**
- *  Cliente HTTP
- *
- * Instância única do Axios configurada para a API REST.
- * Dev: proxy Vite `/api` → localhost:3000.
- * Produção: configure VITE_API_URL no .env do frontend.
- */
 import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_API_URL ?? '/api';

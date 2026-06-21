@@ -1,12 +1,3 @@
-/**
- * PÁGINA — PlacesPage  (RF06: Consulta de Locais)
- *
- * Layout: mapa interativo (OpenStreetMap via Leaflet) + sidebar de locais.
- * Para substituir pelo Google Maps: trocar <MapContainer> por <GoogleMap>
- * de @react-google-maps/api — a estrutura de dados (lat/lng) permanece igual.
- *
- * Dependências: react-leaflet leaflet
- */
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
