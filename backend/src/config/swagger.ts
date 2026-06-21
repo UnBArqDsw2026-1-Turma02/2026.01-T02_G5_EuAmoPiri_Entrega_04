@@ -163,7 +163,70 @@ const options = {
                                 like: { type: "integer" },
                             },
                         },
+                        commentsCount: { type: "integer" },
+                        myReaction: {
+                            type: "string",
+                            enum: ["heart", "like"],
+                            nullable: true,
+                        },
                         createdAt: { type: "string", format: "date-time" },
+                    },
+                },
+                ExperienceComment: {
+                    type: "object",
+                    properties: {
+                        id: { type: "integer" },
+                        text: { type: "string" },
+                        userId: { type: "integer" },
+                        userName: { type: "string" },
+                        experienceId: { type: "integer", description: "ID do relato (atalho)" },
+                        relato: {
+                            type: "object",
+                            properties: {
+                                id: { type: "integer" },
+                                title: { type: "string", nullable: true },
+                                placeId: { type: "integer" },
+                            },
+                        },
+                        local: {
+                            type: "object",
+                            properties: {
+                                id: { type: "integer" },
+                                name: { type: "string" },
+                            },
+                        },
+                        createdAt: { type: "string", format: "date-time" },
+                    },
+                },
+                CreateCommentRequest: {
+                    type: "object",
+                    required: ["text"],
+                    properties: {
+                        text: { type: "string", minLength: 3, maxLength: 500 },
+                    },
+                },
+                ReactToExperienceRequest: {
+                    type: "object",
+                    required: ["reaction"],
+                    properties: {
+                        reaction: { type: "string", enum: ["heart", "like"] },
+                    },
+                },
+                ReactionResponse: {
+                    type: "object",
+                    properties: {
+                        reactions: {
+                            type: "object",
+                            properties: {
+                                heart: { type: "integer" },
+                                like: { type: "integer" },
+                            },
+                        },
+                        myReaction: {
+                            type: "string",
+                            enum: ["heart", "like"],
+                            nullable: true,
+                        },
                     },
                 },
                 UpdateExperienceRequest: {

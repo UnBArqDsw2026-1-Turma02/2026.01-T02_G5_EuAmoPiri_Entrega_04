@@ -53,6 +53,12 @@ export async function findExperienceById(experienceId: number) {
     });
 }
 
+export async function findExperienceByIdAndPlaceId(experienceId: number, placeId: number) {
+    return prisma.experiences.findFirst({
+        where: { id: experienceId, placeId },
+    });
+}
+
 export async function updateExperienceById(id: number, data: Prisma.ExperiencesUpdateInput) {
     return prisma.experiences.update({
         where: { id },

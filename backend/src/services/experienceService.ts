@@ -141,8 +141,19 @@ export async function getExperiencePhotoStream(experienceId: number, photoId: nu
     };
 }
 
-export async function listExperiencesByPlace(placeId: number) {
-    return experienceModel.findAllExperiencesByPlaceId(placeId);
+export async function listExperiencesByPlace(placeId: number, userId?: number) {
+    const experiences = await experienceModel.findAllExperiencesByPlaceId(placeId);
+    const ids = experiences.map((e) => e.id);
+
+    const [commentCounts, reactionCounts, userReactions] = await Promise.all([
+        import("./commentService.ts").then((m) => m.getCommentCountsByExperienceIds(ids)),
+        import("./reactionService.ts").then((m) => m.getReactionCountsByExperienceIds(ids)),
+        userId !== undefined
+            ? import("./reactionService.ts").then((m) => m.getUserReactionMap(userId, ids))
+            : Promise.resolve(new Map()),
+    ]);
+
+    return { experiences, commentCounts, reactionCounts, userReactions };
 }
 
 export async function listMyExperiences(userId: number) {

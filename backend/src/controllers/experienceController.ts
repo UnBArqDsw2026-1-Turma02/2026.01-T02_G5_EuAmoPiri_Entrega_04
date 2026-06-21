@@ -32,9 +32,20 @@ export async function createExperience(req: Request, res: Response) {
 
 export async function listExperiences(req: Request, res: Response) {
     const { placeId } = req.params;
+    const pid = Number(placeId);
+    const userId = req.user?.id;
+
     try {
-        const experiences = await experienceService.listExperiencesByPlace(Number(placeId));
-        res.status(200).json(formatExperienceList(experiences, Number(placeId)));
+        const { experiences, commentCounts, reactionCounts, userReactions } =
+            await experienceService.listExperiencesByPlace(pid, userId);
+
+        res.status(200).json(
+            formatExperienceList(experiences, pid, {
+                commentCounts,
+                reactionCounts,
+                userReactions,
+            })
+        );
     } catch {
         res.status(500).json({ error: "Erro ao buscar as experiencias" });
     }

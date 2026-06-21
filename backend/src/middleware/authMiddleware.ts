@@ -17,6 +17,24 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     })(req, res, next);
 }
 
+export function optionalAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+        next();
+        return;
+    }
+
+    passport.authenticate("jwt", { session: false }, (err: Error | null, user: Express.User | false) => {
+        if (err) {
+            return next(err);
+        }
+        if (user) {
+            req.user = user;
+        }
+        return next();
+    })(req, res, next);
+}
+
 function buildUserFromTokenPayload(payload: { sub: number; email: string }): Express.User {
     return {
         id: payload.sub,

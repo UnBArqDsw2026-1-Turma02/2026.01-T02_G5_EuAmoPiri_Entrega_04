@@ -1,8 +1,10 @@
 import { Router } from "express";
 import * as experienceController from "../controllers/experienceController.ts";
-import { authMiddleware } from "../middleware/authMiddleware.ts";
+import { authMiddleware, optionalAuthMiddleware } from "../middleware/authMiddleware.ts";
 import { requireTurista } from "../middleware/requireAccountTypeMiddleware.ts";
 import { uploadExperiencePhotos, handlePhotoUploadError } from "../middleware/uploadPhotosMiddleware.ts";
+import * as commentController from "../controllers/commentController.ts";
+import * as reactionController from "../controllers/reactionController.ts";
 
 const router = Router();
 
@@ -60,12 +62,18 @@ router.post(
  *   get:
  *     tags: [Experiences]
  *     summary: Listar experiências de um local
+ *     description: |
+ *       Retorna relatos com contadores de comentários e reações.
+ *       Envie Bearer JWT opcional para obter `myReaction` do usuário logado.
  *     parameters:
  *       - in: path
  *         name: placeId
  *         required: true
  *         schema:
  *           type: integer
+ *     security:
+ *       - BearerAuth: []
+ *       - {}
  *     responses:
  *       200:
  *         description: Lista de relatos do local
@@ -76,7 +84,7 @@ router.post(
  *               items:
  *                 $ref: '#/components/schemas/Experience'
  */
-router.get("/:placeId/experiences", experienceController.listExperiences);
+router.get("/:placeId/experiences", optionalAuthMiddleware, experienceController.listExperiences);
 
 /**
  * @openapi
@@ -229,6 +237,135 @@ router.delete(
 router.get(
     "/:placeId/experiences/:experienceId/photos/:photoId",
     experienceController.getExperiencePhoto
+);
+
+/**
+ * @openapi
+ * /places/{placeId}/experiences/{experienceId}/comments:
+ *   get:
+ *     tags: [Experiences]
+ *     summary: Listar comentários de um relato
+ *     parameters:
+ *       - in: path
+ *         name: placeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: experienceId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de comentários
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ExperienceComment'
+ *       404:
+ *         description: Relato não encontrado neste local
+ *   post:
+ *     tags: [Experiences]
+ *     summary: Criar comentário em relato (requer Turista)
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: placeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: experienceId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateCommentRequest'
+ *     responses:
+ *       201:
+ *         description: Comentário criado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ExperienceComment'
+ *       400:
+ *         description: Validação (RNF01, MIN_TEXT_LENGTH, RNF03, BLACKLISTED_CONTENT)
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Papel incorreto
+ *       404:
+ *         description: Relato não encontrado neste local
+ */
+router.get(
+    "/:placeId/experiences/:experienceId/comments",
+    commentController.listComments
+);
+
+router.post(
+    "/:placeId/experiences/:experienceId/comments",
+    authMiddleware,
+    requireTurista,
+    commentController.createComment
+);
+
+/**
+ * @openapi
+ * /places/{placeId}/experiences/{experienceId}/react:
+ *   post:
+ *     tags: [Experiences]
+ *     summary: Reagir a um relato com emoji (requer Turista)
+ *     description: |
+ *       Toggle/troca de reação. Tipos aceitos: `heart`, `like`.
+ *       Clicar na mesma reação remove; clicar em outra troca o tipo.
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: placeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: experienceId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ReactToExperienceRequest'
+ *     responses:
+ *       200:
+ *         description: Contadores atualizados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReactionResponse'
+ *       400:
+ *         description: Tipo de reação inválido
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Papel incorreto
+ *       404:
+ *         description: Relato não encontrado neste local
+ */
+router.post(
+    "/:placeId/experiences/:experienceId/react",
+    authMiddleware,
+    requireTurista,
+    reactionController.reactToExperience
 );
 
 export default router;

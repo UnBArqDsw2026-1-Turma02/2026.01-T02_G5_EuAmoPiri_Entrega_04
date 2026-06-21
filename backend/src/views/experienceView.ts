@@ -1,4 +1,5 @@
 import type { Experiences, ExperiencePhoto } from "../../generated/prisma/client.ts";
+import { emptyReactionCounts, type ReactionKey } from "../constants/reactionTypes.ts";
 
 type ExperienceWithPhotos = Experiences & {
     photos?: ExperiencePhoto[];
@@ -6,6 +7,12 @@ type ExperienceWithPhotos = Experiences & {
 
 type ExperienceWithPlace = ExperienceWithPhotos & {
     place?: { id: number; name: string };
+};
+
+type ExperienceListExtras = {
+    commentCounts: Map<number, number>;
+    reactionCounts: Map<number, Record<ReactionKey, number>>;
+    userReactions: Map<number, ReactionKey>;
 };
 
 function formatPhoto(photo: ExperiencePhoto, placeId: number, experienceId: number) {
@@ -16,9 +23,19 @@ function formatPhoto(photo: ExperiencePhoto, placeId: number, experienceId: numb
     };
 }
 
-export function formatExperience(experience: ExperienceWithPhotos, placeId?: number) {
+type ExperienceFormatExtras = {
+    commentsCount?: number;
+    reactions?: Record<ReactionKey, number>;
+    myReaction?: ReactionKey | null;
+};
+
+export function formatExperience(
+    experience: ExperienceWithPhotos,
+    placeId?: number,
+    extras?: ExperienceFormatExtras
+) {
     const pid = placeId ?? experience.placeId;
-    return {
+    const base = {
         id: experience.id,
         userName: experience.userName,
         userId: experience.userId,
@@ -28,13 +45,30 @@ export function formatExperience(experience: ExperienceWithPhotos, placeId?: num
         visitDate: experience.visitDate,
         placeId: experience.placeId,
         photos: (experience.photos ?? []).map((p) => formatPhoto(p, pid, experience.id)),
-        reactions: { heart: 0, like: 0 },
+        reactions: extras?.reactions ?? emptyReactionCounts(),
+        commentsCount: extras?.commentsCount ?? 0,
         createdAt: experience.createdAt,
     };
+
+    if (extras && "myReaction" in extras) {
+        return { ...base, myReaction: extras.myReaction ?? null };
+    }
+
+    return base;
 }
 
-export function formatExperienceList(experiences: ExperienceWithPhotos[], placeId?: number) {
-    return experiences.map((e) => formatExperience(e, placeId));
+export function formatExperienceList(
+    experiences: ExperienceWithPhotos[],
+    placeId?: number,
+    extras?: ExperienceListExtras
+) {
+    return experiences.map((e) =>
+        formatExperience(e, placeId, {
+            commentsCount: extras?.commentCounts.get(e.id) ?? 0,
+            reactions: extras?.reactionCounts.get(e.id) ?? emptyReactionCounts(),
+            myReaction: extras?.userReactions.get(e.id) ?? null,
+        })
+    );
 }
 
 export function formatMyExperienceList(experiences: ExperienceWithPlace[]) {

@@ -22,6 +22,11 @@ enum PlaceCategory {
   POUSADA
 }
 
+enum ReactionType {
+  HEART
+  LIKE
+}
+
 model Place {
   id          Int           @id @default(autoincrement())
   name        String
@@ -57,9 +62,11 @@ model User {
   biography       String?
   profilePhotoUrl String?
   passwordHash    String?
-  createdAt       DateTime      @default(now())
-  experiences     Experiences[]
-  places          Place[]
+  createdAt           DateTime             @default(now())
+  experiences         Experiences[]
+  places              Place[]
+  experienceComments  ExperienceComment[]
+  experienceReactions ExperienceReaction[]
 }
 
 model Experiences {
@@ -73,8 +80,32 @@ model Experiences {
   placeId   Int
   place     Place              @relation(fields: [placeId], references: [id], onDelete: Cascade)
   userId    Int?
-  user      User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   photos    ExperiencePhoto[]
+  comments  ExperienceComment[]
+  reactions ExperienceReaction[]
+}
+
+model ExperienceComment {
+  id           Int         @id @default(autoincrement())
+  text         String
+  experienceId Int
+  experience   Experiences @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+}
+
+model ExperienceReaction {
+  id           Int          @id @default(autoincrement())
+  experienceId Int
+  experience   Experiences  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         ReactionType
+  createdAt    DateTime     @default(now())
+
+  @@unique([experienceId, userId])
 }
 
 model ExperiencePhoto {
