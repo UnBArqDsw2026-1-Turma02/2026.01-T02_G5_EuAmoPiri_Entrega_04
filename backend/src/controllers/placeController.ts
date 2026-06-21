@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import * as placeService from "../services/placeService.ts";
 import { PlaceError } from "../services/placeService.ts";
 import { GooglePlacesError } from "../services/googlePlacesService.ts";
-import { getPaginatedGoogleCatalog, getCatalogPlaceById } from "../services/googlePlacesCatalogService.ts";
 import { syncGooglePlacesToDatabase } from "../services/googlePlacesSyncService.ts";
 import { formatPlace, formatPlaceList } from "../views/placeView.ts";
 
@@ -25,23 +24,6 @@ export async function createPlace(req: Request, res: Response) {
     }
 }
 
-export async function listGooglePlaces(req: Request, res: Response) {
-    try {
-        const catalog = getPaginatedGoogleCatalog(
-            req.query.page,
-            req.query.limit,
-            req.query.category
-        );
-        res.status(200).json(catalog);
-    } catch (err) {
-        if (err instanceof GooglePlacesError) {
-            res.status(err.statusCode).json({ error: err.message, code: err.code });
-            return;
-        }
-        res.status(500).json({ error: "Erro ao buscar catálogo do Google Maps" });
-    }
-}
-
 export async function syncGooglePlaces(_req: Request, res: Response) {
     try {
         const result = await syncGooglePlacesToDatabase();
@@ -52,29 +34,6 @@ export async function syncGooglePlaces(_req: Request, res: Response) {
             return;
         }
         res.status(500).json({ error: "Erro ao sincronizar locais do Google" });
-    }
-}
-
-export async function getGoogleCatalogPlace(req: Request, res: Response) {
-    const googlePlaceId = req.params.googlePlaceId;
-    if (typeof googlePlaceId !== "string" || !googlePlaceId) {
-        res.status(400).json({ error: "ID do local inválido" });
-        return;
-    }
-
-    try {
-        const place = getCatalogPlaceById(googlePlaceId);
-        if (!place) {
-            res.status(404).json({ error: "Local do catálogo não encontrado" });
-            return;
-        }
-        res.status(200).json(place);
-    } catch (err) {
-        if (err instanceof GooglePlacesError) {
-            res.status(err.statusCode).json({ error: err.message, code: err.code });
-            return;
-        }
-        res.status(500).json({ error: "Erro ao buscar local do catálogo" });
     }
 }
 

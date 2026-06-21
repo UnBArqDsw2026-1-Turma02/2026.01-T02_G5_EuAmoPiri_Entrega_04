@@ -70,7 +70,6 @@ export function formatPlace(place: PlaceWithPhotos) {
         moradorId: place.moradorId,
         moradorName: place.morador?.name ?? null,
         source: SOURCE_LABELS[place.source] ?? "community",
-        catalogOnly: false,
         googlePlaceId: place.googlePlaceId,
         lat: place.latitude,
         lng: place.longitude,

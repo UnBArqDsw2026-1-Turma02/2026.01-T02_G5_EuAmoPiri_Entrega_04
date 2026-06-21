@@ -10,7 +10,6 @@ import {
     mapGooglePlaceToCategory,
     placeCategoryToApiLabel,
 } from "./placeCategoryMapper.ts";
-import { clearGooglePlacesCache } from "./googlePlacesCache.ts";
 
 export class GooglePlacesError extends Error {
     constructor(
@@ -24,7 +23,6 @@ export class GooglePlacesError extends Error {
 }
 
 export interface GooglePlaceDto {
-    id: string;
     googlePlaceId: string;
     name: string;
     category: "cachoeira" | "restaurante" | "pousada";
@@ -33,7 +31,6 @@ export interface GooglePlaceDto {
     lng: number;
     mapsLink: string;
     source: "google";
-    catalogOnly: boolean;
     rating: number | null;
     reviewsCount: number;
     description: string;
@@ -55,6 +52,7 @@ interface GoogleTextSearchPlace {
 
 interface GoogleTextSearchResponse {
     places?: GoogleTextSearchPlace[];
+    nextPageToken?: string;
 }
 
 interface GoogleErrorBody {
@@ -64,10 +62,12 @@ interface GoogleErrorBody {
     };
 }
 
-function getCacheTtlMs(): number {
-    const raw = process.env.GOOGLE_PLACES_CACHE_TTL_MS;
-    const parsed = raw ? Number(raw) : 21_600_000;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 21_600_000;
+const GOOGLE_PAGE_SIZE = 20;
+
+export function getSyncPerCategory(): number {
+    const raw = process.env.GOOGLE_SYNC_PER_CATEGORY;
+    const parsed = raw ? Number(raw) : 40;
+    return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 40;
 }
 
 function getApiKey(): string {
@@ -117,7 +117,6 @@ function formatGooglePlace(place: GoogleTextSearchPlace, apiKey: string): Google
         `${name} — local em Pirenópolis importado do Google Maps.`;
 
     return {
-        id: `gmaps:${googlePlaceId}`,
         googlePlaceId,
         name,
         category: placeCategoryToApiLabel(category) as GooglePlaceDto["category"],
@@ -128,7 +127,6 @@ function formatGooglePlace(place: GoogleTextSearchPlace, apiKey: string): Google
             place.googleMapsUri?.trim() ||
             `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + " Pirenópolis")}`,
         source: "google",
-        catalogOnly: true,
         rating: place.rating ?? null,
         reviewsCount: place.userRatingCount ?? 0,
         description,
@@ -177,7 +175,29 @@ function parseGoogleApiError(status: number, body: string): GooglePlacesError {
  * Adapter/Facade sobre a Google Places API (New) — Text Search.
  * Delimita buscas à região de Pirenópolis via locationBias circular.
  */
-async function searchTextQuery(textQuery: string, apiKey: string): Promise<GoogleTextSearchPlace[]> {
+async function searchTextQueryPage(
+    textQuery: string,
+    apiKey: string,
+    pageToken?: string
+): Promise<GoogleTextSearchResponse> {
+    const body: Record<string, unknown> = {
+        textQuery,
+        pageSize: GOOGLE_PAGE_SIZE,
+        locationBias: {
+            circle: {
+                center: {
+                    latitude: PIRI_CENTER_LAT,
+                    longitude: PIRI_CENTER_LNG,
+                },
+                radius: PIRI_SEARCH_RADIUS_M,
+            },
+        },
+    };
+
+    if (pageToken) {
+        body.pageToken = pageToken;
+    }
+
     const response = await fetch(GOOGLE_PLACES_TEXT_SEARCH_URL, {
         method: "POST",
         headers: {
@@ -185,37 +205,49 @@ async function searchTextQuery(textQuery: string, apiKey: string): Promise<Googl
             "X-Goog-Api-Key": apiKey,
             "X-Goog-FieldMask": GOOGLE_PLACES_FIELD_MASK,
         },
-        body: JSON.stringify({
-            textQuery,
-            locationBias: {
-                circle: {
-                    center: {
-                        latitude: PIRI_CENTER_LAT,
-                        longitude: PIRI_CENTER_LNG,
-                    },
-                    radius: PIRI_SEARCH_RADIUS_M,
-                },
-            },
-        }),
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        console.error(`Google Places API error (${response.status}): ${body}`);
-        throw parseGoogleApiError(response.status, body);
+        const text = await response.text().catch(() => "");
+        console.error(`Google Places API error (${response.status}): ${text}`);
+        throw parseGoogleApiError(response.status, text);
     }
 
-    const data = (await response.json()) as GoogleTextSearchResponse;
-    return data.places ?? [];
+    return (await response.json()) as GoogleTextSearchResponse;
+}
+
+/** Pagina Text Search até atingir maxResults ou esgotar resultados. */
+export async function searchTextQueryAll(
+    textQuery: string,
+    apiKey: string,
+    maxResults: number
+): Promise<GoogleTextSearchPlace[]> {
+    const collected: GoogleTextSearchPlace[] = [];
+    let pageToken: string | undefined;
+
+    while (collected.length < maxResults) {
+        const data = await searchTextQueryPage(textQuery, apiKey, pageToken);
+        const page = data.places ?? [];
+        if (page.length === 0) break;
+
+        collected.push(...page);
+
+        pageToken = data.nextPageToken;
+        if (!pageToken) break;
+    }
+
+    return collected.slice(0, maxResults);
 }
 
 /** Busca todos os locais categorizados na API Google (sem persistir). */
 export async function fetchAllGooglePlacesFromApi(): Promise<GooglePlaceDto[]> {
     const apiKey = getApiKey();
+    const maxPerQuery = getSyncPerCategory();
     const byId = new Map<string, GooglePlaceDto>();
 
     for (const query of PIRI_TEXT_SEARCH_QUERIES) {
-        const rawPlaces = await searchTextQuery(query, apiKey);
+        const rawPlaces = await searchTextQueryAll(query, apiKey, maxPerQuery);
         for (const raw of rawPlaces) {
             const formatted = formatGooglePlace(raw, apiKey);
             if (formatted && !byId.has(formatted.googlePlaceId)) {
@@ -226,6 +258,3 @@ export async function fetchAllGooglePlacesFromApi(): Promise<GooglePlaceDto[]> {
 
     return Array.from(byId.values());
 }
-
-/** Expõe limpeza de cache para testes. */
-export { clearGooglePlacesCache };

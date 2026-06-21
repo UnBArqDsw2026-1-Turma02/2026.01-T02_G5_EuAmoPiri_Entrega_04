@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { clearGooglePlacesCache, fetchAllGooglePlacesFromApi } from "./googlePlacesService.ts";
+import { fetchAllGooglePlacesFromApi, searchTextQueryAll } from "./googlePlacesService.ts";
 
 const mockPlace = {
     id: "places/ChIJ123",
@@ -14,14 +14,13 @@ const mockPlace = {
 
 describe("googlePlacesService", () => {
     beforeEach(() => {
-        clearGooglePlacesCache();
         vi.stubEnv("GOOGLE_MAPS_API_KEY", "test-key");
+        vi.stubEnv("GOOGLE_SYNC_PER_CATEGORY", "40");
     });
 
     afterEach(() => {
         vi.unstubAllEnvs();
         vi.restoreAllMocks();
-        clearGooglePlacesCache();
     });
 
     it("lança erro sem API key", async () => {
@@ -47,5 +46,28 @@ describe("googlePlacesService", () => {
             name: "Cachoeira da Rosário",
             category: "cachoeira",
         });
+    });
+
+    it("pagina até maxResults quando há nextPageToken", async () => {
+        const page1 = { places: [mockPlace], nextPageToken: "token-2" };
+        const page2 = {
+            places: [{
+                ...mockPlace,
+                id: "places/ChIJ456",
+                displayName: { text: "Restaurante Piri" },
+                types: ["restaurant"],
+            }],
+        };
+
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => page1 })
+            .mockResolvedValueOnce({ ok: true, json: async () => page2 });
+        vi.stubGlobal("fetch", fetchMock);
+
+        const raw = await searchTextQueryAll("restaurante em Pirenópolis", "test-key", 40);
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(raw).toHaveLength(2);
     });
 });

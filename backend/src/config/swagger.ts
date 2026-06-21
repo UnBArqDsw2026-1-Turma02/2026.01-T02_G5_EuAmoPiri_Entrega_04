@@ -117,9 +117,8 @@ const options = {
                 },
                 GooglePlace: {
                     type: "object",
-                    description: "Local importado do Google Places API (catálogo de Pirenópolis)",
+                    description: "DTO interno de local importado do Google (sync para PostgreSQL)",
                     properties: {
-                        id: { type: "string", example: "gmaps:ChIJ123" },
                         googlePlaceId: { type: "string" },
                         name: { type: "string" },
                         category: { type: "string", enum: ["cachoeira", "restaurante", "pousada"] },
