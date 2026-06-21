@@ -32,3 +32,21 @@ export function getCurrentUser() {
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
+
+const REGISTER_DRAFT_KEY = 'euamopiri_register_draft';
+
+export function saveRegisterDraft(draft) {
+  sessionStorage.setItem(REGISTER_DRAFT_KEY, JSON.stringify(draft));
+}
+
+export function getRegisterDraft() {
+  try {
+    return JSON.parse(sessionStorage.getItem(REGISTER_DRAFT_KEY));
+  } catch {
+    return null;
+  }
+}
+
+export function clearRegisterDraft() {
+  sessionStorage.removeItem(REGISTER_DRAFT_KEY);
+}

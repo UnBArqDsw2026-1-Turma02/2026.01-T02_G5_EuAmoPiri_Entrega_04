@@ -11,16 +11,13 @@ export default function RegisterSuccessPage() {
         <p className={styles.logo}>❤ EuAmoPiri</p>
         
         <div className={styles.iconContainer}>
-          <svg className={styles.checkmark} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-            <circle className={styles.checkmarkCircle} cx="26" cy="26" r="25" fill="none"/>
-            <path className={styles.checkmarkCheck} fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-          </svg>
+          <span className={styles.checkIcon} role="img" aria-label="Conta criada com sucesso">✅</span>
         </div>
 
         <h1 className={styles.title}>Bem-vindo!</h1>
         <p className={styles.subtitle}>Sua conta foi criada com sucesso.</p>
 
-        <Button variant="teal" fullWidth onClick={() => navigate('/login')}>
+        <Button variant="primary" fullWidth onClick={() => navigate('/')}>
           Acessar o Site
         </Button>
       </div>

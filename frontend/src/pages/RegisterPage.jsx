@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { saveRegisterDraft } from '../api/auth/authSessionStorage';
 import Button from '../presentation/atoms/Button';
 import FormField from '../presentation/molecules/FormField';
 import styles from './RegisterPage.module.css';
@@ -15,11 +16,14 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm();
 
-  async function onSubmit(data) {
-    //etapa de cadastro 1
-    console.log('Dados da Etapa 1:', { ...data, accountType });
-    
-    //etapa de cadastro 2
+  function onSubmit(data) {
+    saveRegisterDraft({
+      name: data.fullName,
+      email: data.email,
+      birthDate: data.birthDate,
+      phone: data.phone,
+      role: accountType,
+    });
     navigate('/cadastro/seguranca');
   }
 
@@ -100,7 +104,7 @@ export default function RegisterPage() {
             <Button variant="outline" type="button" onClick={() => navigate('/login')}>
               Cancelar
             </Button>
-            <Button variant="teal" type="submit" loading={isSubmitting}>
+            <Button variant="primary" type="submit" loading={isSubmitting}>
               Próximo
             </Button>
           </div>
