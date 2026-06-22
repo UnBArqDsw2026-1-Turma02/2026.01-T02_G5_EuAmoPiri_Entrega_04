@@ -4,7 +4,6 @@
   padding: var(--space-8) 0;
 }
 
-/* -- Tabs de navegacao (mobile) -- */
 .tabs {
   display: flex;
   justify-content: center;
@@ -36,7 +35,6 @@
   color: var(--color-white);
 }
 
-/* -- Botoes Anterior / Proximo (mobile) -- */
 .navBotoes {
   display: flex;
   align-items: center;
@@ -72,11 +70,6 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
-}
-
-/* Oculta secoes inativas no mobile */
-.secaoOculta {
-  display: none;
 }
 
 .backLink {
@@ -123,6 +116,10 @@
   gap: var(--space-6);
 }
 
+.secaoOculta {
+  display: none;
+}
+
 .texto {
   min-width: 0;
 }
@@ -145,7 +142,6 @@
   margin: 0;
 }
 
-/* --- Galeria principal (Origem) --- */
 .galeria {
   position: relative;
   width: 350px;
@@ -177,14 +173,12 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* --- Grade inferior --- */
 .grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-6);
 }
 
-/* --- Fotos nos cards de grade --- */
 .fotosLadoALado {
   display: flex;
   gap: 15px;
@@ -205,12 +199,17 @@
   margin-top: 30px;
 }
 
-/* ============================================================
-   Desktop (>= 768px)
-   ============================================================ */
 @media (min-width: 768px) {
   .container {
     padding: 0 var(--space-6);
+  }
+
+  .secaoOculta {
+    display: block;
+  }
+
+  .grid > .secaoOculta {
+    display: block;
   }
 
   .cardHorizontal {
@@ -224,25 +223,13 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  /* No desktop: tabs, nav e botao voltar ocultos, todas as secoes visiveis */
   .tabs,
   .navBotoes,
   .backLink {
     display: none;
   }
-
-  .secaoOculta {
-    display: block;
-  }
-
-  .grid > .secaoOculta {
-    display: block;
-  }
 }
 
-/* ============================================================
-   Mobile (< 600px)
-   ============================================================ */
 @media (max-width: 600px) {
   .galeria {
     position: static;
