@@ -34,6 +34,7 @@ export default function Header() {
         <nav className={styles.nav} aria-label="Navegação principal">
           <NavLink to="/" className={navLinkClass} end>Sobre Piri</NavLink>
           <NavLink to="/locais" className={navLinkClass}>Locais</NavLink>
+          
         </nav>
 
         {/* Ações desktop */}
