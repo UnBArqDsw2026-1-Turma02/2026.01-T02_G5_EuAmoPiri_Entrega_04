@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { fetchPlaceById, updatePlace } from '../infra/adaptor/placeAdaptor';
 import Button from '../presentation/atoms/Button';
@@ -35,6 +35,7 @@ function formatDateInput(value) {
 export default function EditPlacePage() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const returnTo = location.state?.returnTo ?? '/perfil';
 
   const [loading, setLoading] = useState(true);
