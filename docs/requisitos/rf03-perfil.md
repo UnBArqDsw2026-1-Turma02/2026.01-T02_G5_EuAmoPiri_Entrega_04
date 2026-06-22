@@ -1,4 +1,4 @@
-# RF03 — Gestão de Perfil do Usuário
+﻿# RF03 — Gestão de Perfil do Usuário
 
 ## Requisito
 
@@ -8,67 +8,26 @@
 ## Diagrama de Atividades
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
 flowchart TD
-    A([Usuário autenticado acessa /perfil]) --> B{Usuário logado?}
-    B -- não --> C[Exibe aviso: precisa estar logado]
-    B -- sim --> D[Modo leitura: exibe dados do perfil]
-    D --> E{Ação do usuário}
-    E -- Editar Perfil --> F[Modo edição: formulário pré-preenchido + seção de senha]
-    E -- Deletar Perfil --> G[Ação destrutiva — pendente]
-    E -- Cadastrar Novo Local/Relato --> H[Navega para rota correspondente]
-    F --> I{Submissão}
-    I -- Cancelar --> D
-    I -- Atualizar Perfil --> J[react-hook-form valida campos]
-    J --> K{Validação ok?}
-    K -- não --> L[Exibe erros nos campos]
-    L --> F
-    K -- sim --> M[Chama updateProfile]
-    M --> N{Resposta}
-    N -- sucesso --> O[Exibe mensagem de sucesso, volta ao modo leitura]
-    N -- erro --> P[Exibe mensagem de erro]
-    F --> Q{Atualizar Senha}
-    Q -- campos vazios/inválidos --> R[Exibe erro de validação]
-    Q -- senhas não coincidem --> R
-    Q -- senha < 6 chars --> R
-    Q -- válido --> S[Exibe mensagem de sucesso]
+    A([Acessa /perfil]) --> B{Logado?}
+    B -- não --> C[Aviso]
+    B -- sim --> D[Modo leitura]
+    D --> E{Editar?}
+    E -- sim --> F[Formulário]
+    F --> G[updateProfile]
+    G --> D
 ```
 
 ## Diagrama de Componentes
 
 ```mermaid
-graph TD
-    subgraph pages
-        PP[ProfilePage]
-    end
-    subgraph organisms
-        PP --> H[Header]
-    end
-    subgraph molecules
-        PP --> FF1[FormField — Nome]
-        PP --> FF2[FormField — E-mail]
-        PP --> FF3[FormField — Profissão]
-        PP --> FF4[FormField — Contato]
-        PP --> FF5[FormField — Data de nascimento]
-        PP --> FF6[FormField — Bio]
-    end
-    subgraph atoms
-        PP --> AV[Avatar]
-        PP --> BT[Button — Deletar/Editar/Cadastrar/Atualizar]
-        PP --> BG[Badge — papel do usuário]
-        PP --> SR[StarRating — cards de local e avaliação]
-        FF1 & FF2 & FF3 & FF4 & FF5 --> IN[Input]
-        FF6 --> TX[Textarea]
-    end
-    subgraph subcomponents
-        PP --> MS[MoradorSections — Relatos + Locais]
-        PP --> TS[TuristaSections — Avaliações]
-    end
-    subgraph context
-        PP --> AU[useAuth — user + updateProfile + isMorador]
-    end
-    subgraph lib
-        PP --> RHF[react-hook-form]
-    end
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
+flowchart LR
+    PP[ProfilePage] --> AU[useAuth]
+    PP --> RHF[react-hook-form]
+    PP --> MS[MoradorSections]
+    PP --> FF[FormField]
 ```
 
 ## O que foi feito

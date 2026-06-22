@@ -46,22 +46,20 @@
 
     - [Visão geral](/ArquiteturaReutilizacao/backend/00.VisaoGeral.md)
 
-      - [Infraestrutura transversal](/ArquiteturaReutilizacao/backend/00.VisaoGeral.md#2-infraestrutura-transversal)
+    - [RF01 — Autenticação](/ArquiteturaReutilizacao/backend/01.Autenticacao.md)
 
-    - [RF01 — Autenticação](/ArquiteturaReutilizacao/backend/02.Autenticacao.md)
+    - [RF03 — Perfil e GCS](/ArquiteturaReutilizacao/backend/02.PerfilArmazenamento.md)
 
-    - [RF03 — Perfil e GCS](/ArquiteturaReutilizacao/backend/03.PerfilArmazenamento.md)
+    - [RF04/RF07 — Locais Morador](/ArquiteturaReutilizacao/backend/03.LocaisMorador.md)
 
-    - [RF12/RF13 — Comentários e reações](/ArquiteturaReutilizacao/backend/04.ComentariosReacoes.md)
+    - [RF05/RF08/RF09 — Relatos](/ArquiteturaReutilizacao/backend/04.RelatosExperiencia.md)
 
-    - [RF11 — Denúncia e moderação](/ArquiteturaReutilizacao/backend/05.DenunciaModeracao.md)
+    - [RF06 — Consulta pública](/ArquiteturaReutilizacao/backend/05.ConsultaPublica.md)
 
-    - [RF15 — Google Places](/ArquiteturaReutilizacao/backend/06.SincronizacaoGooglePlaces.md)
+    - [RF11 — Denúncia e moderação](/ArquiteturaReutilizacao/backend/06.DenunciaModeracao.md)
 
-    - [RF04/RF07 — Locais Morador](/ArquiteturaReutilizacao/backend/07.LocaisMorador.md)
+    - [RF12/RF13 — Comentários e reações](/ArquiteturaReutilizacao/backend/07.ComentariosReacoes.md)
 
-    - [RF05/RF08/RF09 — Relatos](/ArquiteturaReutilizacao/backend/08.RelatosExperiencia.md)
-
-    - [RF06 — Consulta pública](/ArquiteturaReutilizacao/backend/09.ConsultaPublica.md)
+    - [RF15 — Google Places](/ArquiteturaReutilizacao/backend/08.SincronizacaoGooglePlaces.md)
 
 

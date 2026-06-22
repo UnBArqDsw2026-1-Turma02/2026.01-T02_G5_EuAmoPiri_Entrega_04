@@ -1,4 +1,4 @@
-# RF04 — Cadastro de Novo Local (Morador)
+﻿# RF04 — Cadastro de Novo Local (Morador)
 
 ## Requisito
 
@@ -8,74 +8,25 @@
 ## Diagrama de Atividades
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
 flowchart TD
-    A([Morador acessa /morador/locais/novo]) --> B{Autenticado e role=morador?}
-    B -- não --> C[Redireciona para /login]
-    B -- sim --> D[CreatePlacePage renderiza formulário]
-
-    D --> E{Morador clica Cancelar?}
-    E -- sim --> F[Navega para /perfil]
-
-    D --> G[Morador preenche campos e faz upload de fotos]
-    G --> H{Clica em Cadastrar Novo Local}
-
-    H --> I{Tem pelo menos 1 foto?}
-    I -- não --> J[Exibe erro inline: Adicione pelo menos 1 foto]
-    J --> G
-
-    I -- sim --> K{Campos obrigatórios válidos?}
-    K -- não --> L[Exibe erros de validação inline por campo]
-    L --> G
-
-    K -- sim --> M[createPlace chamado com dados do formulário]
-    M --> N{API POST /places respondeu com sucesso?}
-
-    N -- sim --> O[Local salvo no backend — PostgreSQL/Neon]
-    N -- não --> P[Fallback mock: push para LOCAL_PLACES + sessionStorage]
-
-    O --> Q[Exibe overlay de sucesso]
-    P --> Q
-
-    Q --> R{Morador escolhe destino}
-    R -- Ver locais --> S[Navega para /locais]
-    R -- Voltar ao perfil --> T[Navega para /perfil]
+    A([/morador/locais/novo]) --> B{Morador?}
+    B -- não --> C[/login]
+    B -- sim --> D[Formulário]
+    D --> E{Foto + campos ok?}
+    E -- não --> D
+    E -- sim --> F[POST /places]
+    F --> G[Sucesso]
 ```
 
 ## Diagrama de Componentes
 
 ```mermaid
-graph TD
-    subgraph pages
-        CP[CreatePlacePage]
-    end
-    subgraph atoms
-        CP --> BT[Button]
-    end
-    subgraph molecules
-        CP --> FF[FormField]
-    end
-    subgraph styles
-        CP --> BS[baseStyles — EditPlacePage.module.css]
-        CP --> CS[styles — CreatePlacePage.module.css]
-    end
-    subgraph infra
-        CP --> CRP[createPlace — placeAdaptor]
-        CRP --> LP[LOCAL_PLACES + sessionStorage]
-        CRP --> API[POST /api/places — backend Express + PostgreSQL]
-    end
-    subgraph webapi
-        CP --> OBJ[URL.createObjectURL / revokeObjectURL]
-    end
-    subgraph react-hook-form
-        CP --> UF[useForm — register, handleSubmit, formState]
-    end
-    subgraph react-router-dom
-        CP --> UN[useNavigate]
-        CP --> LK[Link — /locais, /perfil]
-    end
-    subgraph routes
-        AR[AppRoutes — ProtectedRoute role=morador] --> CP
-    end
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
+flowchart LR
+    AR[AppRoutes] --> CP[CreatePlacePage]
+    CP --> API[placeAdaptor]
+    CP --> UF[useForm]
 ```
 
 ## O que foi feito

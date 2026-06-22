@@ -40,10 +40,12 @@ const REACTION_EMOJIS = [
 
 const REACTION_LABELS = { heart: 'Amei', like: 'Gostei' };
 
-function shouldShowContentOptions(currentUserId, authorUserId) {
-  if (authorUserId == null) return true;
-  if (currentUserId == null) return true;
-  return Number(authorUserId) !== Number(currentUserId);
+function shouldShowReportOption(currentUserId, authorUserId, { isAuthenticated, canReport }) {
+  if (authorUserId != null && currentUserId != null && Number(authorUserId) === Number(currentUserId)) {
+    return false;
+  }
+  if (!isAuthenticated) return true;
+  return canReport;
 }
 
 const COMMENT_MIN = 3;
@@ -83,6 +85,7 @@ function ExperienceComments({
   commentsCount,
   isTurista,
   canReport,
+  isAuthenticated,
   currentUserId,
   onReportComment,
   onCommentAdded,
@@ -192,7 +195,7 @@ function ExperienceComments({
             <span className={styles.commentAuthor}>{comment.userName}</span>
             <div className={styles.commentHeaderRight}>
               <span className={styles.commentTime}>{timeAgo(comment.createdAt)}</span>
-              {shouldShowContentOptions(currentUserId, comment.userId) && (
+              {shouldShowReportOption(currentUserId, comment.userId, { isAuthenticated, canReport }) && (
                 <ContentOptionsMenu
                   label="Opções do comentário"
                   onReport={() => onReportComment(experienceId, comment)}
@@ -243,6 +246,7 @@ function CommentCard({
   showReactions = false,
   userReactions = new Map(),
   canReport = false,
+  isAuthenticated = false,
   currentUserId,
   onReportExperience,
   onReportComment,
@@ -257,7 +261,7 @@ function CommentCard({
         <span className={styles.commentAuthor}>{exp.userName}</span>
         <div className={styles.commentHeaderRight}>
           <span className={styles.commentTime}>{timeAgo(exp.createdAt)}</span>
-          {shouldShowContentOptions(currentUserId, exp.userId) && (
+          {shouldShowReportOption(currentUserId, exp.userId, { isAuthenticated, canReport }) && (
             <ContentOptionsMenu
               label="Opções do relato"
               onReport={() => onReportExperience?.(exp)}
@@ -311,6 +315,7 @@ function CommentCard({
         commentsCount={exp.commentsCount}
         isTurista={isTurista}
         canReport={canReport}
+        isAuthenticated={isAuthenticated}
         currentUserId={currentUserId}
         onReportComment={onReportComment}
         onCommentAdded={onCommentAdded}
@@ -327,6 +332,7 @@ function CommentsModal({
   onClose,
   userReactions,
   canReport,
+  isAuthenticated,
   currentUserId,
   onReportExperience,
   onReportComment,
@@ -347,6 +353,7 @@ function CommentsModal({
               showReactions
               userReactions={userReactions}
               canReport={canReport}
+              isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onReportExperience={onReportExperience}
               onReportComment={onReportComment}
@@ -710,6 +717,7 @@ export default function PlaceDetailPage() {
                 onReact={isTurista ? handleReact : undefined}
                 userReactions={userReactions}
                 canReport={canReport}
+                isAuthenticated={isAuthenticated}
                 currentUserId={user?.id}
                 onReportExperience={openExperienceReport}
                 onReportComment={openCommentReport}
@@ -764,6 +772,7 @@ export default function PlaceDetailPage() {
           onClose={() => setShowModal(false)}
           userReactions={userReactions}
           canReport={canReport}
+          isAuthenticated={isAuthenticated}
           currentUserId={user?.id}
           onReportExperience={openExperienceReport}
           onReportComment={openCommentReport}

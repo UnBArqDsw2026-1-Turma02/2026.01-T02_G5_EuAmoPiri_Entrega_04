@@ -1,4 +1,4 @@
-# RF07 — Edição e Exclusão de Locais (Morador)
+﻿# RF07 — Edição e Exclusão de Locais (Morador)
 
 ## Requisito
 
@@ -8,80 +8,27 @@
 ## Diagrama de Atividades
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
 flowchart TD
-    A([Morador acessa /perfil]) --> B{Autenticado e role=morador?}
-    B -- não --> C[Redireciona para /login]
-    B -- sim --> D[ProfilePage exibe MoradorSections]
-    D --> E[Lista LOCAIS CADASTRADOS com botões Editar e Excluir]
-
-    E --> F{Morador clica Editar Local?}
-    F -- sim --> G[Navega para /morador/locais/:id/editar]
-    G --> H[EditPlacePage: fetchPlaceById carrega dados]
-    H --> I{Local encontrado?}
-    I -- não --> J[Exibe mensagem de erro + botão voltar]
-    I -- sim --> K[Preenche formulário com dados existentes]
-    K --> L{Morador submete?}
-    L -- cancelar --> M[Volta para /perfil]
-    L -- salvar --> N{Dados válidos?}
-    N -- não --> O[Exibe erros de validação inline]
-    N -- sim --> P[updatePlace chamado]
-    P --> Q{Sucesso?}
-    Q -- sim --> R[Exibe feedback de sucesso e redireciona para /perfil]
-    Q -- não --> S[Exibe mensagem de erro no formulário]
-
-    E --> T{Morador clica Excluir Local?}
-    T -- sim --> U[Abre modal de confirmação com nome do local]
-    U --> V{Morador confirma?}
-    V -- cancelar --> W[Fecha modal]
-    V -- excluir --> X[deletePlace chamado]
-    X --> Y{Sucesso?}
-    Y -- sim --> Z[Remove local da lista em tempo real]
-    Y -- não --> AA[Exibe mensagem de erro no modal]
+    A([/perfil]) --> B{Morador?}
+    B -- não --> C[/login]
+    B -- sim --> D[Lista locais]
+    D --> E{Editar?}
+    E -- sim --> F[EditPlacePage]
+    F --> G[updatePlace]
+    D --> H{Excluir?}
+    H -- sim --> I[deletePlace]
 ```
 
 ## Diagrama de Componentes
 
 ```mermaid
-graph TD
-    subgraph pages
-        PP[ProfilePage]
-        EP[EditPlacePage]
-    end
-    subgraph sections
-        PP --> MS[MoradorSections interno]
-    end
-    subgraph modal
-        MS --> CM[ConfirmDialog inline]
-    end
-    subgraph atoms
-        EP --> SP[Spinner]
-        EP --> BT[Button]
-        MS --> BT
-        CM --> BT
-    end
-    subgraph molecules
-        EP --> FF[FormField]
-    end
-    subgraph infra
-        MS --> DP[deletePlace — placeAdaptor]
-        EP --> FPB[fetchPlaceById — placeAdaptor]
-        EP --> UP[updatePlace — placeAdaptor]
-    end
-    subgraph context
-        PP --> AU[useAuth — AuthContext]
-    end
-    subgraph routes
-        AR[AppRoutes — ProtectedRoute role=morador] --> EP
-        AR2[AppRoutes — ProtectedRoute] --> PP
-    end
-    subgraph react-hook-form
-        EP --> UF[useForm]
-    end
-    subgraph react-router-dom
-        MS --> LK[Link — /morador/locais/:id/editar]
-        EP --> UN[useNavigate]
-        EP --> UPR[useParams — id]
-    end
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
+flowchart LR
+    PP[ProfilePage] --> MS[MoradorSections]
+    MS --> EP[EditPlacePage]
+    MS --> PA[placeAdaptor]
+    EP --> PA
 ```
 
 ## O que foi feito

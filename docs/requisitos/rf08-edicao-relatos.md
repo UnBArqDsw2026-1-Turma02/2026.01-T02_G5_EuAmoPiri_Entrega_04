@@ -1,4 +1,4 @@
-# RF08 — Edição e Exclusão de Relatos (Turista)
+﻿# RF08 — Edição e Exclusão de Relatos (Turista)
 
 ## Requisito
 
@@ -8,73 +8,27 @@
 ## Diagrama de Atividades
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
 flowchart TD
-    A([Turista acessa /perfil]) --> B{Autenticado e role=turista?}
-    B -- não --> C[Redireciona para /login]
-    B -- sim --> D[ProfilePage exibe TuristaSections]
-    D --> E[Lista AVALIAÇÕES CADASTRADAS com botões Editar e Excluir]
-
-    E --> F{Turista clica Editar Avaliação?}
-    F -- sim --> G[Navega para /locais/:placeId/relatos/:id/editar]
-    G --> H[EditExperiencePage: fetchExperiencesByPlace carrega dados]
-    H --> I{Relato encontrado?}
-    I -- não --> J[Exibe Spinner / estado de carregamento]
-    I -- sim --> K[Preenche ExperienceForm com dados existentes]
-    K --> L{Turista submete?}
-    L -- cancelar --> M[Volta para /locais/:placeId]
-    L -- salvar --> N[updateExperience chamado]
-    N --> O[Redireciona para /locais/:placeId]
-
-    E --> P{Turista clica Excluir Avaliação?}
-    P -- sim --> Q[Abre modal de confirmação com nome do local]
-    Q --> R{Turista confirma?}
-    R -- cancelar --> S[Fecha modal]
-    R -- excluir --> T[deleteExperience chamado]
-    T --> U{Sucesso?}
-    U -- sim --> V[Remove avaliação da lista em tempo real]
-    U -- não --> W[Exibe mensagem de erro no modal]
+    A([/perfil]) --> B{Turista?}
+    B -- não --> C[/login]
+    B -- sim --> D[Lista relatos]
+    D --> E{Editar?}
+    E -- sim --> F[EditExperiencePage]
+    F --> G[updateExperience]
+    D --> H{Excluir?}
+    H -- sim --> I[deleteExperience]
 ```
 
 ## Diagrama de Componentes
 
 ```mermaid
-graph TD
-    subgraph pages
-        PP[ProfilePage]
-        EE[EditExperiencePage]
-    end
-    subgraph sections
-        PP --> TS[TuristaSections interno]
-    end
-    subgraph modal
-        TS --> CM[ConfirmDialog inline]
-    end
-    subgraph organisms
-        EE --> EF[ExperienceForm]
-    end
-    subgraph atoms
-        EE --> SP[Spinner]
-        EE --> BT[Button]
-        TS --> BT
-        CM --> BT
-    end
-    subgraph infra
-        TS --> DE[deleteExperience — experienceAdaptor]
-        EE --> FEBP[fetchExperiencesByPlace — experienceAdaptor]
-        EE --> UE[updateExperience — experienceAdaptor]
-    end
-    subgraph context
-        PP --> AU[useAuth — AuthContext]
-    end
-    subgraph routes
-        AR[AppRoutes — ProtectedRoute role=turista] --> EE
-        AR2[AppRoutes — ProtectedRoute] --> PP
-    end
-    subgraph react-router-dom
-        TS --> LK[Link — /locais/:placeId/relatos/:id/editar]
-        EE --> UN[useNavigate]
-        EE --> UPR[useParams — placeId + id]
-    end
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#eee','tertiaryColor':'#fff','clusterBkg':'#fff','clusterBorder':'#000','actorBkg':'#fff','actorBorder':'#000','actorTextColor':'#000'}}}%%
+flowchart LR
+    PP[ProfilePage] --> TS[TuristaSections]
+    TS --> EE[EditExperiencePage]
+    TS --> EA[experienceAdaptor]
+    EE --> EA
 ```
 
 ## O que foi feito
