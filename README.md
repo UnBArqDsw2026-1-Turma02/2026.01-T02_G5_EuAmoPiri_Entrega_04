@@ -1,4 +1,4 @@
-# Eu amo Piri
+# ❤️ Eu Amo Piri
 
 <br>
 <img width="400" height="50" alt="❤️ EuAmoPiri" src="https://github.com/user-attachments/assets/b31d17ea-0932-4f89-9d4d-c958ca901351" />
@@ -8,6 +8,10 @@
 
 Este repositório reune todas as documentações e artefatos do grupo 05
 necessários para a realização da entrega 2 da Disciplina de Arquitetura e Desenho de Software "FGA0208" ministrada pela Prof.ª Milene Serrano - 2026.1
+
+## Link para o site desenvolvido
+
+[Site ❤️ Eu Amo Piri](https://eu-amo-piri.onrender.com).
 
 ## Documentação
 
