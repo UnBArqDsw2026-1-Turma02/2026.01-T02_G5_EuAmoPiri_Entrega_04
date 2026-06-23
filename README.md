@@ -9,13 +9,12 @@
 Este repositório reune todas as documentações e artefatos do grupo 05
 necessários para a realização da entrega 2 da Disciplina de Arquitetura e Desenho de Software "FGA0208" ministrada pela Prof.ª Milene Serrano - 2026.1
 
-## Link para o site desenvolvido
+## Links
 
-[Site ❤️ Eu Amo Piri](https://eu-amo-piri.onrender.com).
-
-## Documentação
-
-A documentação completa pode ser acessada por meio do link ao lado -> [Acessar documentação](https://unbarqdsw2026-1-turma02.github.io/2026.01-T02_G5_EuAmoPiri_Entrega_01/#/)
+| Recurso | URL |
+| --- | --- |
+| **Site em produção** | [https://eu-amo-piri.onrender.com](https://eu-amo-piri.onrender.com/) |
+| **Documentação (GitHub Pages)** | [https://unbarqdsw2026-1-turma02.github.io/2026.01-T02_G5_EuAmoPiri_Entrega_04/](https://unbarqdsw2026-1-turma02.github.io/2026.01-T02_G5_EuAmoPiri_Entrega_04/) |
 
 ## Equipe
 

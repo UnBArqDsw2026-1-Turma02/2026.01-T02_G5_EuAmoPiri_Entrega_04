@@ -2,9 +2,11 @@
 
 
 
-- [Home](/docs)
+- [Home](/)
 
-- [Projetos](/docs/Projeto/Projeto.md)
+- [Site em produção ↗](https://eu-amo-piri.onrender.com/)
+
+- [Projetos](/Projeto/Projeto.md)
 
 
 
